@@ -1,0 +1,22 @@
+[project]
+name = "ffbffl-pipeline"
+version = "1.0.0"
+description = "ESPN fantasy football league archive and analytics pipeline"
+requires-python = ">=3.11"
+dependencies = ["requests>=2.31,<3", "PyYAML>=6,<7"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
+ignore = ["E501", "SIM108", "B905"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E402", "F401", "F811"]

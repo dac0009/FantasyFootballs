@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "pipeline_version": "1.0.0",
+  "generated_at": "2026-10-08T17:45:12+00:00",
+  "source": "sample",
+  "league": {
+    "league_id": 61253603,
+    "name": "FFBFFL",
+    "short_name": "FFBFFL",
+    "site_title": "FFBFFL Record Book",
+    "timezone": "America/New_York"
+  },
+  "seasons": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025,
+    2026
+  ],
+  "current_season": 2026,
+  "current_week": 4,
+  "upcoming_week": 5,
+  "counts": {
+    "seasons": 8,
+    "owners": 15,
+    "matchups": 697,
+    "completed_matchups": 623,
+    "team_weeks": 1246,
+    "roster_rows": 20160,
+    "players": 248,
+    "draft_picks": 1472,
+    "transactions": 0,
+    "head_to_head_pairs": 105
+  },
+  "limitations": [
+    "2019: ESPN returned no transaction history.",
+    "2020: ESPN returned no transaction history.",
+    "2021: ESPN returned no transaction history.",
+    "2022: ESPN returned no transaction history.",
+    "2023: ESPN returned no transaction history.",
+    "2024: ESPN returned no transaction history.",
+    "2025: ESPN returned no transaction history.",
+    "2026: ESPN returned no transaction history."
+  ],
+  "warnings": [
+    "season 2019: 10 teams, expected 12. League size has changed over time, so this may be correct.",
+    "season 2020: 10 teams, expected 12. League size has changed over time, so this may be correct."
+  ]
+}

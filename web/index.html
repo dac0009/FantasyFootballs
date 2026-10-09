@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>FFBFFL Record Book</title>
+    <meta
+      name="description"
+      content="The permanent archive and analytics hub for the FFBFFL fantasy football league: standings, records, rivalries and every result since 2019."
+    />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0F1115" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      // Companion to public/404.html: GitHub Pages has no SPA rewrite, so a
+      // direct hit on /owners/jane-doe 404s. 404.html encodes the path into a
+      // query string and bounces here; this restores the real URL before
+      // React Router mounts. Internal navigation never touches this.
+      (function () {
+        var redirect = new URLSearchParams(window.location.search).get("p");
+        if (redirect) {
+          history.replaceState(null, "", redirect + window.location.hash);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      This archive needs JavaScript to browse. The underlying data is plain JSON
+      in the <code>data/</code> folder of the repository.
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,281 @@
+[
+  {
+    "season": 2019,
+    "team_count": 10,
+    "regular_season_weeks": 13,
+    "completed_weeks": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "champion": {
+      "owner_id": "elliot-nakamura",
+      "owner_name": "Elliot Nakamura",
+      "team_name": "Union Hall United",
+      "record": "6-7",
+      "points_for": 1497.03
+    },
+    "runner_up": {
+      "owner_id": "marcus-oyelaran",
+      "owner_name": "Marcus Oyelaran",
+      "team_name": "The Analytics Dept"
+    },
+    "league_name": "Sample Fantasy League",
+    "is_current": false
+  },
+  {
+    "season": 2020,
+    "team_count": 10,
+    "regular_season_weeks": 13,
+    "completed_weeks": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "champion": {
+      "owner_id": "ruth-mwangi",
+      "owner_name": "Ruth Mwangi",
+      "team_name": "Granite Row",
+      "record": "9-4",
+      "points_for": 1644.6
+    },
+    "runner_up": {
+      "owner_id": "elliot-nakamura",
+      "owner_name": "Elliot Nakamura",
+      "team_name": "Quarry Road Royals"
+    },
+    "league_name": "Sample Fantasy League",
+    "is_current": false
+  },
+  {
+    "season": 2021,
+    "team_count": 12,
+    "regular_season_weeks": 14,
+    "completed_weeks": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+    ],
+    "champion": {
+      "owner_id": "mira-oduya",
+      "owner_name": "Mira Oduya",
+      "team_name": "Mallard Point",
+      "record": "10-4",
+      "points_for": 1827.7
+    },
+    "runner_up": {
+      "owner_id": "theo-barros",
+      "owner_name": "Theo Barros",
+      "team_name": "Sunset Blvd Sharks"
+    },
+    "league_name": "Sample Fantasy League",
+    "is_current": false
+  },
+  {
+    "season": 2022,
+    "team_count": 12,
+    "regular_season_weeks": 14,
+    "completed_weeks": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+    ],
+    "champion": {
+      "owner_id": "priya-raghunathan",
+      "owner_name": "Priya Raghunathan",
+      "team_name": "Quarry Road Royals",
+      "record": "10-3-1",
+      "points_for": 1889.9
+    },
+    "runner_up": {
+      "owner_id": "dev-patel",
+      "owner_name": "Dev Patel",
+      "team_name": "The Standard"
+    },
+    "league_name": "Sample Fantasy League",
+    "is_current": false
+  },
+  {
+    "season": 2023,
+    "team_count": 12,
+    "regular_season_weeks": 14,
+    "completed_weeks": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+    ],
+    "champion": {
+      "owner_id": "mira-oduya",
+      "owner_name": "Mira Oduya",
+      "team_name": "Summit Supply Co",
+      "record": "11-3",
+      "points_for": 1809.54
+    },
+    "runner_up": {
+      "owner_id": "priya-raghunathan",
+      "owner_name": "Priya Raghunathan",
+      "team_name": "Ninth Ward Nine"
+    },
+    "league_name": "Sample Fantasy League",
+    "is_current": false
+  },
+  {
+    "season": 2024,
+    "team_count": 12,
+    "regular_season_weeks": 14,
+    "completed_weeks": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+    ],
+    "champion": {
+      "owner_id": "elliot-nakamura",
+      "owner_name": "Elliot Nakamura",
+      "team_name": "Union Hall United",
+      "record": "7-7",
+      "points_for": 1756.8
+    },
+    "runner_up": {
+      "owner_id": "ruth-mwangi",
+      "owner_name": "Ruth Mwangi",
+      "team_name": "Riverbend Rail"
+    },
+    "league_name": "Sample Fantasy League",
+    "is_current": false
+  },
+  {
+    "season": 2025,
+    "team_count": 12,
+    "regular_season_weeks": 14,
+    "completed_weeks": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+    ],
+    "champion": {
+      "owner_id": "hollis-vance",
+      "owner_name": "Hollis Vance",
+      "team_name": "Foundry FC",
+      "record": "9-5",
+      "points_for": 1662.93
+    },
+    "runner_up": {
+      "owner_id": "nora-kristiansen",
+      "owner_name": "Nora Kristiansen",
+      "team_name": "Summit Supply Co"
+    },
+    "league_name": "Sample Fantasy League",
+    "is_current": false
+  },
+  {
+    "season": 2026,
+    "team_count": 12,
+    "regular_season_weeks": 14,
+    "completed_weeks": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "champion": null,
+    "runner_up": null,
+    "league_name": "Sample Fantasy League",
+    "is_current": true
+  }
+]

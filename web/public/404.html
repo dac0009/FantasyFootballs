@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirecting</title>
+    <script>
+      // GitHub Pages serves this file for any unknown path. Encode the
+      // requested path and bounce to the app, which restores it.
+      (function () {
+        var segments = window.location.pathname.split("/");
+        // Project sites are served from /<repo>/; keep that prefix.
+        var base = segments.length > 1 ? "/" + segments[1] + "/" : "/";
+        var rest = window.location.pathname.slice(base.length);
+        var target =
+          base + "?p=" + encodeURIComponent(base + rest) + window.location.hash;
+        window.location.replace(target);
+      })();
+    </script>
+    <meta name="robots" content="noindex" />
+  </head>
+  <body></body>
+</html>
