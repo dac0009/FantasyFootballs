@@ -1,0 +1,164 @@
+name: Refresh ESPN data
+
+# Runs every Tuesday at 6:00 AM America/New_York, and whenever you click
+# "Run workflow" on the Actions tab.
+#
+# GitHub cron is UTC-only and has no daylight-saving awareness. 6:00 AM in New
+# York is 11:00 UTC during Eastern Standard Time and 10:00 UTC during Eastern
+# Daylight Time, so this schedules *both* hours and then checks the actual
+# local time in the first step. Exactly one of the two runs continues; the
+# other exits immediately and costs a few seconds of runner time.
+
+on:
+  schedule:
+    - cron: "0 10 * * 2" # 6:00 AM EDT (Mar-Nov)
+    - cron: "0 11 * * 2" # 6:00 AM EST (Nov-Mar)
+  workflow_dispatch:
+    inputs:
+      seasons:
+        description: "Seasons to refresh, space separated (blank = all)"
+        required: false
+        type: string
+      skip_rosters:
+        description: "Skip per-week lineup data (much faster)"
+        required: false
+        default: false
+        type: boolean
+      no_cache:
+        description: "Ignore the raw response cache and refetch everything"
+        required: false
+        default: true
+        type: boolean
+      allow_shrink:
+        description: "Allow publishing a SMALLER dataset (only if you know why)"
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: refresh-espn-data
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    name: Pull from ESPN and publish datasets
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
+    steps:
+      - name: Check the local time in the league's timezone
+        id: guard
+        run: |
+          TZ_NAME="America/New_York"
+          LOCAL_HOUR=$(TZ="$TZ_NAME" date +%-H)
+          LOCAL_TIME=$(TZ="$TZ_NAME" date "+%Y-%m-%d %H:%M %Z")
+          echo "Local time in $TZ_NAME is $LOCAL_TIME"
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "Triggered manually; skipping the time guard."
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          elif [ "$LOCAL_HOUR" = "6" ]; then
+            echo "It is the 6 AM hour locally; proceeding."
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Not 6 AM in $TZ_NAME (currently hour $LOCAL_HOUR). This is the duplicate cron for the other DST offset; exiting."
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.guard.outputs.proceed == 'true'
+
+      - uses: actions/setup-python@v5
+        if: steps.guard.outputs.proceed == 'true'
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        if: steps.guard.outputs.proceed == 'true'
+        run: pip install -r requirements-dev.txt
+
+      - name: Run the statistical test suite
+        if: steps.guard.outputs.proceed == 'true'
+        run: python -m pytest tests -q
+
+      - name: Check that credentials are configured
+        if: steps.guard.outputs.proceed == 'true'
+        env:
+          SWID: ${{ secrets.SWID }}
+          ESPN_S2: ${{ secrets.ESPN_S2 }}
+        run: |
+          if [ -z "$SWID" ] || [ -z "$ESPN_S2" ]; then
+            echo "::error::SWID and/or ESPN_S2 repository secrets are missing. Add them under Settings -> Secrets and variables -> Actions. See docs/SECURITY.md."
+            exit 1
+          fi
+          echo "Both secrets are present."
+
+      - name: Refresh data from ESPN
+        if: steps.guard.outputs.proceed == 'true'
+        env:
+          SWID: ${{ secrets.SWID }}
+          ESPN_S2: ${{ secrets.ESPN_S2 }}
+        run: |
+          ARGS="refresh"
+          for season in ${{ inputs.seasons }}; do
+            ARGS="$ARGS --season $season"
+          done
+          if [ "${{ inputs.skip_rosters }}" = "true" ]; then ARGS="$ARGS --skip-rosters"; fi
+          if [ "${{ inputs.no_cache }}" != "false" ]; then ARGS="$ARGS --no-cache"; fi
+          if [ "${{ inputs.allow_shrink }}" = "true" ]; then ARGS="$ARGS --allow-shrink"; fi
+          echo "Running: python -m pipeline $ARGS"
+          python -m pipeline $ARGS
+
+      - name: Summarise the published dataset
+        if: steps.guard.outputs.proceed == 'true'
+        run: |
+          {
+            echo "## Dataset published"
+            echo '```'
+            python -m pipeline inspect
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guard against committing credentials
+        if: steps.guard.outputs.proceed == 'true'
+        env:
+          ESPN_S2_FRAGMENT: ${{ secrets.ESPN_S2 }}
+        run: |
+          if grep -rEl '\{[0-9A-Fa-f]{8}-([0-9A-Fa-f]{4}-){3}[0-9A-Fa-f]{12}\}' data/ 2>/dev/null; then
+            echo "::error::An ESPN GUID appeared in the generated data. Refusing to commit."
+            exit 1
+          fi
+          if [ -n "$ESPN_S2_FRAGMENT" ] && grep -rl "$ESPN_S2_FRAGMENT" data/ 2>/dev/null; then
+            echo "::error::Credential fragment found in generated data."
+            exit 1
+          fi
+          echo "No credential-shaped strings in data/."
+
+      - name: Commit the refreshed datasets
+        id: commit
+        if: steps.guard.outputs.proceed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet; then
+            echo "No data changes; nothing to commit."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "Refresh ESPN data ($(TZ=America/New_York date '+%Y-%m-%d %H:%M %Z'))"
+            git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    name: Rebuild the site
+    needs: refresh
+    if: needs.refresh.outputs.changed == 'true'
+    uses: ./.github/workflows/deploy.yml
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
