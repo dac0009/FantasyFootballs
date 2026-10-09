@@ -1,0 +1,28 @@
+# Owner identity overrides.
+#
+# You usually do not need this file. Owner identity comes from ESPN member
+# account GUIDs, which are stable across every season, so a team rename is
+# handled automatically.
+#
+# Add an entry here only when:
+#   1. Someone rebuilt their ESPN account and now has two GUIDs, or
+#   2. ESPN's display name is wrong/unhelpful and you want to pin a real name,
+#   3. A team had no linked ESPN account and shows up as "unlinked".
+#
+# Find the values by running:  python -m pipeline owners
+#
+# owners:
+#   - owner_id: jane-doe          # stable slug used in URLs: /owners/jane-doe
+#     name: Jane Doe              # display name shown on the site
+#     espn_member_ids:            # every ESPN account GUID belonging to Jane
+#       - "{AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE}"
+#       - "{11111111-2222-3333-4444-555555555555}"
+#     note: "Took over the Harbor City franchise in 2021."
+#
+#   - owner_id: retired-manager
+#     name: Former Member
+#     hidden: true                # kept in the data, de-emphasised in the UI
+#     espn_member_ids:
+#       - "{99999999-8888-7777-6666-555555555555}"
+
+owners: []

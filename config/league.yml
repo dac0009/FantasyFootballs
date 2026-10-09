@@ -1,0 +1,20 @@
+# Non-secret league configuration.
+# Secrets (SWID / ESPN_S2) never live here -- see .env.example and docs/SECURITY.md.
+league:
+  league_id: 61253603
+  first_season: 2019
+
+  # Leave `last_season` blank to follow the calendar automatically: a fantasy
+  # season labelled Y runs Sep Y -> Jan Y+1, so from August onward the pipeline
+  # starts attempting the new season with no code change. Set an explicit year
+  # only if you need to freeze the archive.
+  last_season:
+
+  timezone: America/New_York
+
+  name: FFBFFL
+  short_name: FFBFFL
+  site_title: FFBFFL Record Book
+
+  # Only used to raise a validation warning when a season's team count differs.
+  team_count_hint: 12

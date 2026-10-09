@@ -1,0 +1,376 @@
+@import "tailwindcss";
+
+/*
+ * Design direction (from the project brief): dark charcoal/graphite
+ * foundation, clean light typography, restrained accent, data-first,
+ * professional sports-analytics publication. No emoji, no gradients as
+ * decoration, no shadows, no card grid.
+ *
+ * Two typefaces, clearly distinct:
+ *   Archivo        -- display. Sturdy editorial grotesque, tight tracking.
+ *   IBM Plex Sans  -- body and all data. Tabular figures so every column of
+ *                     numbers aligns; a monospace face is deliberately NOT
+ *                     used, because tabular-nums solves the real problem
+ *                     without making stats look like code.
+ *
+ * Structure comes from hairline rules and spacing, not containers. The brass
+ * accent is rationed: active navigation, championship markers, and the one
+ * feature rule on the Game of the Week. Diverging data (luck, differential)
+ * is the only place colour carries meaning.
+ */
+
+@theme {
+  --color-base: #0f1115;
+  --color-surface: #171a20;
+  --color-raised: #1e222a;
+  --color-line: #2b313b;
+  --color-line-soft: #21262e;
+
+  --color-hi: #e8ebf0;
+  --color-mid: #98a1ae;
+  --color-low: #6a7280;
+
+  --color-brass: #c8963e;
+  --color-brass-dim: #8a6726;
+  --color-steel: #6e9bc5;
+  --color-pos: #4e9e72;
+  --color-neg: #c25b52;
+
+  --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "IBM Plex Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  html {
+    scroll-padding-top: calc(3.5rem + var(--safe-top));
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-base);
+    color: var(--color-hi);
+    font-family: var(--font-sans);
+    font-feature-settings: "tnum" 1;
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.08;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brass);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* ---- page scaffolding ------------------------------------------- */
+
+  .shell {
+    width: 100%;
+    max-width: 78rem;
+    margin-inline: auto;
+    padding-inline: 1.15rem;
+  }
+
+  @media (min-width: 900px) {
+    .shell {
+      padding-inline: 2rem;
+    }
+  }
+
+  /* A labelled horizontal rule. This is the main structural device on every
+     page: it names a region without wrapping it in a box. */
+  .band {
+    border-top: 1px solid var(--color-line);
+    padding-top: 0.85rem;
+    margin-top: 2.75rem;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .band-title {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .band-note {
+    color: var(--color-low);
+    font-size: 0.82rem;
+  }
+
+  .lede {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(1.5rem, 4.4vw, 2.6rem);
+    line-height: 1.12;
+    letter-spacing: -0.025em;
+    max-width: 34ch;
+  }
+
+  .prose-narrow {
+    max-width: 68ch;
+    color: var(--color-mid);
+    line-height: 1.62;
+  }
+
+  /* ---- tables: the hero element ----------------------------------- */
+
+  .sheet {
+    overflow-x: auto;
+    border-top: 1px solid var(--color-line);
+  }
+
+  .sheet table {
+    min-width: 42rem;
+  }
+
+  .sheet thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background-color: var(--color-base);
+    border-bottom: 1px solid var(--color-line);
+    color: var(--color-mid);
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    padding: 0.55rem 0.6rem;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .sheet thead th:first-child,
+  .sheet tbody td:first-child {
+    text-align: left;
+    padding-left: 0;
+  }
+
+  .sheet tbody td {
+    border-bottom: 1px solid var(--color-line-soft);
+    font-size: 0.86rem;
+    padding: 0.5rem 0.6rem;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .sheet tbody tr:hover td {
+    background-color: var(--color-surface);
+  }
+
+  .sheet th[aria-sort] {
+    color: var(--color-hi);
+  }
+
+  .sort-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .sort-btn:hover {
+    color: var(--color-hi);
+  }
+
+  /* Magnitude shown in the cell itself rather than in a separate chart. */
+  .cell-bar {
+    position: relative;
+    display: block;
+    height: 0.18rem;
+    margin-top: 0.22rem;
+    background-color: var(--color-line);
+  }
+
+  .cell-bar > span {
+    position: absolute;
+    inset-block: 0;
+    left: 0;
+    background-color: var(--color-steel);
+  }
+
+  /* ---- small typographic pieces ----------------------------------- */
+
+  .tag {
+    display: inline-block;
+    border: 1px solid var(--color-line);
+    color: var(--color-mid);
+    font-size: 0.68rem;
+    font-weight: 500;
+    padding: 0.08rem 0.36rem;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+
+  .tag-champ {
+    border-color: var(--color-brass-dim);
+    color: var(--color-brass);
+  }
+
+  .figure {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  .link-quiet {
+    border-bottom: 1px solid transparent;
+    transition: border-color 120ms ease, color 120ms ease;
+  }
+
+  .link-quiet:hover {
+    color: var(--color-hi);
+    border-bottom-color: var(--color-brass);
+  }
+
+  .panel {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: 3px;
+    padding: 1.1rem 1.15rem;
+  }
+
+  .scoreline {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.35rem 0.8rem;
+    align-items: center;
+    border-bottom: 1px solid var(--color-line-soft);
+    padding: 0.55rem 0;
+  }
+
+  .chart-frame {
+    border: 1px solid var(--color-line);
+    border-radius: 3px;
+    background-color: var(--color-surface);
+    padding: 0.9rem 0.6rem 0.4rem;
+  }
+
+  .pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .pill {
+    border: 1px solid var(--color-line);
+    background: none;
+    color: var(--color-mid);
+    font: inherit;
+    font-size: 0.78rem;
+    padding: 0.22rem 0.6rem;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+
+  .pill:hover {
+    color: var(--color-hi);
+    border-color: var(--color-low);
+  }
+
+  .pill[aria-pressed="true"],
+  .pill[data-active="true"] {
+    color: var(--color-base);
+    background-color: var(--color-brass);
+    border-color: var(--color-brass);
+    font-weight: 600;
+  }
+
+  .select {
+    appearance: none;
+    background-color: var(--color-raised);
+    border: 1px solid var(--color-line);
+    border-radius: 2px;
+    color: var(--color-hi);
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 0.3rem 1.8rem 0.3rem 0.55rem;
+    background-image: linear-gradient(45deg, transparent 50%, var(--color-mid) 50%),
+      linear-gradient(135deg, var(--color-mid) 50%, transparent 50%);
+    background-position: calc(100% - 15px) 55%, calc(100% - 10px) 55%;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+  }
+
+  .notice {
+    border: 1px solid var(--color-brass-dim);
+    border-left-width: 3px;
+    background-color: color-mix(in srgb, var(--color-brass) 7%, var(--color-base));
+    color: var(--color-mid);
+    font-size: 0.83rem;
+    padding: 0.6rem 0.85rem;
+    border-radius: 2px;
+  }
+
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+  }
+
+  .skip-link:focus {
+    left: 1rem;
+    top: 1rem;
+    z-index: 50;
+    background-color: var(--color-raised);
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--color-brass);
+  }
+}
+
+@layer utilities {
+  .num-pos {
+    color: var(--color-pos);
+  }
+  .num-neg {
+    color: var(--color-neg);
+  }
+}
