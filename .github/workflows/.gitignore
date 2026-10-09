@@ -1,0 +1,43 @@
+# ---- secrets: never commit these -------------------------------------------
+.env
+.env.*
+!.env.example
+*.cookies
+cookies.txt
+secrets.json
+
+# ---- pipeline working files -------------------------------------------------
+.cache/
+probe-report.json
+
+# ---- python -----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# ---- node / web -------------------------------------------------------------
+node_modules/
+web/dist/
+web/.vite/
+npm-debug.log*
+
+# ---- notebooks --------------------------------------------------------------
+.ipynb_checkpoints/
+
+# ---- editors and OS ---------------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# ---- legacy ArcGIS artifacts ------------------------------------------------
+*.aprx
+*.atbx
+*.gdb/
+ImportLog/
+/New Notebook.ipynb
