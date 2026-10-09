@@ -1,7 +1,7 @@
 [
   {
     "season": 2019,
-    "team_count": 10,
+    "team_count": 14,
     "regular_season_weeks": 13,
     "completed_weeks": [
       1,
@@ -22,18 +22,18 @@
       16
     ],
     "champion": {
-      "owner_id": "elliot-nakamura",
-      "owner_name": "Elliot Nakamura",
-      "team_name": "Union Hall United",
-      "record": "6-7",
-      "points_for": 1497.03
+      "owner_id": "dylan-williams",
+      "owner_name": "Dylan Williams",
+      "team_name": "4 for4",
+      "record": "9-4",
+      "points_for": 1560.26
     },
     "runner_up": {
-      "owner_id": "marcus-oyelaran",
-      "owner_name": "Marcus Oyelaran",
-      "team_name": "The Analytics Dept"
+      "owner_id": "jakob-frank",
+      "owner_name": "Jakob Frank",
+      "team_name": "Lil B Fanclub  Lil B"
     },
-    "league_name": "Sample Fantasy League",
+    "league_name": "14 Man Winner Takes all",
     "is_current": false
   },
   {
@@ -59,23 +59,23 @@
       16
     ],
     "champion": {
-      "owner_id": "ruth-mwangi",
-      "owner_name": "Ruth Mwangi",
-      "team_name": "Granite Row",
-      "record": "9-4",
-      "points_for": 1644.6
+      "owner_id": "dom-campese",
+      "owner_name": "Dom Campese",
+      "team_name": "Irish  Wieners",
+      "record": "12-1",
+      "points_for": 1792.82
     },
     "runner_up": {
-      "owner_id": "elliot-nakamura",
-      "owner_name": "Elliot Nakamura",
-      "team_name": "Quarry Road Royals"
+      "owner_id": "jakob-frank-2",
+      "owner_name": "Jakob Frank",
+      "team_name": "Suck My Dick From the Back"
     },
-    "league_name": "Sample Fantasy League",
+    "league_name": "The 2020 Corona Bowl Festival",
     "is_current": false
   },
   {
     "season": 2021,
-    "team_count": 12,
+    "team_count": 14,
     "regular_season_weeks": 14,
     "completed_weeks": [
       1,
@@ -97,18 +97,18 @@
       17
     ],
     "champion": {
-      "owner_id": "mira-oduya",
-      "owner_name": "Mira Oduya",
-      "team_name": "Mallard Point",
-      "record": "10-4",
-      "points_for": 1827.7
+      "owner_id": "mikey-fidler",
+      "owner_name": "mikey fidler",
+      "team_name": "Cruise Control",
+      "record": "11-3",
+      "points_for": 1823.78
     },
     "runner_up": {
-      "owner_id": "theo-barros",
-      "owner_name": "Theo Barros",
-      "team_name": "Sunset Blvd Sharks"
+      "owner_id": "justin-ripple",
+      "owner_name": "Justin Ripple",
+      "team_name": "Inhood Trash Pandas"
     },
-    "league_name": "Sample Fantasy League",
+    "league_name": "The 2021 Duke's Mayo Classic",
     "is_current": false
   },
   {
@@ -135,18 +135,18 @@
       17
     ],
     "champion": {
-      "owner_id": "priya-raghunathan",
-      "owner_name": "Priya Raghunathan",
-      "team_name": "Quarry Road Royals",
-      "record": "10-3-1",
-      "points_for": 1889.9
+      "owner_id": "dom-campese",
+      "owner_name": "Dom Campese",
+      "team_name": "Ben Simmons  Blows",
+      "record": "12-2",
+      "points_for": 1989.8
     },
     "runner_up": {
-      "owner_id": "dev-patel",
-      "owner_name": "Dev Patel",
-      "team_name": "The Standard"
+      "owner_id": "mikey-fidler",
+      "owner_name": "mikey fidler",
+      "team_name": "Cruise Control"
     },
-    "league_name": "Sample Fantasy League",
+    "league_name": "The 2022 LIV Championship",
     "is_current": false
   },
   {
@@ -173,18 +173,18 @@
       17
     ],
     "champion": {
-      "owner_id": "mira-oduya",
-      "owner_name": "Mira Oduya",
-      "team_name": "Summit Supply Co",
-      "record": "11-3",
-      "points_for": 1809.54
+      "owner_id": "dylan-williams",
+      "owner_name": "Dylan Williams",
+      "team_name": "Bring Back The  4 for 4",
+      "record": "9-5",
+      "points_for": 1951.3
     },
     "runner_up": {
-      "owner_id": "priya-raghunathan",
-      "owner_name": "Priya Raghunathan",
-      "team_name": "Ninth Ward Nine"
+      "owner_id": "justin-ripple",
+      "owner_name": "Justin Ripple",
+      "team_name": "Inhood Trash Pandas"
     },
-    "league_name": "Sample Fantasy League",
+    "league_name": "The 2023 FFB Invitational",
     "is_current": false
   },
   {
@@ -211,18 +211,18 @@
       17
     ],
     "champion": {
-      "owner_id": "elliot-nakamura",
-      "owner_name": "Elliot Nakamura",
-      "team_name": "Union Hall United",
-      "record": "7-7",
-      "points_for": 1756.8
+      "owner_id": "abhik-patel",
+      "owner_name": "Abhik Patel",
+      "team_name": "Team BeakTheFreak",
+      "record": "8-6",
+      "points_for": 1932.75
     },
     "runner_up": {
-      "owner_id": "ruth-mwangi",
-      "owner_name": "Ruth Mwangi",
-      "team_name": "Riverbend Rail"
+      "owner_id": "tyler-kuiken",
+      "owner_name": "tyler kuiken",
+      "team_name": "Substitute Bus Driver"
     },
-    "league_name": "Sample Fantasy League",
+    "league_name": "The 2024 FFBFFL Invitational",
     "is_current": false
   },
   {
@@ -249,18 +249,18 @@
       17
     ],
     "champion": {
-      "owner_id": "hollis-vance",
-      "owner_name": "Hollis Vance",
-      "team_name": "Foundry FC",
-      "record": "9-5",
-      "points_for": 1662.93
+      "owner_id": "tyler-kuiken",
+      "owner_name": "tyler kuiken",
+      "team_name": "Mommys Little Allstars",
+      "record": "8-6",
+      "points_for": 1855.8
     },
     "runner_up": {
-      "owner_id": "nora-kristiansen",
-      "owner_name": "Nora Kristiansen",
-      "team_name": "Summit Supply Co"
+      "owner_id": "dominick-cifelli",
+      "owner_name": "Dominick Cifelli",
+      "team_name": "Jr. Double Triple Whopper"
     },
-    "league_name": "Sample Fantasy League",
+    "league_name": "2025 FFBFFL Friends of Coal Bowl",
     "is_current": false
   },
   {
@@ -275,7 +275,7 @@
     ],
     "champion": null,
     "runner_up": null,
-    "league_name": "Sample Fantasy League",
+    "league_name": "2026 AI Data Center Championship",
     "is_current": true
   }
 ]
