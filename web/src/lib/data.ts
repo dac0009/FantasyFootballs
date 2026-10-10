@@ -9,6 +9,7 @@ import type {
   OwnerIndexRow,
   OwnerPayload,
   Player,
+  PlayoffPicture,
   RecordBook,
   RosterRow,
   SeasonIndexRow,
@@ -131,6 +132,7 @@ export const paths = {
   seasons: "seasons.json",
   owners: "owners.json",
   current: "current.json",
+  playoffs: "playoffs.json",
   gameOfWeek: "game_of_week.json",
   records: "records.json",
   headToHead: "head_to_head.json",
@@ -147,6 +149,7 @@ export const useMeta = () => useData<Meta>(paths.meta);
 export const useSeasonIndex = () => useData<SeasonIndexRow[]>(paths.seasons);
 export const useOwnerIndex = () => useData<OwnerIndexRow[]>(paths.owners);
 export const useCurrent = () => useData<CurrentPayload>(paths.current);
+export const usePlayoffs = () => useData<PlayoffPicture | null>(paths.playoffs);
 export const useGameOfWeek = () => useData<GameOfWeek | null>(paths.gameOfWeek);
 export const useRecordBook = () => useData<RecordBook>(paths.records);
 export const useHeadToHead = () => useData<Record<string, H2HRecord>>(paths.headToHead);

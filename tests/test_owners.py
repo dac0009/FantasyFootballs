@@ -99,6 +99,26 @@ class TestOverrides:
         assert records[0]["name"] == "John Smith"  # pinned, not ESPN's "Johnny S"
         assert records[0]["seasons"] == [2019, 2024]
 
+    def test_two_accounts_merge_by_published_hash(self):
+        """Merging must work from the public member_hash alone, because raw
+        ESPN GUIDs are deliberately never published."""
+        overrides = {
+            "owners": [
+                {
+                    "owner_id": "jakob-frank",
+                    "name": "Jakob Frank",
+                    "espn_member_hashes": [hash_member_id(GUID_A), hash_member_id(GUID_B)],
+                }
+            ]
+        }
+        registry = OwnerRegistry(overrides)
+        registry.register_season(2019, [member(GUID_A, "Jakob", "Frank")], [team(6, "Lil B", GUID_A)])
+        registry.register_season(2020, [member(GUID_B, "Jakob", "Frank")], [team(16, "Other", GUID_B)])
+        records = registry.to_records()
+        assert len(records) == 1
+        assert records[0]["owner_id"] == "jakob-frank"
+        assert records[0]["seasons"] == [2019, 2020]
+
     def test_guid_without_braces_in_config_still_matches(self):
         overrides = {
             "owners": [

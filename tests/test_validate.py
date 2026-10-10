@@ -10,9 +10,11 @@ from pipeline.constants import GAME_REGULAR
 
 
 def season_data(**overrides):
+    # ESPN's pointsFor is regular-season only; match the fixture's week-1 scores.
+    espn_pf = {1: 120.0, 2: 100.0, 3: 110.0, 4: 90.0}
     teams = [
         {"season": 2024, "team_id": i, "owner_id": f"o{i}", "team_name": f"T{i}",
-         "espn_points_for": 220.0, "espn_points_against": 190.0, "playoff_seed": i,
+         "espn_points_for": espn_pf[i], "espn_points_against": 190.0, "playoff_seed": i,
          "final_rank": i, "abbrev": None, "logo": None, "espn_wins": 1,
          "espn_losses": 1, "espn_ties": 0, "division_id": 0}
         for i in (1, 2, 3, 4)
@@ -52,6 +54,7 @@ class TestSeasonValidation:
     def test_clean_season_passes(self):
         report = validate.validate_season(season_data(), expected_team_count=4)
         assert report.ok, report.render()
+        assert not any("but ESPN reports" in w for w in report.warnings)
 
     def test_too_few_teams_is_an_error(self):
         data = season_data()
@@ -98,13 +101,32 @@ class TestSeasonValidation:
         assert not report.ok
         assert any("playing itself" in e for e in report.errors)
 
-    def test_double_counted_points_raise_a_warning(self):
+    def test_misclassified_game_raises_a_warning(self):
         data = season_data()
-        # Our rows now sum to far more than ESPN's reported pointsFor.
+        # Our regular-season rows now sum to far more than ESPN's pointsFor.
         for row in data["team_weeks"]:
             row["score"] += 500
         report = validate.validate_season(data)
         assert any("but ESPN reports" in w for w in report.warnings)
+
+    def test_postseason_points_do_not_trip_the_cross_check(self):
+        """ESPN's pointsFor is regular season only, so playoff games we hold
+        must not be counted against it. This was a real false positive."""
+        from conftest import pair
+
+        from pipeline.constants import GAME_PLAYOFF
+
+        data = season_data()
+        extra = pair(2024, 15, 1, 150, 2, 140, game_type=GAME_PLAYOFF)
+        for row in extra:
+            row["owner_id"] = f"o{row['team_id']}"
+        data["team_weeks"] += extra
+        data["matchups"].append({**data["matchups"][0], "matchup_id": "2024-15-1-2",
+                                 "week": 15, "game_type": GAME_PLAYOFF,
+                                 "home_score": 150.0, "away_score": 140.0,
+                                 "margin": 10.0, "combined": 290.0, "espn_matchup_id": 9})
+        report = validate.validate_season(data)
+        assert not any("but ESPN reports" in w for w in report.warnings)
 
 
 class TestOwnerValidation:
@@ -133,7 +155,9 @@ class TestOwnerValidation:
         ]
         report = validate.validate_owners(owners, [2023, 2024])
         assert report.ok
-        assert any("sharing a display name" in w for w in report.warnings)
+        assert any("probably one person" in w for w in report.warnings)
+        # The warning must hand the user a paste-ready merge snippet.
+        assert any("espn_member_hashes" in w for w in report.warnings)
 
     def test_unlinked_owner_is_a_warning(self):
         owners = [{"owner_id": "unlinked-2019-3", "name": "T", "seasons": [2019],

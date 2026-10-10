@@ -458,6 +458,7 @@ export interface GameOfWeekCandidate {
   components: Record<string, number>;
   weights: Record<string, number>;
   reasons: string[];
+  preview?: MatchupPreview | null;
   projection: {
     basis: string;
     home_expected: number;
@@ -485,7 +486,68 @@ export interface Milestone {
   record_id?: string;
 }
 
+export interface ScoringModel {
+  games: number;
+  raw_mean: number;
+  mean: number;
+  sd: number;
+  low: number;
+  high: number;
+}
+
+export interface Swing {
+  if_win: number;
+  if_loss: number;
+}
+
+export interface MatchupPreview {
+  matchup_id: string;
+  week: number;
+  home_owner_id: string;
+  away_owner_id: string;
+  home_team_name: string | null;
+  away_team_name: string | null;
+  home_win_pct: number;
+  away_win_pct: number;
+  home_model: ScoringModel;
+  away_model: ScoringModel;
+  home_swing: Swing;
+  away_swing: Swing;
+  leverage: number;
+}
+
+export interface PlayoffTeam {
+  owner_id: string;
+  team_name: string | null;
+  rank: number;
+  record: string;
+  points_for: number | null;
+  status: "clinched" | "eliminated" | "alive";
+  playoff_pct: number;
+  bye_pct: number | null;
+  expected_final_wins: number;
+  seed_distribution: Record<string, number>;
+  top_seed_pct: number;
+  model: ScoringModel;
+  this_week: Swing | null;
+}
+
+export interface PlayoffPicture {
+  season: number;
+  as_of_week: number | null;
+  next_week: number | null;
+  remaining_regular_season_games: number;
+  playoff_teams: number;
+  byes: number;
+  simulations: number;
+  league_model: { mean: number; sd: number; games_per_team: number };
+  teams: PlayoffTeam[];
+  previews: MatchupPreview[];
+  model: { shrinkage_games: number; tiebreak: string; notes: string };
+}
+
 export interface CurrentPayload {
+  playoff_picture: PlayoffPicture | null;
   season: number;
   latest_completed_week: number | null;
   upcoming_week: number | null;
@@ -493,7 +555,7 @@ export interface CurrentPayload {
   playoff_team_count: number | null;
   is_active: boolean;
   week: WeekPayload | null;
-  upcoming_matchups: Matchup[];
+  upcoming_matchups: (Matchup & { preview?: MatchupPreview | null })[];
   standings: StandingsRow[];
   milestones: Milestone[];
   movement: { owner_id: string; team_name: string | null; rank: number; previous_rank: number; change: number }[];

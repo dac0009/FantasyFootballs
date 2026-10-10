@@ -83,6 +83,26 @@ export const METRICS: Record<string, MetricDefinition> = {
     formula: "equal weights on meetings played, series parity, average closeness and playoff meetings",
     limitation: "The scale constants are arbitrary and chosen to spread this league's pairs out. Not a measurement.",
   },
+  playoff_odds: {
+    label: "Playoff odds",
+    short:
+      "How often a team makes the bracket when the rest of the regular season is simulated thousands of times from each team's scoring so far.",
+    formula:
+      "weekly score ~ Normal(team mean shrunk toward league mean, league-pooled std dev); top N by wins then points after 5,000 simulated seasons",
+    limitation:
+      "Assumes every team keeps scoring the way it has. Ignores injuries, byes and trades, and does not know ESPN's exact tiebreaker. Early in the season it deliberately leans toward the league average.",
+  },
+  win_probability: {
+    label: "Win probability",
+    short: "The chance one team outscores the other, from the two teams' scoring distributions.",
+    formula: "P(score A > score B) for two independent normal distributions",
+    limitation: "Same assumptions as playoff odds. A 60% favourite loses two games in five.",
+  },
+  playoff_swing: {
+    label: "This week's swing",
+    short: "A team's playoff odds if it wins this week against its odds if it loses. The gap is how much the game matters.",
+    formula: "playoff odds conditioned on winning minus playoff odds conditioned on losing",
+  },
   game_of_week: {
     label: "Game of the Week model",
     short: "Scheduled matchups scored on team quality, how evenly matched they are, stakes, recent form and rivalry history.",

@@ -4,12 +4,23 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 import { generatedAt } from "../lib/format";
 import type { Meta } from "../lib/types";
 
-const NAV = [
+// Four things people actually open from a phone. Everything else is one tap
+// further: linked from these pages and listed in the footer.
+interface NavItem {
+  to: string;
+  label: string;
+  end?: boolean;
+}
+
+const NAV: NavItem[] = [
   { to: "/", label: "This week", end: true },
-  { to: "/season", label: "Season" },
-  { to: "/seasons", label: "Archive" },
+  { to: "/season", label: "Standings" },
   { to: "/records", label: "Records" },
   { to: "/owners", label: "Owners" },
+];
+
+const MORE: NavItem[] = [
+  { to: "/seasons", label: "Season archive" },
   { to: "/head-to-head", label: "Head to head" },
   { to: "/drafts", label: "Drafts" },
   { to: "/methodology", label: "Methodology" },
@@ -74,6 +85,16 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
                 {item.label}
               </NavLink>
             ))}
+            <span className="nav-sep" aria-hidden="true" />
+            {MORE.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) => `nav-item nav-item-quiet${isActive ? " nav-item-active" : ""}`}
+              >
+                {item.label}
+              </NavLink>
+            ))}
           </nav>
 
           <button
@@ -94,7 +115,7 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
             className="shell mobile-nav"
             style={{ paddingBottom: "0.9rem" }}
           >
-            {NAV.map((item) => (
+            {[...NAV, ...MORE].map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
@@ -145,10 +166,12 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
                 }`
               : ""}
           </p>
-          <p style={{ margin: 0 }}>
-            <Link to="/methodology" className="link-quiet">
-              How these numbers are calculated
-            </Link>
+          <p style={{ margin: 0, display: "flex", gap: "1.1rem", flexWrap: "wrap" }}>
+            {MORE.map((item) => (
+              <Link key={item.to} to={item.to} className="link-quiet">
+                {item.label}
+              </Link>
+            ))}
           </p>
         </div>
       </footer>
@@ -166,6 +189,8 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
           transition: color 120ms ease;
         }
         .nav-item:hover { color: var(--color-hi); }
+        .nav-item-quiet { color: var(--color-low); font-size: 0.8rem; }
+        .nav-sep { width: 1px; height: 1rem; background: var(--color-line); align-self: center; }
         .nav-item-active { color: var(--color-hi); border-bottom-color: var(--color-brass); }
         @media (min-width: 940px) {
           .main-nav { display: flex; }

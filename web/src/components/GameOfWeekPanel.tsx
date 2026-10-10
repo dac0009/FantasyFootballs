@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { CHART } from "../lib/chartTheme";
-import { points } from "../lib/format";
 import type { GameOfWeek } from "../lib/types";
 import { Metric, OwnerLink, RivalryLink } from "./primitives";
 
@@ -55,13 +54,12 @@ export function GameOfWeekPanel({ data }: { data: GameOfWeek }) {
         ))}
       </ul>
 
-      {pick.projection ? (
+      {pick.preview ? (
         <p style={{ color: "var(--color-mid)", fontSize: "0.88rem", margin: "0.7rem 0 0" }}>
-          Season averages put this within {points(pick.projection.expected_margin, 1)} points &mdash;{" "}
+          {pick.preview.away_team_name} {Math.round(pick.preview.away_win_pct * 100)}% &middot;{" "}
+          {pick.preview.home_team_name} {Math.round(pick.preview.home_win_pct * 100)}%{" "}
           <span style={{ color: "var(--color-low)" }}>
-            {points(pick.projection.away_expected, 1)} to{" "}
-            {points(pick.projection.home_expected, 1)}. Not an ESPN projection; ESPN does not
-            publish one for a future week.
+            win probability from each team's scoring so far, not an ESPN projection.
           </span>
         </p>
       ) : null}

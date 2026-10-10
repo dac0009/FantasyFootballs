@@ -4,25 +4,39 @@
 # account GUIDs, which are stable across every season, so a team rename is
 # handled automatically.
 #
-# Add an entry here only when:
-#   1. Someone rebuilt their ESPN account and now has two GUIDs, or
-#   2. ESPN's display name is wrong/unhelpful and you want to pin a real name,
-#   3. A team had no linked ESPN account and shows up as "unlinked".
+# Use it for three things:
+#   1. Pin a proper display name (ESPN gives us whatever the person typed).
+#   2. Merge two ESPN accounts that belong to one person.
+#   3. Attach a team ESPN never linked to an account ("unlinked-...").
 #
-# Find the values by running:  python -m pipeline owners
+# The easiest way to merge: each owner's `member_hash` is in data/owners.json,
+# and whenever two owners share a name the pipeline prints a ready-to-paste
+# snippet in its warnings (see data/meta.json or the workflow summary).
+# Raw ESPN GUIDs also work if you have them.
 #
 # owners:
 #   - owner_id: jane-doe          # stable slug used in URLs: /owners/jane-doe
 #     name: Jane Doe              # display name shown on the site
-#     espn_member_ids:            # every ESPN account GUID belonging to Jane
+#     espn_member_hashes:         # from data/owners.json (preferred)
+#       - 3f1a9c2b7d4e
+#       - a81b22c9d0ef
+#     espn_member_ids:            # or raw ESPN account GUIDs, if you have them
 #       - "{AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE}"
-#       - "{11111111-2222-3333-4444-555555555555}"
 #     note: "Took over the Harbor City franchise in 2021."
-#
-#   - owner_id: retired-manager
-#     name: Former Member
-#     hidden: true                # kept in the data, de-emphasised in the UI
-#     espn_member_ids:
-#       - "{99999999-8888-7777-6666-555555555555}"
 
-owners: []
+owners:
+  # Display-name pins. The owner_id must match the slug ESPN's name produces.
+  - owner_id: mikey-fidler
+    name: Mikey Fidler
+  - owner_id: tyler-kuiken
+    name: Tyler Kuiken
+
+  # Jakob Frank appears twice in the ESPN data (2019 under one account,
+  # 2020 onward under another). After the next refresh, data/meta.json will
+  # contain a warning with his two member hashes; paste them here to merge:
+  #
+  # - owner_id: jakob-frank
+  #   name: Jakob Frank
+  #   espn_member_hashes:
+  #     - <hash from the warning>
+  #     - <hash from the warning>

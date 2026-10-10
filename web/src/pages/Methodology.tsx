@@ -9,6 +9,9 @@ import type { Meta } from "../lib/types";
  */
 export default function Methodology({ meta }: { meta: Meta }) {
   const order = [
+    "playoff_odds",
+    "win_probability",
+    "playoff_swing",
     "all_play",
     "expected_wins",
     "schedule_luck",
@@ -99,6 +102,30 @@ export default function Methodology({ meta }: { meta: Meta }) {
             );
           })}
       </dl>
+
+      <Band title="Playoff odds" id="playoff-odds" />
+      <div className="prose-narrow" style={{ marginTop: "0.8rem" }}>
+        <p>
+          The rest of the regular season is played out 5,000 times. In each run, every remaining
+          game is decided by drawing a score for both teams from a normal distribution: the team's
+          average so far, pulled toward the league average in proportion to how few games it has
+          played, with a standard deviation pooled across the whole league (a single team's spread
+          over four games is too noisy to trust). Final standings rank by wins, then points. The
+          top six make the bracket and the top two get byes, matching the league's settings.
+        </p>
+        <p>
+          The "win / lose" column re-runs the simulation twice with this week's game forced each
+          way. The gap between the two is how much the game matters to that team, and the week's
+          games are ordered by the sum of that gap for both sides.
+        </p>
+        <p>
+          <strong>What it assumes:</strong> that every team keeps scoring the way it has. It
+          knows nothing about injuries, bye weeks, trades or lineup changes, and it does not know
+          ESPN's exact tiebreaker. Early in the season it deliberately leans toward the league
+          average, so September odds cluster near six-in-twelve and sharpen as games are played.
+          Treat 70% as "likely", not "certain".
+        </p>
+      </div>
 
       <Band title="Game of the Week" id="game-of-the-week" />
       <div className="prose-narrow" style={{ marginTop: "0.8rem" }}>
