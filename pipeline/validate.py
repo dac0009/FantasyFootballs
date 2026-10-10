@@ -24,7 +24,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .constants import ALL_GAME_TYPES
+from .constants import ALL_GAME_TYPES, GAME_REGULAR
 
 MAX_WEEK = 25
 MIN_TEAMS = 4
@@ -168,17 +168,18 @@ def _cross_check_points(
     teams: Sequence[dict],
     team_weeks: Sequence[dict],
 ) -> None:
-    """Our summed points vs ESPN's own record totals.
+    """Our regular-season point totals vs ESPN's own ``record.overall.pointsFor``.
 
-    ESPN's ``record.overall.pointsFor`` includes every game it counts toward
-    the standings, which for most leagues is the regular season plus playoff
-    games the team played. We therefore compare against all games and allow a
-    small tolerance; a large mismatch means we are dropping or double-counting
-    games.
+    ESPN's figure covers the regular season only (verified against every
+    team-season in this league's history). Comparing the same scope makes
+    this a genuine correctness check on game-type classification: if a
+    playoff or consolation game were ever misfiled as regular season, the
+    totals would diverge by a whole game's worth of points.
     """
     totals: dict[int, float] = defaultdict(float)
     for row in team_weeks:
-        totals[row["team_id"]] += row["score"]
+        if row.get("game_type") == GAME_REGULAR:
+            totals[row["team_id"]] += row["score"]
 
     for team in teams:
         espn_pf = team.get("espn_points_for")
@@ -187,14 +188,11 @@ def _cross_check_points(
         ours = round(totals.get(team["team_id"], 0.0), 2)
         if ours == 0:
             continue
-        # ESPN's total can legitimately exceed ours (it may include games we
-        # classify as consolation). Only flag when *we* have more points than
-        # ESPN, which would indicate double counting.
-        if ours - espn_pf > PF_TOLERANCE:
+        if abs(ours - espn_pf) > PF_TOLERANCE:
             report.warn(
-                f"{tag}: team {team['team_id']} ({team['team_name']}) sums to "
-                f"{ours} points but ESPN reports {espn_pf}. Check for "
-                "duplicated matchups."
+                f"{tag}: team {team['team_id']} ({team['team_name']}) regular-season "
+                f"points sum to {ours} but ESPN reports {espn_pf}. A game may be "
+                "misclassified between regular season and postseason."
             )
 
 
@@ -219,11 +217,23 @@ def validate_owners(owners: Sequence[dict], seasons: Sequence[int]) -> Validatio
     # Suspicious: two owners sharing an identical display name usually means a
     # GUID change that should be merged in config/owners.yml.
     name_counts = Counter(o["name"] for o in owners if not o.get("unlinked"))
-    shared = [name for name, n in name_counts.items() if n > 1]
-    if shared:
+    for name, count in name_counts.items():
+        if count < 2:
+            continue
+        dupes = [o for o in owners if o["name"] == name]
+        hashes = [o.get("member_hash") for o in dupes if o.get("member_hash")]
+        snippet = (
+            "owners:\n"
+            f"  - owner_id: {dupes[0]['owner_id']}\n"
+            f"    name: {name}\n"
+            "    espn_member_hashes:\n"
+            + "".join(f"      - {h}\n" for h in hashes)
+        )
         report.warn(
-            f"owners sharing a display name: {shared}. If these are the same "
-            "person, merge their espn_member_ids in config/owners.yml."
+            f"'{name}' appears as {count} separate owners "
+            f"({', '.join(o['owner_id'] for o in dupes)}), probably one person "
+            "with two ESPN accounts. To merge, add this to config/owners.yml:\n"
+            + snippet.rstrip()
         )
 
     covered = {s for o in owners for s in (o.get("seasons") or [])}

@@ -184,6 +184,7 @@ def build_careers(
             {
                 "owner_id": owner_id,
                 "name": owner["name"],
+                "member_hash": owner.get("member_hash"),
                 "current_team_name": owner.get("current_team_name"),
                 "team_name_timeline": owner.get("team_name_timeline"),
                 "seasons": owner.get("seasons"),

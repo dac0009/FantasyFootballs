@@ -12,7 +12,7 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 
-from . import extract, gotw, head_to_head, metrics, records, transform
+from . import extract, gotw, head_to_head, metrics, playoffs, records, transform
 from .config import (
     DATA_DIR,
     PIPELINE_VERSION,
@@ -300,6 +300,19 @@ def build_current(
         regular_season_weeks=meta.get("regular_season_weeks"),
     )
 
+    picture = playoffs.build_playoff_picture(
+        season,
+        standings,
+        season_matchups,
+        all_team_weeks,
+        playoff_teams=meta.get("playoff_team_count"),
+        regular_season_weeks=meta.get("regular_season_weeks"),
+    )
+    previews_by_id = {p["matchup_id"]: p for p in (picture or {}).get("previews", [])}
+    if game_of_week:
+        for candidate in [game_of_week["pick"], *game_of_week["ranked"]]:
+            candidate["preview"] = previews_by_id.get(candidate["matchup_id"])
+
     milestones = (
         transform.detect_milestones(
             season, latest_week, all_team_weeks, all_matchups, owners_by_id
@@ -319,7 +332,10 @@ def build_current(
             "playoff_team_count": meta.get("playoff_team_count"),
             "is_active": meta.get("is_active"),
             "week": week_payload,
-            "upcoming_matchups": upcoming,
+            "upcoming_matchups": [
+                {**m, "preview": previews_by_id.get(m["matchup_id"])} for m in upcoming
+            ],
+            "playoff_picture": picture,
             "standings": standings,
             "milestones": milestones,
             "movement": movement,
@@ -454,6 +470,7 @@ def publish(assembled: dict, data_dir: Path | None = None, *, allow_shrink: bool
                 for key in (
                     "owner_id",
                     "name",
+                    "member_hash",
                     "current_team_name",
                     "seasons",
                     "seasons_played",
@@ -499,6 +516,7 @@ def publish(assembled: dict, data_dir: Path | None = None, *, allow_shrink: bool
     emit("records.json", assembled["records"])
     emit("head_to_head.json", assembled["head_to_head"])
     emit("current.json", assembled["current"])
+    emit("playoffs.json", assembled["current"].get("playoff_picture"))
     emit("game_of_week.json", assembled["game_of_week"])
     emit("players.json", list(assembled["players"].values()))
 

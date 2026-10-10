@@ -8,8 +8,11 @@ Resolution order
 ----------------
 1. ESPN ``members[].id`` -- a per-account GUID that is stable across every
    season of the league. This is the primary key.
-2. ``config/owners.yml`` may merge several GUIDs into one person (someone who
-   rebuilt their ESPN account) and may pin a display name.
+2. ``config/owners.yml`` may merge several accounts into one person (someone
+   who rebuilt their ESPN account) and may pin a display name. Accounts can
+   be referenced by raw GUID *or* by the published ``member_hash``, so a
+   merge can be configured from the public data alone without anyone having
+   to go and find an ESPN account id.
 3. If a season predates ESPN exposing members, or a team has no owner GUID,
    we fall back to a deterministic ``season:team_id`` placeholder so the
    pipeline still produces a complete dataset. The validator reports these.
@@ -67,6 +70,7 @@ class OwnerRegistry:
         overrides = overrides or {}
         self._owner_specs: list[dict] = list(overrides.get("owners") or [])
         self._guid_to_owner: dict[str, str] = {}
+        self._hash_to_owner: dict[str, str] = {}
         self._pinned_name: dict[str, str] = {}
         self._notes: dict[str, str] = {}
         self._hidden: set[str] = set()
@@ -89,6 +93,8 @@ class OwnerRegistry:
                 self._hidden.add(owner_id)
             for guid in spec.get("espn_member_ids") or []:
                 self._guid_to_owner[self._canonical_guid(guid)] = owner_id
+            for member_hash in spec.get("espn_member_hashes") or []:
+                self._hash_to_owner[str(member_hash).strip().lower()] = owner_id
 
     @staticmethod
     def _canonical_guid(guid: str) -> str:
@@ -147,8 +153,11 @@ class OwnerRegistry:
         return team_to_owner
 
     def _owner_id_for_guid(self, guid: str, member: dict | None) -> str:
-        if guid in self._guid_to_owner:
-            owner_id = self._guid_to_owner[guid]
+        configured = self._guid_to_owner.get(guid) or self._hash_to_owner.get(
+            hash_member_id(guid)
+        )
+        if configured:
+            owner_id = configured
             self._ensure_owner(
                 owner_id,
                 name=self._pinned_name.get(owner_id)
