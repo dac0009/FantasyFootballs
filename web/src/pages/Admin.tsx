@@ -34,7 +34,7 @@ export default function Admin(){
       {owners.state!=='ready'&&<p>Owner list is unavailable while league data loads. Reload if it does not appear.</p>}
       <label className="share-access">Copy this for the league<textarea readOnly value={shareText} rows={8} onFocus={e=>e.target.select()}/></label>
     </section>
-    <div className="admin-links">{[['/','Home'],['/owners','Owners'],['/owners/dominick-cifelli','My profile'],['/season','Standings'],['/head-to-head','Head to head'],['/playoffs','Playoffs'],['/records','Records'],['/seasons','Seasons'],['/drafts','Drafts']].map(([to,label])=><Link key={to} className="pill" to={to} onClick={()=>setEditMode(true)}>{label}</Link>)}</div>
+    <div className="admin-links">{[['/home','Home'],['/owners','Owners'],['/owners/dominick-cifelli','My profile'],['/season','Standings'],['/head-to-head','Head to head'],['/playoffs','Playoffs'],['/records','Records'],['/seasons','Seasons'],['/drafts','Drafts']].map(([to,label])=><Link key={to} className="pill" to={to} onClick={()=>setEditMode(true)}>{label}</Link>)}</div>
     <label className="admin-search">Find text or sections<input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search a phrase or page name"/></label>
     <p className="figure-label">{rows.length} editable areas</p>
     <div className="admin-list">{rows.map(([key,label])=>{const body=documents.find(d=>d.kind==='copy'&&d.key===key)?.body;return <button key={key} onClick={()=>setSelected(key)}><strong>{label}</strong><span>{body?.display==='hidden'?'Hidden':body?.display==='default'?'Original':body?.text?'Custom':sectionLabels[key]?'Visible':'Original'}</span></button>;})}</div>

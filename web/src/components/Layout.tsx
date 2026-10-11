@@ -14,7 +14,7 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { to: "/", label: "This week", end: true },
+  { to: "/home", label: "This week", end: true },
   { to: "/season", label: "Standings" },
   { to: "/playoffs", label: "Playoff explorer" },
   { to: "/records", label: "Records" },
@@ -59,7 +59,7 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
         <div className="shell publication-folio"><span><EditableText id="masthead.folio" fallback="Fantasy football"/></span><span>{meta ? `${meta.seasons[0]}–${meta.seasons[meta.seasons.length-1]}` : 'League archive'} / The digital edition</span></div>
         <div className="shell masthead">
           <div className="nameplate">
-            <span><Link to="/">{meta?.league.short_name ?? "League"}</Link></span> <EditableText id="masthead.title" fallback="The Record"/>
+            <span><Link to="/home">{meta?.league.short_name ?? "League"}</Link></span> <EditableText id="masthead.title" fallback="The Record"/>
           </div>
           <div className="masthead-motto"><EditableText id="masthead.motto" fallback=""/></div>
           <nav aria-label="Primary" className="main-nav">

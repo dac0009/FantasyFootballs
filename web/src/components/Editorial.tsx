@@ -69,7 +69,7 @@ export function EditorToolbar(){
       replace(doc);setPagePreview(null);setStatus(verified?`Saved to Supabase · version ${doc.version} · ${new Date(doc.updated_at).toLocaleTimeString()}`:'Supabase accepted the save, but read-back was unavailable. Use Refresh saved content in Admin to verify.');
     }catch(error){setStatus((error as {message?:string}).message??'Could not publish. Your preview is still here.');}finally{setBusy(false);}
   }
-  return <div className="editor-toolbar shell"><Link to="/account">{member?'My account':'Owner sign in'}</Link>{member?.owner_id&&<Link to={`/owners/${member.owner_id}`}>My profile</Link>}{member?.role==='commissioner' && <><Link to="/admin">Admin</Link><button className="pill" aria-pressed={editMode} onClick={()=>setEditMode(!editMode)}>{editMode?'Finish editing':'Visual editor'}</button></>}
+  return <div className="editor-toolbar shell"><Link to="/account">{member?'My account':'Owner sign in'}</Link>{member?.owner_id&&<Link to={`/owners/${member.owner_id}`}>My profile</Link>}{member&&<button className="pill" onClick={()=>window.dispatchEvent(new Event('ffbffl:tour'))}>Site guide</button>}{member?.role==='commissioner' && <><Link to="/admin">Admin</Link><button className="pill" aria-pressed={editMode} onClick={()=>setEditMode(!editMode)}>{editMode?'Finish editing':'Visual editor'}</button></>}
     {pagePreview&&<div className="page-preview-bar"><strong>Private preview · not published</strong><button className="pill" disabled={busy} onClick={()=>void publishPreview()}>Publish preview</button><button className="pill" disabled={busy} onClick={()=>{setPagePreview(null);setStatus('Preview discarded.');}}>Discard preview</button></div>}
     {status&&<span role="status">{status}</span>}
   </div>;
@@ -126,7 +126,7 @@ export function DocumentEditor({kind,documentKey,label,fallback,onClose}:{kind:'
     const routes:Record<string,string>={owner:profile,'owner-almanac':profile,'owner-career-atlas':profile,owners:'/owners','current-season':'/season',records:'/records','season-index':'/seasons','head-to-head':'/head-to-head',playoffs:'/playoffs',drafts:'/drafts'};
     const year=meta.state==='ready'?meta.data.current_season:null;
     if(year){routes.season=`/seasons/${year}`;routes.week=`/seasons/${year}/weeks/${meta.state==='ready'?(meta.data.current_week??1):1}`;}
-    navigate(routes[page]??'/');
+    navigate(routes[page]??'/home');
   }
   const allowed=canEdit(member,kind,documentKey);
   function field(key:string,value:string){setBody(old=>({...old,[key]:value,...(key==='text'?{display:'custom'}:{})}));setStatus('');}

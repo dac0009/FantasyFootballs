@@ -2,14 +2,24 @@
   "name": "FFBFFL Record Book",
   "short_name": "FFBFFL",
   "description": "Standings, playoff odds, records and history for the FFBFFL fantasy football league.",
-  "start_url": "./",
+  "start_url": "./?launch=1",
   "scope": "./",
   "display": "standalone",
   "background_color": "#ded5c3",
   "theme_color": "#ded5c3",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
-  ]
+    {
+      "src": "branding/icon-192-v2.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "branding/icon-512-v2.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "id": "./"
 }

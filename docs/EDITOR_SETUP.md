@@ -80,3 +80,13 @@ Open `/admin` as commissioner. **Saved on the live site** lists saved document v
 **Publish changes** is available directly in the editor. It writes to Supabase and reads the record back before displaying a verified save with timestamp/version. If the write is acknowledged but read-back fails, the editor preserves the acknowledged version and tells you to verify in Admin. It never treats a failed write as saved. **Save tab draft** stores only a private draft in the current browser tab. **Preview on page** also remains private until published. No GitHub push is needed for content publications.
 
 Live verification: publish one intended change, note the saved version/time, close the dialog, click Refresh saved content in Admin, and open the public page in a private/incognito window. The same published content should appear there. If publication errors, keep the editor open and copy the exact error. Never send your commissioner password.
+
+## Phone icon, app entrance, and welcome guide
+
+The approved football/FFBFFL wordmark is packaged in `web/public/branding/` as the iPhone touch icon, browser favicon, and 192/512px manifest icons. Icon links include the deployment base path, including on nested profile URLs. The manifest opens the root entrance in standalone mode. No offline behavior is promised; login and publishing need a connection.
+
+Opening the site root now sends signed-out visitors to `/account?entry=1`. After successful sign-in and membership lookup, owners and the commissioner go to their own profile. Remembered sessions skip re-entering credentials. `/account` remains available through My account for signing out. The league front page is now `/home`; This week and masthead links lead there. Shared archive and profile URLs remain public.
+
+A personalized modal guide opens on the owner's first profile visit after sign-in. Next/Back move between the relevant real pages. It explains profile publishing, navigation, playoffs, and the glossary, plus Admin/Visual editor for the commissioner. Skip, Escape, or completion dismisses it. Completion is stored per Auth user in this device/browser's local storage, not in Supabase; a new device or cleared storage can show the guide again. Site guide in the toolbar replays it. The guide never edits or publishes content.
+
+After merging and a successful Pages deployment, open the site in Safari on iPhone, choose Share → Add to Home Screen, and add FFBFFL. Remove an old home-screen shortcut and add it again if it retains the old icon/start page. A home-screen app may maintain a separate session from the browser. A resumed app can retain its last screen; a fresh launch follows the start URL.
