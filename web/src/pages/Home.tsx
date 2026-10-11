@@ -1,3 +1,4 @@
+import { ScoreRanking } from "../components/charts/ScoreRanking";
 import { Link } from "react-router-dom";
 import { GameOfWeekPanel } from "../components/GameOfWeekPanel";
 import { MatchupPreviewCard, PreviewLegend } from "../components/MatchupPreview";
@@ -39,7 +40,7 @@ export default function Home({ meta }: { meta: Meta }) {
             {data.upcoming_week ? (
               <span style={{ color: "var(--color-low)", fontWeight: 500 }}>
                 {" "}
-                \u2014 week {data.upcoming_week} next
+                — week {data.upcoming_week} next
               </span>
             ) : null}
           </h1>
@@ -50,6 +51,8 @@ export default function Home({ meta }: { meta: Meta }) {
           url={siteUrl}
         />
       </div>
+
+      <p><Link to="/playoffs" className="pill" style={{display:"inline-block",textDecoration:"none",marginTop:"1rem"}}>Open playoff explorer →</Link></p>
 
       {picture ? (
         <>
@@ -117,6 +120,10 @@ export default function Home({ meta }: { meta: Meta }) {
             <Figure value={points(week.summary.league_mean, 1)} label="League average" size="1.6rem" />
             <Figure value={points(week.summary.closest_game?.margin, 2)} label="Closest margin" size="1.6rem" />
           </div>
+          <ScoreRanking rows={week.matchups.filter(m=>m.completed && !m.is_bye).flatMap(m=>[
+            {id:m.home_owner_id!,name:m.home_team_name ?? "Home",score:m.home_score ?? 0},
+            {id:m.away_owner_id!,name:m.away_team_name ?? "Away",score:m.away_score ?? 0}
+          ])} mean={week.summary.league_mean ?? 0} caption={`Week ${week.week} scoring, highest to lowest`} />
           <div style={{ marginTop: "0.6rem" }}>
             <Scoreboard matchups={week.matchups} showType />
           </div>

@@ -8,10 +8,16 @@ export function currentOwners(owners: OwnerIndexRow[]): OwnerIndexRow[] {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export function currentRivalries(owners: OwnerIndexRow[], pairs: H2HRecord[]): H2HRecord[] {
+export type RivalrySort = "meetings" | "balance" | "margin" | "playoffs";
+export function currentRivalries(owners: OwnerIndexRow[], pairs: H2HRecord[], sort: RivalrySort = "meetings"): H2HRecord[] {
   const ids = new Set(currentOwners(owners).map((owner) => owner.owner_id));
   return pairs.filter((pair) => ids.has(pair.left_owner_id) && ids.has(pair.right_owner_id)
     && pair.overall.games >= 3)
-    .sort((a, b) => b.rivalry_index.score - a.rivalry_index.score ||
-      b.overall.games - a.overall.games || a.pair_key.localeCompare(b.pair_key));
+    .sort((a, b) => {
+      const value = (r: H2HRecord) => sort === "balance"
+        ? Math.abs(r.overall.left_wins - r.overall.right_wins) / r.overall.games
+        : sort === "margin" ? r.avg_abs_margin
+        : sort === "playoffs" ? -r.playoff.games : -r.overall.games;
+      return value(a) - value(b) || b.overall.games - a.overall.games || a.pair_key.localeCompare(b.pair_key);
+    });
 }

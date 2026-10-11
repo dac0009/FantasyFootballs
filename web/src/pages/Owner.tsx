@@ -12,18 +12,24 @@ import {
   RivalryLink,
   WeekLink,
 } from "../components/primitives";
-import { useOwner } from "../lib/data";
+import { currentOwners } from "../lib/rivalries";
+import { useOwner, useOwnerIndex } from "../lib/data";
 import { gameTypeLabel, ordinal, pct, points, signClass, signed, total } from "../lib/format";
 import type { OpponentRow, OwnerSeasonRow, WeekRef } from "../lib/types";
 
 export default function Owner() {
   const { ownerId } = useParams();
   const owner = useOwner(ownerId ?? null);
+  const index = useOwnerIndex();
 
   if (owner.state === "loading") return <Loading what="this owner" />;
   if (owner.state === "error") return <ErrorState error={owner.error} what="This owner" />;
 
   const data = owner.data;
+  const activeIds = new Set(index.state === "ready" ? currentOwners(index.data).map(o=>o.owner_id) : []);
+  const familiar = activeIds.has(data.owner_id) ? [...data.head_to_head.opponents]
+    .filter(o=>activeIds.has(o.opponent_owner_id) && o.games>=3)
+    .sort((a,b)=>b.games-a.games || a.opponent_owner_id.localeCompare(b.opponent_owner_id))[0] : null;
 
   const seasonColumns: Column<OwnerSeasonRow>[] = [
     {
@@ -84,13 +90,7 @@ export default function Owner() {
     { key: "games", header: "Meetings", sortValue: (r) => r.games, cell: (r) => r.games },
     { key: "record", header: "Record", sortValue: (r) => r.win_pct, cell: (r) => r.record },
     { key: "pct", header: "Win %", sortValue: (r) => r.win_pct, cell: (r) => pct(r.win_pct), bar: (r) => r.win_pct },
-    {
-      key: "rivalry",
-      header: <Metric name="rivalry_index">Rivalry</Metric>,
-      sortValue: (r) => r.rivalry_index,
-      cell: (r) => points(r.rivalry_index, 1),
-      secondary: true,
-    },
+
     {
       key: "open",
       header: "",
@@ -120,26 +120,11 @@ export default function Owner() {
         {data.current_team_name}
         {data.seasons_played ? `, ${data.seasons_played} seasons, ${data.first_season}\u2013${data.last_season}` : ""}
       </p>
-      {data.rival ? (
-        <div className="rival-plate">
-          <span className="rival-label">
-            {data.rival.reciprocal ? "Rivalry" : "Chief rival"}
-          </span>
-          <span className="rival-name">
-            <RivalryLink a={data.owner_id} b={data.rival.rival_owner_id}>
-              {data.rival.rival_name}
-            </RivalryLink>
-          </span>
-          <span className="rival-series">
-            {data.rival.record} all-time
-            {data.rival.current_streak.length
-              ? data.rival.current_streak.owner_id === data.owner_id
-                ? `, won last ${data.rival.current_streak.length}`
-                : `, lost last ${data.rival.current_streak.length}`
-              : ""}
-          </span>
-        </div>
-      ) : null}
+      {familiar ? <div className="rival-plate">
+        <span className="rival-label">Most-played current opponent</span>
+        <span className="rival-name"><RivalryLink a={data.owner_id} b={familiar.opponent_owner_id}>{familiar.opponent_name}</RivalryLink></span>
+        <span className="rival-series">{familiar.record} across {familiar.games} meetings</span>
+      </div> : null}
       {data.note ? <p className="notice" style={{ marginTop: "0.9rem" }}>{data.note}</p> : null}
       {data.unlinked ? (
         <p className="notice" style={{ marginTop: "0.9rem" }}>

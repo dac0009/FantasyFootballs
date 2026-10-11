@@ -15,6 +15,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { to: "/", label: "This week", end: true },
   { to: "/season", label: "Standings" },
+  { to: "/playoffs", label: "Playoff explorer" },
   { to: "/records", label: "Records" },
   { to: "/owners", label: "Owners" },
 ];

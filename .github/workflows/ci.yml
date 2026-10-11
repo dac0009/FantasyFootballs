@@ -46,7 +46,7 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - working-directory: web
         run: npm ci
-      - name: Rivalry membership tests
+      - name: Frontend model tests
         working-directory: web
         run: npm test
       - name: Typecheck and build

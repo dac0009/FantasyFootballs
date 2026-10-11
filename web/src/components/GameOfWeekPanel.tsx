@@ -1,101 +1,29 @@
 import { Link } from "react-router-dom";
-import { CHART } from "../lib/chartTheme";
 import type { GameOfWeek } from "../lib/types";
-import { Metric, OwnerLink, RivalryLink } from "./primitives";
+import { OwnerLink, RivalryLink } from "./primitives";
 
-/**
- * The feature slot on the homepage. It must justify the pick, so the reasons
- * the model produced are shown verbatim alongside the component scores that
- * drove them.
- */
-export function GameOfWeekPanel({ data }: { data: GameOfWeek }) {
-  const { pick, model, week } = data;
-  const components = Object.entries(pick.components).sort(
-    (a, b) => (model.weights[b[0]] ?? 0) * b[1] - (model.weights[a[0]] ?? 0) * a[1],
-  );
-
-  return (
-    <section
-      className="panel"
-      style={{ borderTopWidth: 3, borderTopColor: "var(--color-brass)", borderRadius: "0 0 3px 3px" }}
-    >
-      <p style={{ color: "var(--color-brass)", fontSize: "0.8rem", margin: 0, fontWeight: 600 }}>
-        Game of the Week, week {week}
-      </p>
-
-      <h3 style={{ fontSize: "clamp(1.25rem, 3vw, 1.7rem)", margin: "0.5rem 0 0.1rem" }}>
-        <OwnerLink ownerId={pick.away_owner_id} className="">
-          {pick.away_team_name}
-        </OwnerLink>
-        <span style={{ color: "var(--color-low)", fontWeight: 500 }}> at </span>
-        <OwnerLink ownerId={pick.home_owner_id} className="">
-          {pick.home_team_name}
-        </OwnerLink>
-      </h3>
-
-      <ul
-        style={{
-          listStyle: "none",
-          padding: 0,
-          margin: "0.9rem 0 0",
-          display: "grid",
-          gap: "0.3rem",
-          color: "var(--color-mid)",
-          fontSize: "0.88rem",
-        }}
-      >
-        {pick.reasons.slice(0, 5).map((reason) => (
-          <li key={reason} style={{ display: "flex", gap: "0.55rem" }}>
-            <span aria-hidden="true" style={{ color: "var(--color-brass)" }}>
-              &bull;
-            </span>
-            <span>{reason}</span>
-          </li>
-        ))}
-      </ul>
-
-      {pick.preview ? (
-        <p style={{ color: "var(--color-mid)", fontSize: "0.88rem", margin: "0.7rem 0 0" }}>
-          {pick.preview.away_team_name} {Math.round(pick.preview.away_win_pct * 100)}%, 
-          {pick.preview.home_team_name} {Math.round(pick.preview.home_win_pct * 100)}%{" "}
-          <span style={{ color: "var(--color-low)" }}>
-            win probability from each team's scoring so far, not an ESPN projection.
-          </span>
-        </p>
-      ) : null}
-
-      <div style={{ marginTop: "1.1rem", display: "grid", gap: "0.45rem" }}>
-        {components.map(([name, value]) => (
-          <div key={name} style={{ display: "grid", gridTemplateColumns: "6.5rem 1fr 2.6rem", gap: "0.6rem", alignItems: "center" }}>
-            <span style={{ color: "var(--color-low)", fontSize: "0.76rem", textTransform: "capitalize" }}>
-              {name}
-            </span>
-            <span style={{ height: "0.3rem", background: "var(--color-line)", display: "block" }}>
-              <span
-                style={{
-                  display: "block",
-                  height: "100%",
-                  width: `${Math.round(value * 100)}%`,
-                  background: name === "rivalry" ? CHART.brass : CHART.steel,
-                }}
-              />
-            </span>
-            <span style={{ color: "var(--color-mid)", fontSize: "0.76rem", textAlign: "right" }}>
-              {(model.weights[name] * 100).toFixed(0)}%
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <p style={{ margin: "1rem 0 0", fontSize: "0.82rem" }}>
-        <RivalryLink a={pick.home_owner_id} b={pick.away_owner_id}>
-          Rivalry history
-        </RivalryLink>
-        <span style={{ color: "var(--color-line)", margin: "0 0.6rem" }}>|</span>
-        <Link to="/glossary#game-of-the-week" className="link-quiet">
-          <Metric name="game_of_week">How the pick is made</Metric>
-        </Link>
-      </p>
-    </section>
-  );
+export function GameOfWeekPanel({data}: {data:GameOfWeek}) {
+  const {pick, week} = data;
+  const preview = pick.preview;
+  const pct = (value:number)=>`${Math.round(value*100)}%`;
+  return <section className="panel">
+    <div className="section-kicker">Matchup to watch / Week {week}</div>
+    <h3 style={{fontSize:'1.7rem'}}><OwnerLink ownerId={pick.away_owner_id}>{pick.away_team_name}</OwnerLink>
+      <span style={{fontWeight:400}}> at </span><OwnerLink ownerId={pick.home_owner_id}>{pick.home_team_name}</OwnerLink></h3>
+    {preview ? <>
+      <p className="prose-narrow" style={{fontSize:'.85rem'}}>A model-selected matchup, based on playoff impact, how well both teams have scored this season, and how evenly matched they are.</p>
+      <div style={{display:'flex',justifyContent:'space-between',gap:'1rem',fontSize:'.8rem'}}><span>Away win estimate <b>{pct(preview.away_win_pct)}</b></span><span>Home <b>{pct(preview.home_win_pct)}</b></span></div>
+      <div style={{height:8,background:'var(--ink-faint)',margin:'.5rem 0 1rem'}} role="img" aria-label={`Away win probability ${pct(preview.away_win_pct)}; home ${pct(preview.home_win_pct)}`}><div style={{width:pct(preview.away_win_pct),height:'100%',background:'var(--ember)'}}/></div>
+      <div className="sheet"><table><caption className="sr-only">Playoff impact of winning or losing this matchup</caption><thead><tr><th style={{textAlign:'left'}}>Playoff chance</th><th>If win</th><th>If lose</th></tr></thead><tbody>
+        <tr><td style={{textAlign:'left',whiteSpace:'normal'}}>{pick.away_team_name}</td><td>{pct(preview.away_swing.if_win)}</td><td>{pct(preview.away_swing.if_loss)}</td></tr>
+        <tr><td style={{textAlign:'left',whiteSpace:'normal'}}>{pick.home_team_name}</td><td>{pct(preview.home_swing.if_win)}</td><td>{pct(preview.home_swing.if_loss)}</td></tr>
+      </tbody></table></div>
+      <p className="figure-label">Estimates from season scoring, not ESPN projections. Early-season estimates are uncertain.</p>
+    </> : <p className="prose-narrow">Detailed matchup estimates are unavailable in this snapshot.</p>}
+    <details className="figure-label" style={{marginTop:'1rem'}}><summary>Why this game?</summary>
+      <p>Selection weights: 45% playoff impact, 30% current-season all-play performance, 25% estimated competitiveness. These are ranking weights, not probabilities. Rivalry history is excluded.</p>
+      <p>Playoff impact combines the change in both teams’ chances if they win rather than lose. All-play performance means how often their weekly score would beat the other teams in the league.</p>
+    </details>
+    <p style={{fontSize:'.82rem',marginBottom:0}}><Link to="/playoffs" className="link-quiet">Try your own playoff scenario</Link> · <RivalryLink a={pick.home_owner_id} b={pick.away_owner_id}>Head-to-head history</RivalryLink></p>
+  </section>;
 }

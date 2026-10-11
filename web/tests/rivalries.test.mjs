@@ -35,3 +35,15 @@ test('empty archive has no current members or rankings', () => {
   assert.deepEqual(currentOwners([]), []);
   assert.deepEqual(currentRivalries([], []), []);
 });
+
+test('ordering uses meetings instead of the retired composite score', () => {
+  const longer=pair('a','b',10,1), shorter=pair('a','b',3,99);
+  assert.deepEqual(currentRivalries(owners,[shorter,longer]),[longer,shorter]);
+});
+test('balance, winning margin and playoff sorting use their stated quantities', () => {
+  const a={...pair('a','b',10,100),overall:{games:10,left_wins:5,right_wins:5},avg_abs_margin:20,playoff:{games:1}};
+  const b={...pair('a','b',10,0),overall:{games:10,left_wins:8,right_wins:2},avg_abs_margin:5,playoff:{games:3}};
+  assert.equal(currentRivalries(owners,[b,a],'balance')[0],a);
+  assert.equal(currentRivalries(owners,[a,b],'margin')[0],b);
+  assert.equal(currentRivalries(owners,[a,b],'playoffs')[0],b);
+});

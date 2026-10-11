@@ -23,8 +23,6 @@ export default function Glossary({ meta }: { meta: Meta }) {
     "fortunate_win_index",
     "manager_efficiency",
     "bench_regret",
-    "rivalry_index",
-    "rival",
     "game_of_week",
   ];
 
@@ -32,10 +30,9 @@ export default function Glossary({ meta }: { meta: Meta }) {
     <div className="shell" style={{ paddingTop: "2.2rem" }}>
       <h1 style={{ fontSize: "clamp(1.9rem, 5vw, 2.8rem)" }}>Glossary</h1>
       <p className="prose-narrow" style={{ marginTop: "0.6rem" }}>
-        Nothing on this site is computed in your browser. A Python pipeline reads the league's
-        history from ESPN, works out every statistic, and publishes plain JSON files that these
-        pages only format and chart. If a number here looks wrong, it is wrong in the data, which
-        makes it findable and fixable.
+        League records and baseline estimates come from published ESPN data processed by the
+        Python pipeline. The playoff explorer runs additional simulations in your browser using
+        your selected winners; those scenarios never alter the official results.
       </p>
 
       <Band title="Ground rules" />
@@ -131,17 +128,18 @@ export default function Glossary({ meta }: { meta: Meta }) {
       <Band title="Game of the Week" id="game-of-the-week" />
       <div className="prose-narrow" style={{ marginTop: "0.8rem" }}>
         <p>
-          Every scheduled matchup in the next unplayed week is scored on five components, each
-          scaled from 0 to 1 and then weighted: team quality (30%), how evenly matched the two
-          teams are (25%), what the game decides (20%), recent scoring form over the last three
-          weeks (15%), and rivalry history (10%). The highest total is the pick, and the reasons
-          shown on the homepage are generated from whichever components actually drove it.
+          Every scheduled matchup in the next unplayed week is ranked using playoff impact (45%),
+          current-season all-play performance (30%), and estimated competitiveness (25%).
+          Playoff impact is the combined change in both teams’ qualification chances if they win
+          rather than lose. All-play performance measures how often a team's weekly score would
+          beat the rest of the league. Rivalry history is excluded. The weights rank games;
+          they are not win probabilities.
         </p>
         <p>
           <strong>ESPN projections are not used.</strong> ESPN exposes projected team totals only
           while a week is live, and never for a future week or historically. Rather than invent
-          one, the "projected margin" shown with the pick comes from each team's own season scoring
-          average and is labelled as such.
+          one, matchup win estimates come from each team’s scoring model, with early-season
+          averages pulled toward the league mean.
         </p>
       </div>
 

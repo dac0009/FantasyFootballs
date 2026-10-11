@@ -1,7 +1,7 @@
-import { useMemo } from "react";
-import { currentOwners, currentRivalries } from "../lib/rivalries";
+import { useMemo, useState } from "react";
+import { currentOwners, currentRivalries, type RivalrySort } from "../lib/rivalries";
 import { useSearchParams } from "react-router-dom";
-import { Band, Empty, ErrorState, Figure, Loading, Metric, OwnerLink, WeekLink } from "../components/primitives";
+import { Band, Empty, ErrorState, Figure, Loading, OwnerLink, WeekLink } from "../components/primitives";
 import { useHeadToHead, useOwnerIndex, pairKey } from "../lib/data";
 import { gameTypeLabel, points, signed, total } from "../lib/format";
 import type { H2HRecord, Meeting, ScopeRecord } from "../lib/types";
@@ -14,6 +14,7 @@ export default function HeadToHead() {
   const [params, setParams] = useSearchParams();
   const owners = useOwnerIndex();
   const pairs = useHeadToHead();
+  const [sort, setSort] = useState<RivalrySort>("meetings");
 
   const a = params.get("a") ?? "";
   const b = params.get("b") ?? "";
@@ -30,7 +31,7 @@ export default function HeadToHead() {
   const ownerList = currentOwners(owners.data);
   const activeIds = new Set(ownerList.map((owner) => owner.owner_id));
   const archivedSelection = Boolean(record && (!activeIds.has(a) || !activeIds.has(b)));
-  const sortedRivalries = currentRivalries(owners.data, Object.values(pairs.data));
+  const sortedRivalries = currentRivalries(owners.data, Object.values(pairs.data), sort);
   // Preserve historical deep links without adding departed owners to the default picker.
   const selectedFormer = owners.data.filter((owner) =>
     !activeIds.has(owner.owner_id) && [a, b].includes(owner.owner_id));
@@ -187,13 +188,26 @@ export default function HeadToHead() {
               size="1.5rem"
             />
             <Figure
-              value={points(record.rivalry_index.score, 1)}
-              label={<Metric name="rivalry_index">Rivalry index</Metric>}
+              value={points(record.avg_abs_margin, 1)}
+              label="Average winning margin"
               size="1.5rem"
               tone="var(--color-brass)"
             />
           </div>
 
+          <Band title="How the series unfolded" note={`Margin from ${leftName}’s perspective`} />
+          <div className="series-history" role="img" aria-label={`Chronological margins for ${leftName}; positive means a win, negative a loss`}>
+            {[...record.meetings].sort((a,b)=>a.season-b.season||a.week-b.week).map(meeting).map((m,i)=>{
+              const delta=m.leftScore-m.rightScore;
+              const max=Math.max(1,...record.meetings.map(g=>Math.abs(g.left_score-g.right_score)));
+              return <div key={`${m.season}-${m.week}-${i}`} className="series-game-bar" title={`${m.season} week ${m.week}: ${leftName} ${signed(delta,1)}`}>
+                <span style={{height:60,display:"flex",alignItems:"flex-end"}}>{delta>=0?<i style={{height:Math.abs(delta)/max*55,background:"var(--ember)"}}/>:null}</span>
+                <span style={{height:60,borderTop:"1px solid var(--rule)"}}>{delta<0?<i style={{height:Math.abs(delta)/max*55,background:"#a88572"}}/>:null}</span>
+                <small>{String(m.season).slice(-2)}·{m.week}</small>
+              </div>;
+            })}
+          </div>
+          <p className="figure-label">Above the line: {leftName} won. Below: {rightName} won. Labels show year · week. Full scores follow below.</p>
           <Band title="Defining games" />
           <div className="highlight-grid">
             <SeriesGame
@@ -256,9 +270,15 @@ export default function HeadToHead() {
         <>
           <Band title="The rivalry ledger" note={`${ownerList.length} current owners · Three meetings to qualify`} />
           <p className="prose-narrow" style={{ fontSize: "0.85rem" }}>
-            Ordered by <Metric name="rivalry_index">rivalry index</Metric>. All completed meetings count,
-            including past seasons. Select a series to open its record.
+            Compare actual history: how often they meet, how evenly they split wins, and how close
+            the scores are. No combined rivalry score. All completed meetings count.
           </p>
+          <label className="figure-label" style={{display:"block",margin:"1rem 0"}}>Order series by{" "}
+            <select className="select" value={sort} onChange={e=>setSort(e.target.value as RivalrySort)}>
+              <option value="meetings">Most meetings</option><option value="balance">Most evenly split wins</option>
+              <option value="margin">Smallest average winning margin</option><option value="playoffs">Most playoff meetings</option>
+            </select>
+          </label>
           {!sortedRivalries.length ? <Empty>No current-owner series has reached three meetings yet.</Empty> : null}
           <ol style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {sortedRivalries.slice(0, 10).map((rivalry, index) => (
@@ -283,7 +303,7 @@ export default function HeadToHead() {
                 </button>
                 <span style={{ color: "var(--color-mid)", fontSize: "0.85rem" }}>
                   <strong className="rivalry-record">{rivalry.overall.record}</strong>
-                  <span>{rivalry.overall.games} meetings · {points(rivalry.avg_abs_margin, 1)} avg. margin</span>
+                  <span>{rivalry.overall.games} meetings · {points(rivalry.avg_abs_margin, 1)} avg. margin · {rivalry.playoff.games} playoff games</span>
                 </span>
               </li>
             ))}
@@ -293,6 +313,8 @@ export default function HeadToHead() {
       )}
 
       <style>{`
+        .series-history {display:flex;gap:6px;margin-top:1.5rem;overflow-x:auto;padding-bottom:.5rem}
+        .series-game-bar{flex:1;min-width:24px;text-align:center}.series-game-bar>span{display:block}.series-game-bar i{display:block;width:100%;min-height:1px}.series-game-bar small{font-size:.6rem;color:var(--ink-faint)}
         .h2h-picker {
           display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; align-items: flex-end;
           margin: 1.5rem 0 0.5rem; padding-bottom: 1.2rem;
