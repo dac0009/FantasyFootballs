@@ -6,32 +6,33 @@ why the winner was chosen.
 
 Scoring model (documented so it can be argued with)
 ---------------------------------------------------
-Each component returns 0-1 and is weighted:
+Every component is about *this season* -- what the game means right now, not
+what the two franchises have done over the league's history. Each returns
+0-1 and is weighted:
 
 ================  ======  ==================================================
 component         weight  meaning
 ================  ======  ==================================================
-quality            0.30   mean of the two teams' all-play win percentage.
-                          Rewards two genuinely good teams.
-parity             0.25   1 - |all_play_a - all_play_b|, scaled. Rewards two
-                          evenly matched teams; a 1-11 team against an 11-1
-                          team scores 0.
-stakes             0.20   how close both teams are to the playoff cut line,
-                          and how late in the season it is. Rewards games
-                          that actually decide something.
-form               0.15   mean of each team's scoring z-score over the last
-                          three completed weeks. Rewards teams playing well
-                          right now rather than in September.
-rivalry            0.10   the pair's rivalry index / 100.
+leverage           0.45   how much the game swings both teams' playoff odds,
+                          taken straight from the playoff simulation. This is
+                          the honest measure of "does this game matter": a
+                          game that moves nobody's odds scores 0.
+quality            0.30   mean of the two teams' all-play win percentage
+                          *this season*. Rewards two teams playing well now.
+closeness          0.25   1 - |win prob - 0.5| * 2, from the two teams'
+                          current scoring. A coin-flip scores 1, a blowout 0.
 ================  ======  ==================================================
+
+Rivalry history is deliberately *not* a factor. An eight-year head-to-head
+record says nothing about whether a Week 5 game is worth watching, and
+folding it in was making old grudges outrank live playoff races. Rivalry
+lives on its own pages instead.
 
 No ESPN projection is used. ESPN's ``mMatchupScore`` exposes projected team
 totals only for the *current* scoring period and only while a week is live;
-it is not reliably available for a future week, and it is never available
-historically. Rather than fake a projected margin, the model reports a
-"projected margin" only when every participating team has at least three
-completed games, and derives it from each team's own mean score -- which is
-labelled as such on the page.
+it is not reliably available for a future week, and never historically.
+The "projected margin" shown with the pick is derived from each team's own
+season scoring average and is labelled as such.
 """
 
 from __future__ import annotations
@@ -40,17 +41,14 @@ import statistics
 from collections.abc import Sequence
 
 from .constants import GAME_REGULAR
-from .head_to_head import pair_key
 from .metrics import filter_weeks, r2, r3
 
 WEIGHTS = {
+    "leverage": 0.45,
     "quality": 0.30,
-    "parity": 0.25,
-    "stakes": 0.20,
-    "form": 0.15,
-    "rivalry": 0.10,
+    "closeness": 0.25,
 }
-FORM_WINDOW = 3
+FORM_WINDOW = 3  # retained for recent_form, used elsewhere
 MIN_GAMES_FOR_PROJECTION = 3
 
 
@@ -97,6 +95,7 @@ def select_game_of_the_week(
     *,
     playoff_team_count: int | None,
     regular_season_weeks: int | None,
+    playoff_picture: dict | None = None,
 ) -> dict | None:
     upcoming_week = next_unplayed_week(matchups, season)
     if upcoming_week is None:
@@ -116,9 +115,16 @@ def select_game_of_the_week(
         return None
 
     standings_by_owner = {s["owner_id"]: s for s in standings}
-    form = recent_form(team_weeks, season)
-    total_teams = len(standings_by_owner) or 1
-    cut = playoff_team_count or max(1, total_teams // 2)
+
+    # Leverage and win probability come from the playoff simulation's previews,
+    # keyed by matchup. Without a simulation (e.g. no playoff format), leverage
+    # falls back to a neutral value and the game is scored on quality and
+    # closeness alone.
+    previews = {p["matchup_id"]: p for p in (playoff_picture or {}).get("previews", [])}
+    max_leverage = max(
+        (p.get("leverage") or 0.0 for p in previews.values()),
+        default=0.0,
+    )
 
     scored = []
     for matchup in candidates:
@@ -128,12 +134,8 @@ def select_game_of_the_week(
             away,
             standings_by_owner,
             all_play_totals,
-            h2h_pairs,
-            form,
-            cut=cut,
-            total_teams=total_teams,
-            week=upcoming_week,
-            regular_season_weeks=regular_season_weeks,
+            preview=previews.get(matchup["matchup_id"]),
+            max_leverage=max_leverage,
         )
         score = sum(WEIGHTS[name] * value for name, value in components.items())
         scored.append(
@@ -159,11 +161,11 @@ def select_game_of_the_week(
         "week": upcoming_week,
         "model": {
             "weights": WEIGHTS,
-            "form_window": FORM_WINDOW,
             "notes": (
-                "Components are each scaled 0-1 and combined with the weights "
-                "shown. No ESPN projection is used; the projected margin is "
-                "derived from each team's own season scoring average."
+                "Every component is about the current season. Leverage is the "
+                "combined swing in both teams' playoff odds from the "
+                "simulation; quality is this season's all-play; closeness is "
+                "the current win probability. Rivalry history is not a factor."
             ),
         },
         "pick": scored[0],
@@ -184,97 +186,66 @@ def _score_matchup(
     away: str,
     standings_by_owner: dict[str, dict],
     all_play_totals: dict[str, dict],
-    h2h_pairs: dict[str, dict],
-    form: dict[str, float],
     *,
-    cut: int,
-    total_teams: int,
-    week: int,
-    regular_season_weeks: int | None,
+    preview: dict | None,
+    max_leverage: float,
 ) -> tuple[dict[str, float], list[str]]:
+    """Score one matchup on three current-season components.
+
+    ``leverage``   how much the game swings both teams' playoff odds, taken
+                   from the simulation preview and normalised against the
+                   week's most pivotal game. The honest "does it matter".
+    ``quality``    mean of the two teams' all-play win % this season.
+    ``closeness``  how close the game projects to be, from win probability.
+    """
     reasons: list[str] = []
 
+    # leverage ------------------------------------------------------------
+    if preview is not None and max_leverage > 0:
+        leverage = _clamp((preview.get("leverage") or 0.0) / max_leverage)
+    else:
+        leverage = 0.0
+    if preview is not None:
+        swings = []
+        for side in ("home_swing", "away_swing"):
+            sw = preview.get(side) or {}
+            if "if_win" in sw and "if_loss" in sw:
+                swings.append(round((sw["if_win"] - sw["if_loss"]) * 100))
+        big = max(swings) if swings else 0
+        if big >= 25:
+            reasons.append(f"swings a playoff spot by up to {big} points")
+        elif big >= 12:
+            reasons.append("moves both teams' playoff odds meaningfully")
+
+    # quality -------------------------------------------------------------
     ap_home = (all_play_totals.get(home) or {}).get("all_play_win_pct")
     ap_away = (all_play_totals.get(away) or {}).get("all_play_win_pct")
     if ap_home is not None and ap_away is not None:
         quality = (ap_home + ap_away) / 2
-        parity = _clamp(1.0 - abs(ap_home - ap_away) * 2.0)
         ranked = sorted(
-            [o for o in all_play_totals if all_play_totals[o]["all_play_win_pct"] is not None],
+            (o for o in all_play_totals if all_play_totals[o]["all_play_win_pct"] is not None),
             key=lambda o: -all_play_totals[o]["all_play_win_pct"],
         )
         if home in ranked and away in ranked:
             reasons.append(
-                f"#{ranked.index(home) + 1} vs #{ranked.index(away) + 1} in all-play record"
+                f"#{ranked.index(home) + 1} vs #{ranked.index(away) + 1} in all-play this season"
             )
         if quality >= 0.55:
-            reasons.append(
-                f"both teams above .500 in all-play ({ap_home:.3f} and {ap_away:.3f})"
-            )
-        if parity >= 0.8:
-            reasons.append("the two teams are nearly indistinguishable by all-play")
+            reasons.append("both teams scoring above the league this season")
     else:
-        quality, parity = 0.5, 0.5
+        quality = 0.5
 
-    home_rank = (standings_by_owner.get(home) or {}).get("rank")
-    away_rank = (standings_by_owner.get(away) or {}).get("rank")
-    stakes = 0.4
-    if home_rank and away_rank:
-        # Closeness to the playoff cut line, averaged, plus a lateness boost.
-        bubble = statistics.fmean(
-            [
-                _clamp(1.0 - abs(home_rank - cut - 0.5) / max(total_teams / 2, 1)),
-                _clamp(1.0 - abs(away_rank - cut - 0.5) / max(total_teams / 2, 1)),
-            ]
-        )
-        lateness = _clamp(week / regular_season_weeks) if regular_season_weeks else 0.5
-        stakes = _clamp(0.6 * bubble + 0.4 * lateness)
-        if min(home_rank, away_rank) <= 3 and max(home_rank, away_rank) <= 6:
-            reasons.append(f"both teams in the top six ({home_rank} and {away_rank} in the standings)")
-        elif abs(home_rank - cut) <= 2 and abs(away_rank - cut) <= 2:
-            reasons.append("both teams are on the playoff bubble")
-        if regular_season_weeks and week >= regular_season_weeks - 2:
-            reasons.append(f"week {week} of a {regular_season_weeks}-week regular season")
-
-    form_home = form.get(home)
-    form_away = form.get(away)
-    if form_home is not None and form_away is not None:
-        form_score = _clamp((statistics.fmean([form_home, form_away]) + 1.5) / 3.0)
-        if min(form_home, form_away) > 0.3:
-            reasons.append(
-                f"both scoring above league average over the last {FORM_WINDOW} weeks"
-            )
+    # closeness -----------------------------------------------------------
+    if preview is not None and preview.get("home_win_pct") is not None:
+        p_home = preview["home_win_pct"]
+        closeness = _clamp(1.0 - abs(p_home - 0.5) * 2.0)
+        fav = max(p_home, 1 - p_home)
+        if fav <= 0.56:
+            reasons.append(f"a coin flip ({round(p_home * 100)}% / {round((1 - p_home) * 100)}%)")
     else:
-        form_score = 0.5
+        closeness = 0.5
 
-    rivalry = h2h_pairs.get(pair_key(home, away))
-    rivalry_score = 0.0
-    if rivalry:
-        rivalry_score = (rivalry["rivalry_index"]["score"] or 0) / 100.0
-        overall = rivalry["overall"]
-        is_left = rivalry["left_owner_id"] == home
-        home_wins = overall["left_wins"] if is_left else overall["right_wins"]
-        away_wins = overall["right_wins"] if is_left else overall["left_wins"]
-        if overall["games"] >= 3:
-            if home_wins == away_wins:
-                reasons.append(f"career series dead even at {home_wins}-{away_wins}")
-            else:
-                reasons.append(f"career series {home_wins}-{away_wins}")
-        if rivalry["playoff"]["games"]:
-            reasons.append(
-                f"{rivalry['playoff']['games']} previous playoff meeting(s)"
-            )
-
-    return (
-        {
-            "quality": quality,
-            "parity": parity,
-            "stakes": stakes,
-            "form": form_score,
-            "rivalry": rivalry_score,
-        },
-        reasons,
-    )
+    return {"leverage": leverage, "quality": quality, "closeness": closeness}, reasons
 
 
 def _projection(home: str, away: str, standings_by_owner: dict[str, dict]) -> dict | None:

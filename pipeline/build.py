@@ -195,6 +195,12 @@ def assemble(dataset: dict) -> dict:
         for season in sorted(season_data)
     }
 
+    # "Currently in the league" = anyone with a team in the current season.
+    active_owner_ids = sorted(
+        {r["owner_id"] for r in all_team_weeks if r["season"] == current_season}
+    )
+    rivals = head_to_head.designate_rivals(h2h, active_owner_ids)
+
     owner_payloads = {}
     for career in careers:
         owner_id = career["owner_id"]
@@ -202,6 +208,8 @@ def assemble(dataset: dict) -> dict:
         owner_payloads[owner_id] = {
             **career,
             "head_to_head": highlights,
+            "rival": rivals.get(owner_id),
+            "is_active": owner_id in active_owner_ids,
             "efficiency": efficiency.get(owner_id),
             "weekly_history": [
                 {
@@ -288,6 +296,15 @@ def build_current(
         m for m in season_matchups if upcoming_week and m["week"] == upcoming_week
     ]
 
+    picture = playoffs.build_playoff_picture(
+        season,
+        standings,
+        season_matchups,
+        all_team_weeks,
+        playoff_teams=meta.get("playoff_team_count"),
+        regular_season_weeks=meta.get("regular_season_weeks"),
+    )
+
     ap = metrics.all_play(all_team_weeks, season=season, game_types=(GAME_REGULAR,))
     game_of_week = gotw.select_game_of_the_week(
         season_matchups,
@@ -298,15 +315,7 @@ def build_current(
         season,
         playoff_team_count=meta.get("playoff_team_count"),
         regular_season_weeks=meta.get("regular_season_weeks"),
-    )
-
-    picture = playoffs.build_playoff_picture(
-        season,
-        standings,
-        season_matchups,
-        all_team_weeks,
-        playoff_teams=meta.get("playoff_team_count"),
-        regular_season_weeks=meta.get("regular_season_weeks"),
+        playoff_picture=picture,
     )
     previews_by_id = {p["matchup_id"]: p for p in (picture or {}).get("previews", [])}
     if game_of_week:

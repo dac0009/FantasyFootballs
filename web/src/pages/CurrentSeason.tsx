@@ -1,6 +1,6 @@
 import { StandingsTable } from "../components/StandingsTable";
+import { AboveAverageGrid } from "../components/AboveAverage";
 import { DivergingBars } from "../components/charts/DivergingBars";
-import { PairedBars } from "../components/charts/PairedBars";
 import { QuadrantScatter } from "../components/charts/QuadrantScatter";
 import { WeeklyLines, type WeeklyPoint } from "../components/charts/WeeklyLines";
 import { Band, ErrorState, Loading, Metric, OwnerLink } from "../components/primitives";
@@ -31,6 +31,40 @@ export function SeasonAnalytics({ data, title }: { data: SeasonPayload; title: s
     return row;
   });
 
+  // For each team, each week: did they beat the league average that week, and
+  // did they win? This is the "record against the league" that the
+  // schedule-luck number summarises, shown game by game. Regular season only.
+  const aboveAverage = standings.map((row) => {
+    const weeksForTeam = weekly_series
+      .filter((r) => r.owner_id === row.owner_id && r.game_type === "regular")
+      .sort((a, b) => a.week - b.week)
+      .map((r) => ({
+        week: r.week,
+        diff: r.score - (r.league_mean ?? r.score),
+        beat: r.score >= (r.league_mean ?? r.score),
+        won: r.result === "W",
+        tied: r.result === "T",
+      }));
+    const beats = weeksForTeam.filter((w) => w.beat).length;
+    return {
+      ownerId: row.owner_id,
+      name: row.team_name ?? row.owner_id,
+      record: row.record,
+      weeks: weeksForTeam,
+      beats,
+      total: weeksForTeam.length,
+      aboveRecord: `${beats}-${weeksForTeam.length - beats}`,
+    };
+  });
+  // Sort by how far their league-average record diverges from reality: the
+  // teams whose luck story is most dramatic sit at the top.
+  const realWins = new Map(standings.map((r) => [r.owner_id, r.wins + 0.5 * r.ties]));
+  aboveAverage.sort(
+    (a, b) =>
+      Math.abs(b.beats - (realWins.get(b.ownerId) ?? 0)) -
+      Math.abs(a.beats - (realWins.get(a.ownerId) ?? 0)),
+  );
+
   return (
     <div className="shell" style={{ paddingTop: "2.2rem" }}>
       <h1 style={{ fontSize: "clamp(1.6rem, 4vw, 2.2rem)" }}>{title}</h1>
@@ -53,11 +87,11 @@ export function SeasonAnalytics({ data, title }: { data: SeasonPayload; title: s
       </div>
 
       <Band
-        title="Schedule luck"
+        title="Record versus the league"
         note={
           <>
-            <Metric name="schedule_luck">Schedule luck</Metric> and{" "}
-            <Metric name="expected_wins">expected wins</Metric>
+            <Metric name="schedule_luck">Schedule luck</Metric>, and every team's week-by-week
+            record against the league average
           </>
         }
       />
@@ -74,15 +108,7 @@ export function SeasonAnalytics({ data, title }: { data: SeasonPayload; title: s
           negativeLabel="Unlucky"
           positiveLabel="Lucky"
         />
-        <PairedBars
-          data={standings
-            .filter((r) => r.expected_wins !== null)
-            .map((r) => ({
-              name: r.team_name ?? r.owner_id,
-              actual: r.wins + 0.5 * r.ties,
-              expected: r.expected_wins as number,
-            }))}
-        />
+        <AboveAverageGrid rows={aboveAverage} />
       </div>
 
       <Band title="Weekly scoring" note="Select a team to isolate its line" />
@@ -124,45 +150,6 @@ export function SeasonAnalytics({ data, title }: { data: SeasonPayload; title: s
             </p>
           </section>
         ))}
-      </div>
-
-      <Band title="Consistency and luck indices" note="Who wasted good weeks, and who got away with bad ones" />
-      <div className="season-split" style={{ marginTop: "1rem" }}>
-        <DivergingBars
-          data={standings
-            .filter((r) => r.bad_beat_index !== null && r.fortunate_win_index !== null)
-            .map((r) => ({
-              name: r.team_name ?? r.owner_id,
-              value: (r.fortunate_win_index ?? 0) - (r.bad_beat_index ?? 0),
-              detail: `bad beats ${points(r.bad_beat_index, 2)}, fortunate wins ${points(r.fortunate_win_index, 2)}`,
-            }))}
-          axisLabel="Fortunate wins minus bad beats"
-          negativeLabel="Deserved better"
-          positiveLabel="Got away with it"
-        />
-        <div>
-          <ul style={{ listStyle: "none", padding: 0, margin: "1rem 0 0" }}>
-            {standings
-              .filter((r) => r.worst_bad_beat)
-              .sort((a, b) => (b.worst_bad_beat?.z ?? 0) - (a.worst_bad_beat?.z ?? 0))
-              .slice(0, 5)
-              .map((r) => (
-                <li
-                  key={r.owner_id}
-                  style={{
-                    padding: "0.45rem 0",
-                    borderBottom: "1px solid var(--color-line-soft)",
-                    fontSize: "0.85rem",
-                    color: "var(--color-mid)",
-                  }}
-                >
-                  <OwnerLink ownerId={r.owner_id}>{r.team_name}</OwnerLink> scored{" "}
-                  {points(r.worst_bad_beat?.score, 2)} in week {r.worst_bad_beat?.week} and lost to{" "}
-                  {r.worst_bad_beat?.opponent_team_name} ({points(r.worst_bad_beat?.opponent_score, 2)})
-                </li>
-              ))}
-          </ul>
-        </div>
       </div>
 
       <style>{`

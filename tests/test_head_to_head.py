@@ -122,3 +122,63 @@ class TestHighlights:
         two = head_to_head.h2h_highlights(pairs, "owner-2")["opponents"][0]
         assert (one["wins"], one["losses"]) == (3, 0)
         assert (two["wins"], two["losses"]) == (0, 3)
+
+
+class TestRivalDesignation:
+    """One rival per active owner, reciprocal, active-only."""
+
+    def _pairs(self):
+        # a<->b play a close even series (strong rivalry), a<->c lopsided,
+        # b<->c light. d is active but has only one meeting with everyone.
+        from conftest import pair as P
+
+        from pipeline.head_to_head import build_head_to_head
+
+        tw = []
+        for wk, (h, hs, a, as_) in enumerate(
+            [("a", 120, "b", 118), ("b", 119, "a", 121), ("a", 110, "b", 112),
+             ("b", 130, "a", 128), ("a", 140, "c", 90), ("a", 135, "c", 95),
+             ("a", 138, "c", 92), ("b", 100, "c", 99), ("b", 105, "c", 103),
+             ("b", 108, "c", 101)], start=1):
+            rows = P(2024, wk, 1, hs, 2, as_, owner=h, opp_owner=a)
+            tw += rows
+        owners = {o: {"owner_id": o, "name": o.upper()} for o in "abcd"}
+        return build_head_to_head(tw, owners)
+
+    def test_reciprocal_rivals_are_mutual(self):
+        from pipeline.head_to_head import designate_rivals
+
+        pairs = self._pairs()
+        rivals = designate_rivals(pairs, ["a", "b", "c"], min_meetings=3)
+        # b and c share the highest rivalry score, so they name each other;
+        # a's strongest is b, but b's strongest is c, so a is one-sided.
+        assert rivals["b"]["rival_owner_id"] == "c"
+        assert rivals["c"]["rival_owner_id"] == "b"
+        assert rivals["b"]["reciprocal"] is True and rivals["c"]["reciprocal"] is True
+        assert rivals["a"]["rival_owner_id"] == "b"
+        assert rivals["a"]["reciprocal"] is False
+
+    def test_only_active_owners_are_candidates(self):
+        from pipeline.head_to_head import designate_rivals
+
+        pairs = self._pairs()
+        # If b is not active, a's rival must come from the remaining active set,
+        # never b.
+        rivals = designate_rivals(pairs, ["a", "c"], min_meetings=3)
+        assert "b" not in {r["rival_owner_id"] for r in rivals.values()}
+        assert rivals["a"]["rival_owner_id"] == "c"
+
+    def test_inactive_owner_gets_no_entry(self):
+        from pipeline.head_to_head import designate_rivals
+
+        pairs = self._pairs()
+        rivals = designate_rivals(pairs, ["a", "b", "c"], min_meetings=3)
+        assert "d" not in rivals
+
+    def test_below_min_meetings_excluded(self):
+        from pipeline.head_to_head import designate_rivals
+
+        pairs = self._pairs()
+        # With a very high threshold nobody qualifies.
+        rivals = designate_rivals(pairs, ["a", "b", "c"], min_meetings=99)
+        assert rivals == {}

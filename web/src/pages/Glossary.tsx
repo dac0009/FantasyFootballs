@@ -24,6 +24,7 @@ export default function Glossary({ meta }: { meta: Meta }) {
     "manager_efficiency",
     "bench_regret",
     "rivalry_index",
+    "rival",
     "game_of_week",
   ];
 

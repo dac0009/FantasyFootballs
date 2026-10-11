@@ -103,11 +103,20 @@ export const METRICS: Record<string, MetricDefinition> = {
     short: "A team's playoff odds if it wins this week against its odds if it loses. The gap is how much the game matters.",
     formula: "playoff odds conditioned on winning minus playoff odds conditioned on losing",
   },
-  game_of_week: {
-    label: "Game of the Week model",
-    short: "Scheduled matchups scored on team quality, how evenly matched they are, stakes, recent form and rivalry history.",
-    formula: "0.30 quality + 0.25 parity + 0.20 stakes + 0.15 form + 0.10 rivalry",
+  rival: {
+    label: "Rival",
+    short:
+      "Each active owner's single biggest rivalry among owners still in the league, by rivalry index. Reciprocal where both name each other; otherwise shown as a one-sided chief rival.",
     limitation:
-      "ESPN does not expose reliable projections for a future week, so no projection is used. Any projected margin shown comes from each team's own season average.",
+      "Only owners with a team this season are considered, so a departed nemesis drops off. Needs at least three career meetings.",
+  },
+  game_of_week: {
+    label: "Game of the Week",
+    short:
+      "The upcoming game most worth watching, scored on this season alone: how much it swings both teams' playoff odds, how well the two teams are scoring now, and how close it projects to be.",
+    formula:
+      "0.45 leverage (combined playoff-odds swing from the simulation) + 0.30 quality (mean all-play this season) + 0.25 closeness (from win probability)",
+    limitation:
+      "Current-season only; rivalry history is not a factor. Uses no ESPN projection. Before a team has three games its scoring is still stabilising, so early-season picks lean on leverage.",
   },
 };

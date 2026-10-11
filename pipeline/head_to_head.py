@@ -218,3 +218,77 @@ def h2h_highlights(pairs: dict[str, dict], owner_id: str) -> dict:
         "min_meetings": MIN_MEETINGS,
         "opponents": rows,
     }
+
+
+def designate_rivals(
+    pairs: dict[str, dict],
+    active_owner_ids: Sequence[str],
+    *,
+    min_meetings: int = 3,
+) -> dict[str, dict]:
+    """One rival per active owner, chosen only among owners currently in the
+    league.
+
+    A rivalry is a two-sided thing, so the rival is **reciprocal**: owner A and
+    owner B are rivals when B is the highest-rivalry opponent A has among active
+    owners *and* A is the highest for B. That makes the relationship symmetric
+    and honest -- nobody is told their rival is someone who considers a
+    different team their real rival.
+
+    Owners with no qualifying reciprocal match (new owners, or people whose
+    closest rival has left the league) get a one-sided ``top_rival`` instead,
+    clearly labelled, so the page still has something true to show. Anyone with
+    too little shared history gets nothing rather than a manufactured grudge.
+
+    Returns ``{owner_id: {rival_owner_id, rival_name, pair_key, record,
+    reciprocal, rivalry_score, meetings, ...}}``.
+    """
+    active = set(active_owner_ids)
+
+    # For each active owner, rank active opponents by rivalry score.
+    ranked: dict[str, list[dict]] = {}
+    for owner_id in active:
+        rows = []
+        for record in pairs.values():
+            left, right = record["left_owner_id"], record["right_owner_id"]
+            if owner_id not in (left, right):
+                continue
+            other = right if left == owner_id else left
+            if other not in active:
+                continue  # only rivals who are still in the league
+            if record["overall"]["games"] < min_meetings:
+                continue
+            is_left = left == owner_id
+            wins = record["overall"]["left_wins"] if is_left else record["overall"]["right_wins"]
+            losses = record["overall"]["right_wins"] if is_left else record["overall"]["left_wins"]
+            rows.append(
+                {
+                    "rival_owner_id": other,
+                    "rival_name": record["right_owner_name"] if is_left else record["left_owner_name"],
+                    "pair_key": record["pair_key"],
+                    "rivalry_score": record["rivalry_index"]["score"],
+                    "meetings": record["overall"]["games"],
+                    "record": format_record(wins, losses, record["overall"]["ties"]),
+                    "wins": wins,
+                    "losses": losses,
+                    "ties": record["overall"]["ties"],
+                    "last_meeting": record["last_meeting"],
+                    "current_streak": record["current_streak"],
+                }
+            )
+        rows.sort(key=lambda r: (-r["rivalry_score"], -r["meetings"]))
+        ranked[owner_id] = rows
+
+    def top_choice(owner_id: str) -> str | None:
+        rows = ranked.get(owner_id) or []
+        return rows[0]["rival_owner_id"] if rows else None
+
+    out: dict[str, dict] = {}
+    for owner_id in active:
+        rows = ranked.get(owner_id) or []
+        if not rows:
+            continue
+        top = rows[0]
+        reciprocal = top_choice(top["rival_owner_id"]) == owner_id
+        out[owner_id] = {**top, "reciprocal": reciprocal}
+    return out

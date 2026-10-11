@@ -120,6 +120,27 @@ export default function Owner() {
         {data.current_team_name}
         {data.seasons_played ? `, ${data.seasons_played} seasons, ${data.first_season}\u2013${data.last_season}` : ""}
       </p>
+      {data.rival ? (
+        <div className="rival-plate">
+          <span className="rival-label">
+            {data.rival.reciprocal ? "Rivalry" : "Chief rival"}
+          </span>
+          <span className="rival-name">
+            <RivalryLink a={data.owner_id} b={data.rival.rival_owner_id}>
+              {data.rival.rival_name}
+            </RivalryLink>
+          </span>
+          <span className="rival-series">
+            {data.rival.record} all-time
+            {data.rival.current_streak.length
+              ? data.rival.current_streak.owner_id === data.owner_id
+                ? `, won last ${data.rival.current_streak.length}`
+                : `, lost last ${data.rival.current_streak.length}`
+              : ""}
+            {!data.rival.reciprocal ? ", though they'd name someone else" : ""}
+          </span>
+        </div>
+      ) : null}
       {data.note ? <p className="notice" style={{ marginTop: "0.9rem" }}>{data.note}</p> : null}
       {data.unlinked ? (
         <p className="notice" style={{ marginTop: "0.9rem" }}>
@@ -335,6 +356,18 @@ export default function Owner() {
       </div>
 
       <style>{`
+        .rival-plate {
+          display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem 0.8rem;
+          margin-top: 1rem; padding: 0.6rem 0 0.6rem 0.9rem;
+          border-left: 3px solid var(--ember);
+        }
+        .rival-label {
+          font-family: var(--font-display); font-style: italic; font-size: 0.82rem;
+          color: var(--ink-faint);
+        }
+        .rival-name { font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; }
+        .rival-series { color: var(--ink-soft); font-size: 0.85rem; }
+
         .owner-figures {
           display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.3rem 1rem;
           margin-top: 1.7rem; padding-top: 1.4rem; border-top: 1px solid var(--color-line);

@@ -304,7 +304,23 @@ export interface OpponentRow {
   rivalry_index: number | null;
 }
 
+export interface Rival {
+  rival_owner_id: string;
+  rival_name: string;
+  pair_key: string;
+  rivalry_score: number;
+  meetings: number;
+  record: string;
+  wins: number;
+  losses: number;
+  ties: number;
+  reciprocal: boolean;
+  last_meeting: { season: number; week: number };
+  current_streak: { owner_id: string | null; length: number };
+}
+
 export interface OwnerPayload extends OwnerIndexRow {
+  rival?: Rival | null;
   note: string | null;
   playoff_record: { games: number; record: string; win_pct: number | null; points_for: number | null; avg_score?: number | null };
   all_games_record: { games: number; record: string; win_pct: number | null; points_for: number | null };
