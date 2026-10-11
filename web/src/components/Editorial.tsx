@@ -5,15 +5,17 @@ import { useMeta } from '../lib/data';
 import type { Session } from '@supabase/supabase-js';
 import { canEdit, copyLabels, editorClient, preparePhoto, profileDefaults, type DocumentBody, type Membership, type PublishedDocument, resolvedCopy, sectionLabels } from '../lib/editor';
 import '../styles/editor.css';
+import { publishAndVerify } from '../lib/editorPersistence.mjs';
 
 type PagePreview = {kind: 'copy' | 'profile'; key: string; body: DocumentBody; version: number};
 type EditorContext = {
   pagePreview: PagePreview | null; setPagePreview: (value: PagePreview | null) => void;
   session: Session | null; member: Membership | null; ready: boolean; editMode: boolean;
   setEditMode: (value: boolean) => void; documents: PublishedDocument[]; error: string;
+  savedDocuments: PublishedDocument[]; checkedAt: string; refreshSaved: () => Promise<void>;
   replace: (doc: PublishedDocument) => void;
 };
-const Context = createContext<EditorContext>({ pagePreview:null, setPagePreview:()=>{}, session:null, member:null, ready:false, editMode:false, setEditMode:()=>{}, documents:[], error:'', replace:()=>{} });
+const Context = createContext<EditorContext>({ pagePreview:null, setPagePreview:()=>{}, session:null, member:null, ready:false, editMode:false, setEditMode:()=>{}, documents:[], error:'', savedDocuments:[], checkedAt:'', refreshSaved:async()=>{}, replace:()=>{} });
 export const useEditorial = () => useContext(Context);
 export function EditorialProvider({ children }: { children: ReactNode }) {
   const sessionUser=useRef<string|null>(null);
@@ -21,13 +23,20 @@ export function EditorialProvider({ children }: { children: ReactNode }) {
   const [session,setSession]=useState<Session|null>(null), [member,setMember]=useState<Membership|null>(null);
   const [ready,setReady]=useState(!editorClient), [editMode,setEditMode]=useState(false);
   const [documents,setDocuments]=useState<PublishedDocument[]>([]), [error,setError]=useState('');
+  const [checkedAt,setCheckedAt]=useState('');
+  async function refreshSaved(){
+    if(!editorClient)throw new Error('Supabase is not configured.');
+    const {data,error}=await editorClient.from('editor_documents').select('*');
+    if(error)throw new Error('Could not read saved content from Supabase: '+error.message);
+    setDocuments(data??[]);setCheckedAt(new Date().toISOString());setError('');
+  }
   useEffect(()=>{
     if(!editorClient)return;
     let alive=true;
     editorClient.from('editor_documents').select('*').then(({data,error})=>{
       if(!alive)return;
       if(error)setError('Custom content is temporarily unavailable. The league archive is still available.');
-      else setDocuments(data ?? []);
+      else {setDocuments(data ?? []);setCheckedAt(new Date().toISOString());}
     });
     const {data:{subscription}}=editorClient.auth.onAuthStateChange((_event,next)=>{
       if(alive){
@@ -47,7 +56,7 @@ export function EditorialProvider({ children }: { children: ReactNode }) {
     });
     return ()=>{alive=false;};
   },[session]);
-  return <Context.Provider value={{pagePreview,setPagePreview,session,member,ready,editMode,setEditMode,documents:pagePreview ? [...documents.filter(d=>d.kind!==pagePreview.kind||d.key!==pagePreview.key),{...pagePreview,updated_at:''}] : documents,error,replace:doc=>setDocuments(old=>[...old.filter(d=>d.kind!==doc.kind||d.key!==doc.key),doc])}}>{children}</Context.Provider>;
+  return <Context.Provider value={{savedDocuments:documents,checkedAt,refreshSaved,pagePreview,setPagePreview,session,member,ready,editMode,setEditMode,documents:pagePreview ? [...documents.filter(d=>d.kind!==pagePreview.kind||d.key!==pagePreview.key),{...pagePreview,updated_at:''}] : documents,error,replace:doc=>setDocuments(old=>[...old.filter(d=>d.kind!==doc.kind||d.key!==doc.key),doc])}}>{children}</Context.Provider>;
 }
 export function EditorToolbar(){
   const {member,editMode,setEditMode,pagePreview,setPagePreview,replace}=useEditorial();
@@ -56,11 +65,8 @@ export function EditorToolbar(){
     if(!editorClient||!pagePreview||!canEdit(member,pagePreview.kind,pagePreview.key))return;
     setBusy(true);setStatus('');
     try{
-      const {data,error}=await editorClient.rpc('publish_editor_document',{p_kind:pagePreview.kind,p_key:pagePreview.key,p_body:pagePreview.body,p_expected_version:pagePreview.version});
-      if(error)throw error;
-      const doc=Array.isArray(data)?data[0]:data;
-      if(!doc?.version)throw new Error('Publication was not confirmed. Your preview is still here.');
-      replace(doc);setPagePreview(null);setStatus('Published.');
+      const {document:doc,verified}=await publishAndVerify(editorClient,pagePreview.kind,pagePreview.key,pagePreview.body,pagePreview.version);
+      replace(doc);setPagePreview(null);setStatus(verified?`Saved to Supabase · version ${doc.version} · ${new Date(doc.updated_at).toLocaleTimeString()}`:'Supabase accepted the save, but read-back was unavailable. Use Refresh saved content in Admin to verify.');
     }catch(error){setStatus((error as {message?:string}).message??'Could not publish. Your preview is still here.');}finally{setBusy(false);}
   }
   return <div className="editor-toolbar shell"><Link to="/account">{member?'My account':'Owner sign in'}</Link>{member?.owner_id&&<Link to={`/owners/${member.owner_id}`}>My profile</Link>}{member?.role==='commissioner' && <><Link to="/admin">Admin</Link><button className="pill" aria-pressed={editMode} onClick={()=>setEditMode(!editMode)}>{editMode?'Finish editing':'Visual editor'}</button></>}
@@ -127,13 +133,10 @@ export function DocumentEditor({kind,documentKey,label,fallback,onClose}:{kind:'
   async function publish(){
     if(!editorClient||!allowed||conflictingPreview)return;setBusy(true);setStatus('');
     try{
-      const {data,error}=await editorClient.rpc('publish_editor_document',{p_kind:kind,p_key:documentKey,p_body:body,p_expected_version:version});
-      if(error)throw error;
-      const published=(Array.isArray(data)?data[0]:data) as PublishedDocument;
-      if(!published?.version)throw new Error('The server did not confirm publication. Refresh to check the latest version.');
+      const {document:published,verified}=await publishAndVerify(editorClient,kind,documentKey,body,version);
       replace(published);setVersion(published.version);setPagePreview(null);
       try{sessionStorage.removeItem(draftKey);}catch{/* Publishing does not depend on browser storage. */}
-      setStatus('Published. Your changes are now visible on the site.');setPreview(false);
+      setStatus(verified?`Saved to Supabase · version ${published.version} · ${new Date(published.updated_at).toLocaleString()}. Reload the public page to see it.`:'Supabase accepted the save, but read-back was unavailable. Use Refresh saved content in Admin to verify.');setPreview(false);
     }catch(error){setStatus(error instanceof Error?error.message:(error as {message?:string}).message??'Publishing failed. Your edits are still here.');}
     finally{setBusy(false);}
   }
@@ -142,6 +145,8 @@ export function DocumentEditor({kind,documentKey,label,fallback,onClose}:{kind:'
   async function loadHistory(){if(!editorClient)return;const {data,error}=await editorClient.from('editor_revisions').select('kind,key,body,version,updated_at').eq('kind',kind).eq('key',documentKey).order('version',{ascending:false}).limit(10);if(error)setStatus('History is unavailable. Try again.');else{setHistory(data??[]);if(!data?.length)setStatus('No published versions yet.');}}
   return createPortal(<dialog ref={dialog} aria-labelledby={titleId} className="editor-dialog" onCancel={e=>{if(busy)e.preventDefault();else onClose();}}>
     <div className="editor-heading"><div><span className="section-kicker">The editing desk</span><h2 id={titleId}>{label}</h2></div><button className="pill" disabled={busy} onClick={onClose} aria-label="Close editor">Close</button></div>
+    <p className="save-explanation">Publish changes saves to the live site. Previews and tab drafts are private; no GitHub push is needed.</p>
+    <p className="figure-label">{current?.updated_at?`Last published: ${new Date(current.updated_at).toLocaleString()} · version ${current.version}`:'No saved publication yet'}</p>
     <form onSubmit={e=>{e.preventDefault();setPreview(true);}}>
       {conflictingPreview&&<p role="status">Publish or discard your current page preview before editing another area.</p>}
       <fieldset disabled={busy||!allowed||conflictingPreview}>
@@ -153,8 +158,8 @@ export function DocumentEditor({kind,documentKey,label,fallback,onClose}:{kind:'
           <label>Profile photo<input type="file" accept="image/jpeg,image/png,image/webp" onChange={async e=>{const file=e.target.files?.[0];if(!file)return;setBusy(true);try{field('photo',await preparePhoto(file));}catch(error){setStatus((error as Error).message);}finally{setBusy(false);}}}/><small>Square crop · JPG, PNG, or WebP · up to 8 MB</small></label>
           {body.photo&&<div><img className="editor-photo" src={body.photo} alt="Profile preview"/><button type="button" className="pill" onClick={()=>field('photo','')}>Remove photo</button></div>}
         </div>:<><label>Display<select aria-label="Display" value={body.display??'custom'} onChange={e=>field('display',e.target.value)}><option value="default">{isSection?'Show section':'Use original text'}</option>{!isSection&&<option value="custom">Use my text</option>}<option value="hidden">{isSection?'Hide section':'Hide text'}</option></select></label>{!isSection&&<label>Text<textarea aria-label="Text" maxLength={documentKey==='home.headline'?160:1200} value={body.text??''} placeholder={fallback||'Add an announcement'} onChange={e=>field('text',e.target.value)}/><small>Choose Hide text to remove it. Use original text restores the default.</small></label>}</>}
-        <div className="editor-actions"><button className="pill" type="submit">Preview changes</button><button className="pill" type="button" disabled={!!pagePreview&&(pagePreview.kind!==kind||pagePreview.key!==documentKey)} onClick={previewOnPage}>Preview on page</button><button className="pill" type="button" onClick={saveDraft}>Save draft</button><button className="pill" type="button" onClick={restoreDraft}>Restore draft</button><button className="pill" type="button" onClick={()=>{void loadHistory();}}>Version history</button></div>
-        {preview&&<section ref={previewRef} className="editor-preview" aria-label="Preview"><span className="section-kicker">Preview · not published</span>{kind==='profile'?<div style={{color:body.ink||'var(--ink)'}}>{body.photo&&<img className="editor-photo" src={body.photo} alt=""/>}<h3>{body.display_name||fallback}</h3><p>{body.bio}</p><blockquote>{body.message}</blockquote></div>:<p>{body.display==='hidden'?(isSection?'This section will be hidden.':'This text will be hidden.'):isSection?'This section will be shown.':resolvedCopy(body,fallback)||'No text'}</p>}<button className="pill" type="button" onClick={()=>{void publish();}}>Publish changes</button></section>}
+        <div className="editor-actions"><button className="pill publish-primary" type="button" onClick={()=>void publish()}>Publish changes</button><button className="pill" type="submit">Preview changes</button><button className="pill" type="button" disabled={!!pagePreview&&(pagePreview.kind!==kind||pagePreview.key!==documentKey)} onClick={previewOnPage}>Preview on page</button><button className="pill" type="button" onClick={saveDraft}>Save tab draft</button><button className="pill" type="button" onClick={restoreDraft}>Restore tab draft</button><button className="pill" type="button" onClick={()=>{void loadHistory();}}>Version history</button></div>
+        {preview&&<section ref={previewRef} className="editor-preview" aria-label="Preview"><span className="section-kicker">Preview · not published</span>{kind==='profile'?<div style={{color:body.ink||'var(--ink)'}}>{body.photo&&<img className="editor-photo" src={body.photo} alt=""/>}<h3>{body.display_name||fallback}</h3><p>{body.bio}</p><blockquote>{body.message}</blockquote></div>:<p>{body.display==='hidden'?(isSection?'This section will be hidden.':'This text will be hidden.'):isSection?'This section will be shown.':resolvedCopy(body,fallback)||'No text'}</p>}</section>}
         {history.length>0&&<section className="editor-history"><h3>Published versions</h3>{history.map(row=><button className="pill" type="button" key={row.version} onClick={()=>{setBody(row.body);setPreview(true);setStatus('Previous version loaded into preview. Publish to restore it.');}}>Version {row.version} · {new Date(row.updated_at).toLocaleString()}</button>)}</section>}
       </fieldset>
     </form>
