@@ -1,3 +1,4 @@
+import { EditableText } from "../components/Editorial";
 import { ProfileEditorial } from "../components/Editorial";
 import { OwnerAlmanac } from "../components/OwnerAlmanac";
 import { Link, useParams } from "react-router-dom";
@@ -129,8 +130,8 @@ export default function Owner() {
       ) : null}
 
       <details className="owner-record-book">
-        <summary>The record book</summary>
-      <Band title="Team names" note="The same owner, every franchise identity" />
+        <summary><EditableText id="site.owner.50740e12dd" fallback="The record book"/></summary>
+      <Band title={<EditableText id="site.owner.8d737a28b2" fallback="Team names"/>}  note={<EditableText id="site.owner.fc6be537ce" fallback="The same owner, every franchise identity"/>}  />
       <ol className="timeline">
         {data.team_name_timeline.map((row, index) => {
           const previous = data.team_name_timeline[index - 1];
@@ -149,7 +150,7 @@ export default function Owner() {
         })}
       </ol>
 
-      <Band title="Season by season" />
+      <Band title={<EditableText id="site.owner.71f65d02ce" fallback="Season by season"/>}  />
       <StatTable
         rows={data.seasons_detail}
         columns={seasonColumns}
@@ -158,7 +159,7 @@ export default function Owner() {
         caption={`${data.name} season by season`}
       />
 
-      <Band title="Career highs and lows" />
+      <Band title={<EditableText id="site.owner.c610923178" fallback="Career highs and lows"/>}  />
       <div className="highlight-grid">
         <Highlight label="Best week" week={data.best_week} />
         <Highlight label="Worst week" week={data.worst_week} />
@@ -168,7 +169,7 @@ export default function Owner() {
 
       <div className="owner-split" style={{ marginTop: "1.6rem" }}>
         <div>
-          <h3 style={{ fontSize: "0.95rem", marginBottom: "0.5rem" }}>Best season</h3>
+          <h3 style={{ fontSize: "0.95rem", marginBottom: "0.5rem" }}><EditableText id="site.owner.0fb6b65380" fallback="Best season"/></h3>
           {data.best_season ? (
             <p style={{ color: "var(--color-mid)", fontSize: "0.9rem", margin: 0 }}>
               <Link to={`/seasons/${data.best_season.season}`} className="link-quiet">
@@ -183,7 +184,7 @@ export default function Owner() {
           )}
         </div>
         <div>
-          <h3 style={{ fontSize: "0.95rem", marginBottom: "0.5rem" }}>Worst season</h3>
+          <h3 style={{ fontSize: "0.95rem", marginBottom: "0.5rem" }}><EditableText id="site.owner.97bc4fce44" fallback="Worst season"/></h3>
           {data.worst_season ? (
             <p style={{ color: "var(--color-mid)", fontSize: "0.9rem", margin: 0 }}>
               <Link to={`/seasons/${data.worst_season.season}`} className="link-quiet">
@@ -196,7 +197,7 @@ export default function Owner() {
           ) : null}
         </div>
         <div>
-          <h3 style={{ fontSize: "0.95rem", marginBottom: "0.5rem" }}>Postseason</h3>
+          <h3 style={{ fontSize: "0.95rem", marginBottom: "0.5rem" }}><EditableText id="site.owner.d5c387bd16" fallback="Postseason"/></h3>
           <p style={{ color: "var(--color-mid)", fontSize: "0.9rem", margin: 0 }}>
             {data.playoff_record.games
               ? `${data.playoff_record.record} in ${data.playoff_record.games} playoff games, ${points(
@@ -235,7 +236,7 @@ export default function Owner() {
         ) : null}
       </div>
 
-      <Band title="Against the league" note={`Minimum ${data.head_to_head.min_meetings} meetings for the labels below`} />
+      <Band title={<EditableText id="site.owner.21786adbbf" fallback="Against the league"/>}  note={`Minimum ${data.head_to_head.min_meetings} meetings for the labels below`} />
       <div className="owner-split">
         {data.head_to_head.favorite_victim ? (
           <p style={{ margin: 0, fontSize: "0.92rem" }}>
@@ -272,7 +273,7 @@ export default function Owner() {
         />
       </div>
 
-      <Band title="Scoring by season" note="Average points per game, regular season" />
+      <Band title={<EditableText id="site.owner.87ba229d10" fallback="Scoring by season"/>}  note={<EditableText id="site.owner.d31ade071b" fallback="Average points per game, regular season"/>}  />
       <div style={{ marginTop: "1rem" }}>
         <WeeklyLines
           data={lineData}
@@ -282,7 +283,7 @@ export default function Owner() {
         />
       </div>
 
-      <Band title="Every game" note={`${data.weekly_history.length} games on record`} />
+      <Band title={<EditableText id="site.owner.ac650dd364" fallback="Every game"/>}  note={`${data.weekly_history.length} games on record`} />
       <div className="sheet">
         <table>
           <thead>

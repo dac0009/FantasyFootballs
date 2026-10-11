@@ -47,3 +47,13 @@ Without these variables the public site continues normally and `/account` clearl
 Security behavior is also covered by `web/tests/editor-database.test.mjs`, which runs this migration against embedded PostgreSQL with simulated Supabase auth roles. Actual email delivery and project configuration still need the live checks above.
 
 References: https://supabase.com/docs/guides/auth/auth-email-passwordless · https://supabase.com/docs/guides/auth/auth-smtp · https://supabase.com/docs/guides/database/postgres/row-level-security
+
+## Visual editor upgrade (PR #7)
+
+For a project that already ran the initial setup, run **only** `supabase/migrations/202610110002_visual_editor.sql` in a new SQL query. It updates the publishing function's allowed text areas and display settings without replacing accounts, profiles, or history. New projects run both migration files in order. Merge the visual-editor PR after applying this migration.
+
+Commissioners can open `/admin` (or the Admin link above the page) to search all editable text/section controls. The Visual editor button reveals controls directly on each page. Use **Hide text** to remove wording, **Use my text** to replace it, or **Use original text** to restore the default. Section controls offer Show/Hide. Hidden items remain findable in Admin and in visual edit mode. These settings are shared across instances of the same template, including owner profiles.
+
+**Preview on page** closes the dialog and shows your unpublished change on the actual page. The toolbar labels it a private preview; Publish preview makes it public, and Discard preview reverts it. One page preview is supported at a time. Tab drafts and version history still work. Scores, calculated values, sign-in messages, metric definitions, and navigation behavior are not arbitrary editable HTML. This is a content/visibility editor, not a freeform drag-and-drop page builder.
+
+Owners continue to authenticate with their registered email; persistent sessions and the My profile shortcut reduce repeat sign-ins. Selecting a name alone is not authentication and has not been enabled. Owners remain restricted by database permissions to their own profile.

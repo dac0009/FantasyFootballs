@@ -1,3 +1,4 @@
+import { EditableText } from "../components/Editorial";
 import { useMemo, useState } from "react";
 import { currentOwners, currentRivalries, type RivalrySort } from "../lib/rivalries";
 import { useSearchParams } from "react-router-dom";
@@ -70,11 +71,8 @@ export default function HeadToHead() {
   return (
     <div className="shell" style={{ paddingTop: "2.2rem" }}>
       <div className="section-kicker">The record book / Rivalries</div>
-      <h1 style={{ fontSize: "clamp(2.4rem, 6vw, 3.7rem)" }}>Familiar names. Unfinished business.</h1>
-      <p className="prose-narrow" style={{ marginTop: "0.6rem" }}>
-        Today’s owners, their entire shared history. Team names change; the series stays with
-        the people who played it.
-      </p>
+      <h1 style={{ fontSize: "clamp(2.4rem, 6vw, 3.7rem)" }}><EditableText id="site.head-to-head.c3d4740257" fallback="Head to head"/></h1>
+      <p className="prose-narrow" style={{ marginTop: "0.6rem" }}><EditableText id="site.head-to-head.8e28804df6" fallback="Today’s owners, their entire shared history. Team names change; the series stays with the people who played it."/></p>
 
       <div className="h2h-picker">
         <label>
@@ -195,7 +193,7 @@ export default function HeadToHead() {
             />
           </div>
 
-          <Band title="How the series unfolded" note={`Margin from ${leftName}’s perspective`} />
+          <Band title={<EditableText id="site.head-to-head.883f9c8353" fallback="How the series unfolded"/>}  note={`Margin from ${leftName}’s perspective`} />
           <div className="series-history" role="img" aria-label={`Chronological margins for ${leftName}; positive means a win, negative a loss`}>
             {[...record.meetings].sort((a,b)=>a.season-b.season||a.week-b.week).map(meeting).map((m,i)=>{
               const delta=m.leftScore-m.rightScore;
@@ -208,7 +206,7 @@ export default function HeadToHead() {
             })}
           </div>
           <p className="figure-label">Above: {leftName} · Below: {rightName} · Year/week · <Metric name="winning_margin">Point margin</Metric></p>
-          <Band title="Defining games" />
+          <Band title={<EditableText id="site.head-to-head.b7196d1f5a" fallback="Defining games"/>}  />
           <div className="highlight-grid">
             <SeriesGame
               label={`Biggest ${leftName} win`}
@@ -222,7 +220,7 @@ export default function HeadToHead() {
             <SeriesGame label="Highest scoring" m={meeting(record.highest_scoring_meeting)} />
           </div>
 
-          <Band title="Every meeting" note={`${record.meetings.length} games`} />
+          <Band title={<EditableText id="site.head-to-head.d6f5973c87" fallback="Every meeting"/>}  note={`${record.meetings.length} games`} />
           <div className="sheet">
             <table>
               <thead>
@@ -268,7 +266,7 @@ export default function HeadToHead() {
         </>
       ) : (
         <>
-          <Band title="The rivalry ledger" note={`${ownerList.length} current owners · Three meetings to qualify`} />
+          <Band title={<EditableText id="site.head-to-head.6aac22fb7c" fallback="The rivalry ledger"/>}  note={`${ownerList.length} current owners · Three meetings to qualify`} />
           <p className="prose-narrow" style={{ fontSize: "0.85rem" }}>
             <Metric name="rivalry_history">How series are compared</Metric>
           </p>

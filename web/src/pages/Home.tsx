@@ -1,4 +1,4 @@
-import { EditableText } from "../components/Editorial";
+import { EditableText, EditableSection } from "../components/Editorial";
 import { ScoreRanking } from "../components/charts/ScoreRanking";
 import { Link } from "react-router-dom";
 import { GameOfWeekPanel } from "../components/GameOfWeekPanel";
@@ -52,17 +52,17 @@ export default function Home({ meta }: { meta: Meta }) {
       <p><Link to="/playoffs" className="pill" style={{display:"inline-block",textDecoration:"none",marginTop:"1rem"}}>Open playoff explorer →</Link></p>
 
       {picture ? (
-        <>
+        <EditableSection id="section.home.playoffs">
           <Band
-            title="Playoff picture"
+            title={<EditableText id="site.home.66d5b26fa7" fallback="Playoff picture"/>}
             note={`After week ${picture.as_of_week}, ${picture.remaining_regular_season_games} games left`}
           />
           <PlayoffPicture picture={picture} />
-        </>
+        </EditableSection>
       ) : null}
 
       {previews.length || pick ? (
-        <>
+        <EditableSection id="section.home.previews">
           <Band
             title={`Week ${picture?.next_week ?? pick?.week ?? data.upcoming_week} preview`}
             note={previews.length ? "Ordered by how much each game moves the playoff picture" : undefined}
@@ -78,11 +78,11 @@ export default function Home({ meta }: { meta: Meta }) {
             ) : null}
             {pick ? <GameOfWeekPanel data={pick} /> : null}
           </div>
-        </>
+        </EditableSection>
       ) : null}
 
       {week ? (
-        <>
+        <EditableSection id="section.home.results">
           <Band
             title={`Week ${week.week} results`}
             action={
@@ -98,7 +98,7 @@ export default function Home({ meta }: { meta: Meta }) {
               value={points(week.summary.high?.score, 1)}
               label={
                 <>
-                  High, 
+                  High,
                   <OwnerLink ownerId={week.summary.high?.owner_id}>{week.summary.high?.team_name}</OwnerLink>
                 </>
               }
@@ -108,7 +108,7 @@ export default function Home({ meta }: { meta: Meta }) {
               value={points(week.summary.low?.score, 1)}
               label={
                 <>
-                  Low, 
+                  Low,
                   <OwnerLink ownerId={week.summary.low?.owner_id}>{week.summary.low?.team_name}</OwnerLink>
                 </>
               }
@@ -124,7 +124,7 @@ export default function Home({ meta }: { meta: Meta }) {
           <div style={{ marginTop: "0.6rem" }}>
             <Scoreboard matchups={week.matchups} showType />
           </div>
-        </>
+        </EditableSection>
       ) : (
         <Empty>
           No completed games yet this season. The{" "}
@@ -136,8 +136,8 @@ export default function Home({ meta }: { meta: Meta }) {
       )}
 
       {data.milestones.length ? (
-        <>
-          <Band title="Into the record book" note="All-time lists this week's results entered" />
+        <EditableSection id="section.home.milestones">
+          <Band title={<EditableText id="site.home.6a2e3939ab" fallback="Into the record book"/>}  note={<EditableText id="site.home.bca763cdb7" fallback="All-time lists this week's results entered"/>}  />
           <ul style={{ listStyle: "none", padding: 0, margin: "0.8rem 0 0", display: "grid", gap: "0.7rem" }}>
             {data.milestones.map((milestone, index) => (
               <li
@@ -158,7 +158,7 @@ export default function Home({ meta }: { meta: Meta }) {
               </li>
             ))}
           </ul>
-        </>
+        </EditableSection>
       ) : null}
 
       <p style={{ marginTop: "2.6rem" }}>

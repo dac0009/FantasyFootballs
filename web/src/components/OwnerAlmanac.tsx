@@ -1,3 +1,4 @@
+import { EditableText, EditableSection } from "./Editorial";
 import { useState, type CSSProperties, type PointerEvent } from "react";
 import { useEditorial } from "./Editorial";
 import { ownerInk } from "../lib/ownerInk";
@@ -46,7 +47,7 @@ export function OwnerAlmanac({ owner }: { owner: OwnerPayload }) {
   }
   function chooseGame(index: number) { const game=visible[index]; if(game)setSelected(game.matchup_id); }
   return <section style={{"--card-ink":profile?.ink || ownerInk(owner.owner_id)} as CSSProperties} className="owner-almanac" aria-label={`${owner.name} owner card`}>
-    <div className="almanac-folio"><span>The owners’ collection</span><span>FFBFFL / Est. 2019</span></div>
+    <div className="almanac-folio"><span><EditableText id="owner.collection" fallback="Owners"/></span><span>FFBFFL / Est. 2019</span></div>
     <div className="almanac-opening">
       <div className="owner-card-wrap" onPointerMove={tilt} onPointerLeave={e=>{e.currentTarget.style.setProperty('--tilt-x','0deg');e.currentTarget.style.setProperty('--tilt-y','0deg');}}>
         <div className="card-stage">
@@ -78,12 +79,12 @@ export function OwnerAlmanac({ owner }: { owner: OwnerPayload }) {
         <div className="card-caption"><span>Scoring signature · {visible.length} games</span><span>Drag the gold line ↔</span></div>
       </div>
       <div className="almanac-story">
-        <div className="almanac-story-heading"><span className="section-kicker">{year==='all'?'The complete career':`Chapter ${year}`}</span><h2>{year==='all'?'Every season has a story.':season?.team_name ?? `${year} season`}</h2></div>
+        <div className="almanac-story-heading"><span className="section-kicker">{year==='all'?'The complete career':`Chapter ${year}`}</span><h2>{year==='all'?<EditableText id="owner.overview" fallback="Career overview"/>:season?.team_name ?? `${year} season`}</h2></div>
         <div className="almanac-season-strip" role="group" aria-label="Choose career chapter">
           <button aria-pressed={year==='all'} onClick={()=>chooseYear('all')}><strong>Career</strong><span>{owner.record}</span><small>{owner.seasons_played} seasons</small></button>
           {owner.seasons_detail.map(s=><button key={s.season} aria-pressed={year===String(s.season)} onClick={()=>chooseYear(String(s.season))}><strong>{s.season}</strong><span>{s.record}</span><small>{s.is_champion?'Champion':s.final_rank?`${ordinal(s.final_rank)} place`:'In progress'}</small></button>)}
         </div>
-        {active ? <section className="game-reel" aria-label="Game reel">
+        {active ? <EditableSection id="section.owner.reel"><section className="game-reel" aria-label="Game reel">
           <div className="reel-folio"><span>{active.season} / WEEK {active.week}</span><span>{gameTypeLabel(active.game_type)}</span></div>
           <div className="reel-result"><b>{active.result==='W'?'Victory':active.result==='L'?'Defeat':'A draw'}</b><span><Metric name="winning_margin">{signed(active.score-active.opponent_score,2)} pts</Metric></span></div>
           <div className="reel-team"><span>{active.team_name}</span><b>{points(active.score,2)}</b></div><div className="reel-bar"><span style={{width:`${active.score/scoreMax*100}%`}}/></div>
@@ -92,9 +93,9 @@ export function OwnerAlmanac({ owner }: { owner: OwnerPayload }) {
             <label><span className="sr-only">Game in selected chapter</span><input type="range" min="0" max={Math.max(0,visible.length-1)} value={position} disabled={visible.length<=1} onChange={e=>chooseGame(Number(e.target.value))}/></label>
             <button className="pill" aria-label="Next reel game" disabled={position>=visible.length-1} onClick={()=>chooseGame(position+1)}>→</button></div>
           <div className="reel-footer"><span>Game {position+1} of {visible.length}</span><WeekLink season={active.season} week={active.week}>Open the full week →</WeekLink></div>
-        </section> : <p className="prose-narrow">No completed games in this chapter.</p>}
+        </section></EditableSection> : <p className="prose-narrow"><EditableText id="site.owner-almanac.e2feb288df" fallback="No completed games in this chapter."/></p>}
       </div>
     </div>
-    <OwnerCareerAtlas owner={owner} year={year} setYear={chooseYear} selected={selected} setSelected={setSelected}/>
+    <EditableSection id="section.owner.atlas"><OwnerCareerAtlas owner={owner} year={year} setYear={chooseYear} selected={selected} setSelected={setSelected}/></EditableSection>
   </section>;
 }

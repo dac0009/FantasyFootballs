@@ -1,3 +1,4 @@
+import { EditableText } from "../components/Editorial";
 import { useMemo, useState } from "react";
 import { Band, Empty, ErrorState, Loading, Metric, OwnerLink } from "../components/primitives";
 import { useCurrent, useMatchups } from "../lib/data";
@@ -11,7 +12,7 @@ export default function Playoffs() {
   if (current.state !== "ready" || schedule.state !== "ready") return <Loading what="playoff explorer" />;
   return <div className="shell" style={{ paddingTop: "2rem" }}>
     <div className="section-kicker">The postseason / Scenario explorer</div>
-    <h1>Pick the winners. See what changes.</h1>
+    <h1><EditableText id="site.playoffs.fd90ffab10" fallback="Playoff explorer"/></h1>
     {current.data.playoff_picture ? <Explorer current={current.data} games={schedule.data} picture={current.data.playoff_picture} /> :
       <Empty>Playoff estimates are unavailable for this data snapshot. The next analytics refresh will calculate them if a playoff format is configured.</Empty>}
   </div>;
@@ -34,7 +35,7 @@ function Explorer({current, games, picture}: {current: CurrentPayload; games: Ma
       {" "}<Metric name="playoff_scenarios">Scenario methodology</Metric>.</p>
     <div className="scenario-layout">
       <section>
-        <Band title="Your picks" note={`${Object.keys(picks).length} games picked`} />
+        <Band title={<EditableText id="site.playoffs.f8acd4ea8b" fallback="Your picks"/>}  note={`${Object.keys(picks).length} games picked`} />
         {remaining.length ? <>
           <div className="scenario-controls"><label>Week <select className="select" value={chosenWeek} onChange={e=>setWeek(Number(e.target.value))}>
             {weeks.map(week=><option key={week} value={week}>{week}{remaining.some(g=>g.week===week && picks[g.matchup_id]) ? " · picks saved" : ""}</option>)}
@@ -47,10 +48,10 @@ function Explorer({current, games, picture}: {current: CurrentPayload; games: Ma
                   onClick={()=>setPicks(old=>{const next={...old}; if(value) next[game.matchup_id]=value; else delete next[game.matchup_id]; return next;})}>{label}</button>)}
             </div>
           </fieldset>)}
-        </> : <p>The regular season is complete. No remaining games to pick.</p>}
+        </> : <p><EditableText id="site.playoffs.6d121109b5" fallback="The regular season is complete. No remaining games to pick."/></p>}
       </section>
       <section aria-live="polite" aria-atomic="true">
-        <Band title="Chance to make the playoffs" note="Blue bar: your scenario · Tick: baseline" />
+        <Band title={<EditableText id="site.playoffs.d2add6608b" fallback="Chance to make the playoffs"/>}  note={<EditableText id="site.playoffs.0f94899f7b" fallback="Blue bar: your scenario · Tick: baseline"/>}  />
         <p className="figure-label"><Metric name="playoff_scenarios">3,000 simulations · Change in pp</Metric></p>
         <div className="odds-axis"><span>0%</span><span>50%</span><span>100%</span></div>
         {result.map(row=>{const previous=base.get(row.ownerId)!;const delta=(row.odds-previous.odds)*100;return <div className="odds-row" key={row.ownerId}>
@@ -61,14 +62,14 @@ function Explorer({current, games, picture}: {current: CurrentPayload; games: Ma
         </div>})}
       </section>
     </div>
-    <Band title="Where could your team finish?" note="Final regular-season seed in your scenario" />
+    <Band title={<EditableText id="site.playoffs.54e31d8091" fallback="Where could your team finish?"/>}  note={<EditableText id="site.playoffs.9c7763be1f" fallback="Final regular-season seed in your scenario"/>}  />
     <label className="scenario-controls">Team <select className="select" value={selectedOwner} onChange={e=>selectOwner(e.target.value)}>
       {current.standings.map(row=><option key={row.owner_id} value={row.owner_id}>{row.team_name}</option>)}
     </select></label>
     {selected ? <div className="seed-chart" role="img" aria-label={`${selected.name} seed probabilities: ${selected.seeds.map((p,i)=>`seed ${i+1}: ${pct(p)}`).join(', ')}`}>
       {selected.seeds.map((prob,i)=><div className="seed-column" key={i}><span>{Math.round(prob*100)}%</span><div style={{height:`${prob*160}px`,background:i<picture.playoff_teams?'var(--ember)':'var(--ink-faint)'}}/><span>#{i+1}</span></div>)}
     </div> : null}
-    <p className="figure-label">Blue: playoff seeds · Gray: out · Scale: 0–100%</p>
+    <p className="figure-label"><EditableText id="site.playoffs.e7033b9620" fallback="Blue: playoff seeds · Gray: out · Scale: 0–100%"/></p>
 
     <style>{`
       .scenario-layout {display:grid;gap:2.5rem;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}

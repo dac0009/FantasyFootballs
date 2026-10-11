@@ -16,6 +16,7 @@ test('editor enforces ownership, public visibility, validation, conflict detecti
       grant usage on schema auth to anon,authenticated; grant execute on function auth.uid() to anon,authenticated;
       insert into auth.users values ('${ownerA}'),('${ownerB}'),('${commissioner}'),('${stranger}');`);
     await db.exec(readFileSync(new URL('../../supabase/migrations/202610110001_editor.sql',import.meta.url),'utf8'));
+    await db.exec(readFileSync(new URL('../../supabase/migrations/202610110002_visual_editor.sql',import.meta.url),'utf8'));
     await db.exec(`insert into public.editor_memberships values ('${ownerA}','owner-a','owner'),('${ownerB}','owner-b','owner'),('${commissioner}',null,'commissioner');`);
     async function as(role,uid=''){await db.exec(`reset role; set role ${role};`);await db.query("select set_config('request.jwt.claim.sub',$1,false)",[uid]);}
     async function publish(kind,key,body,version){return db.query('select * from public.publish_editor_document($1,$2,$3::jsonb,$4)',[kind,key,JSON.stringify(body),version]);}
@@ -48,7 +49,17 @@ test('editor enforces ownership, public visibility, validation, conflict detecti
     await assert.rejects(publish('copy','unapproved',{text:'x'},0),/not editable/);
     await assert.rejects(publish('copy','home.headline',{text:'x'.repeat(161)},1),/field limit/);
     assert.equal((await db.query('select * from editor_revisions')).rows.length,4);
-    await as('anon');assert.equal((await db.query('select * from editor_documents')).rows.length,2);
+    await publish('copy','owner.overview',{display:'hidden',text:''},0);
+    await publish('copy','owner.overview',{display:'default',text:''},1);
+    await publish('copy','section.owner.atlas',{display:'hidden'},0);
+    await assert.rejects(publish('copy','owner.overview',{display:'bogus'},2),/Invalid display mode/);
+    await as('authenticated',ownerA);
+    await assert.rejects(publish('copy','section.owner.atlas',{display:'hidden'},1),/only your own/);
+    await assert.rejects(publish('profile','owner-a',{display:'hidden'},3),/Unsupported field/);
+    await as('authenticated',commissioner);
+    await publish('copy','section.owner.atlas',{display:'default'},1);
+
+    await as('anon');assert.equal((await db.query('select * from editor_documents')).rows.length,4);
     await assert.rejects(db.query('select * from editor_revisions'),/permission denied/);
     await as('postgres');await db.query('delete from editor_memberships where user_id=$1',[ownerA]);
     await as('authenticated',ownerA);

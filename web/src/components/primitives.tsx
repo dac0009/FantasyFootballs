@@ -8,7 +8,7 @@ export function Band({
   action,
   id,
 }: {
-  title: string;
+  title: ReactNode;
   note?: ReactNode;
   action?: ReactNode;
   id?: string;

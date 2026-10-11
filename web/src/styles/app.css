@@ -274,7 +274,7 @@ body{background-image:linear-gradient(90deg,#c9bea720,transparent 15%,transparen
 .site-header .publication-folio{display:flex;justify-content:space-between;gap:1rem;padding-top:.7rem;padding-bottom:.65rem;color:var(--ink-faint);text-transform:uppercase;font-size:.56rem;letter-spacing:.13em;border-bottom:1px solid #ffffff25}
 .site-header .masthead{display:grid;grid-template-columns:1fr auto;gap:0 2rem;padding-top:1.1rem;padding-bottom:0;align-items:center}
 .site-header .nameplate{font-size:clamp(2.8rem,5.8vw,5rem);font-weight:500;letter-spacing:-.055em;line-height:1.1;padding-bottom:1.2rem}
-.site-header .nameplate>span{font-family:var(--font-body);font-size:.2em;font-weight:600;letter-spacing:.16em;display:block;line-height:1.6;color:#d3b980;margin-bottom:.3rem}
+.site-header .nameplate>span:first-child{font-family:var(--font-body);font-size:.2em;font-weight:600;letter-spacing:.16em;display:block;line-height:1.6;color:#d3b980;margin-bottom:.3rem}
 .masthead-motto{font-family:var(--font-display);font-style:italic;font-size:1.05rem;line-height:1.35;color:#c4bcab;border-left:1px solid #ffffff35;padding-left:1.5rem}
 .site-header .main-nav{grid-column:1/-1;justify-content:center;margin:0;border-top:1px solid #ffffff50;padding:.45rem 0;gap:1.7rem}
 .site-header .nav-item{font-size:.75rem}.site-header .nav-item-quiet{font-size:.7rem}

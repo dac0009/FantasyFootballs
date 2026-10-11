@@ -1,3 +1,4 @@
+import { EditableText } from "../components/Editorial";
 import { Link, useParams } from "react-router-dom";
 import { Scoreboard } from "../components/Scoreboard";
 import { StatTable, type Column } from "../components/StatTable";
@@ -71,15 +72,15 @@ export default function Week() {
         </div>
       )}
 
-      <Band title="Matchups" note={payload.has_results ? undefined : "Scheduled"} />
+      <Band title={<EditableText id="site.week.b5b2a49247" fallback="Matchups"/>}  note={payload.has_results ? undefined : "Scheduled"} />
       <Scoreboard matchups={payload.matchups} showType />
 
       {payload.has_results ? (
         <>
-          <Band title="Week rankings" note="Every team, by score" />
+          <Band title={<EditableText id="site.week.c53b879f49" fallback="Week rankings"/>}  note={<EditableText id="site.week.f2790e6031" fallback="Every team, by score"/>}  />
           <WeekLeaderboard payload={payload} season={data.season} />
 
-          <Band title="Week extremes" />
+          <Band title={<EditableText id="site.week.566b262117" fallback="Week extremes"/>}  />
           <div className="extreme-grid">
             <Extreme
               label="Highest score"
@@ -300,7 +301,7 @@ function WeekRosterHighlights({ season, week }: { season: number; week: number }
 
   return (
     <>
-      <Band title="Player highlights" note="From ESPN lineup data for this week" />
+      <Band title={<EditableText id="site.week.89afda9c44" fallback="Player highlights"/>}  note={<EditableText id="site.week.64b4f3c729" fallback="From ESPN lineup data for this week"/>}  />
       <div className="roster-split">
         {render(starters, "Best starters", "Highest-scoring started players")}
         {render(bench, "Best bench performances", "Points that never made it into a lineup")}
