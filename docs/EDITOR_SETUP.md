@@ -2,34 +2,47 @@
 
 The site stays on GitHub Pages. Supabase stores authenticated memberships, published profile/text overrides, and revision history. ESPN files remain the source of scores and records. This migration never alters them.
 
-## One-time activation
+## Last-name sign-in upgrade
 
-1. Create a dedicated Supabase project under your account. Run `supabase/migrations/202610110001_editor.sql` once in its SQL editor.
-2. In Authentication settings, disable new-user signups. Configure a production SMTP provider so sign-in emails can reach league owners; Supabase's default email service is restricted. Enable the Email provider. Set Site URL to `https://dac0009.github.io/FantasyFootballs/` and add `https://dac0009.github.io/FantasyFootballs/account` to the redirect allowlist. Keep localhost redirects only for development.
-3. The default magic-link template works with this editor. If you prefer codes, change the Magic Link template to include `<p>Your FFBFFL sign-in code: {{ .Token }}</p>`. The account page supports both. The app requests `shouldCreateUser: false`.
-4. Create each approved account through Authentication → Users → Add user → Create new user (no invitation email is required). Use a random password; owners will use email sign-in. Do not share or commit passwords. Copy its user UUID.
-5. In SQL editor, assign each UUID to the exact owner ID from `data/owners.json` (or the owner's profile URL). Example, replace the placeholder UUID:
+Owners enter their last name at `/account`. Capitalization and surrounding spaces do not matter. First sign-in creates a profile-only account automatically; no invitation, email delivery, or owner setup is needed. This deliberately allows anyone who knows a listed surname to edit that owner's public profile. It is shared profile access, not identity verification.
 
-   ```sql
-   insert into public.editor_memberships(user_id,owner_id,role)
-   values ('REPLACE_WITH_USER_UUID','dominick-cifelli','commissioner');
-   -- For each other account, use its owner ID and role 'owner'.
+Dominick uses **Commissioner sign-in** and the private password on his existing Supabase Auth user. Typing Cifelli in the owner form never grants commissioner access. His password is not a Supabase dashboard / GitHub password unless he deliberately used the same one when creating that separate Auth user.
+
+### Activate on the existing project
+
+The two SQL migrations already applied are sufficient. Do not rerun the first migration or replace existing memberships.
+
+1. Deploy `supabase/functions/league-login` to the existing Supabase project **before merging the frontend PR**. From a checkout of this branch in a terminal with Node installed:
+
+   ```sh
+   npx supabase login
+   npx supabase functions deploy league-login --project-ref yrqytwfpoksuefnvlwwp --no-verify-jwt
    ```
 
-   Memberships can only be assigned by the project administrator. The browser cannot grant itself a role, change owner IDs, or view other memberships. Remove a membership to revoke editing immediately, including for an existing session. Delete the Auth user to remove the account entirely.
-6. Under GitHub repository Settings → Secrets and variables → Actions → Variables, set:
-   - `VITE_SUPABASE_URL`: project URL (`https://PROJECT.supabase.co`)
-   - `VITE_SUPABASE_PUBLISHABLE_KEY`: the project's **publishable** key (or legacy **anon** key).
+   No Docker is needed for hosted deployment. Alternatively, open [the project's Edge Functions](https://supabase.com/dashboard/project/yrqytwfpoksuefnvlwwp/functions), choose **Deploy a new function → Via Editor**, name it **league-login**, replace `index.ts` with the repository's `index.ts`, and add `handler.mjs` alongside it with the repository's contents. Deploy, then turn **Verify JWT with legacy secret** off for this function. It accepts signed-out visitors; the handler checks access before issuing a session. `supabase/config.toml` configures this for CLI deployment.
+2. Keep Supabase's **Email provider enabled**, because the backend uses Supabase Auth internally. No emails are sent and no SMTP setup is needed for this login flow. Keep public new-user signups disabled. Hosted functions already receive `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`. Do not paste a service-role key into GitHub variables, browser code, or chat.
+3. Use the password set when creating Dominick's Auth user (`3e52108b-bc6e-4aa1-9c5a-04c48b5cc0c5`). If forgotten, reset that existing user's password through Supabase administration; do not create a replacement commissioner user. The function looks up the commissioner through the existing database membership and never changes its password.
+4. Merge the PR and wait for [GitHub Actions](https://github.com/dac0009/FantasyFootballs/actions) to finish. The existing `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` repository variables stay as they are.
+5. Open [Owner account](https://dac0009.github.io/FantasyFootballs/account). Check owner sign-in with `Frank`, then sign out and check **Commissioner sign-in** with your private password. Owner sessions should expose only their own profile editor; commissioner sessions should expose **Open editing desk** and **Visual editor**. Share the account-page link with the league after both checks work.
 
-   These are intentionally public browser configuration. **Never use a secret/service-role key.** Database permissions are enforced independently of this key. No Supabase credentials have been committed.
-7. Merge this PR and run the Deploy to GitHub Pages workflow if needed. Open `/account`, sign in, and verify the smoke checks below.
+The frontend PR alone does not deploy an Edge Function. A “sign-in unavailable” message usually means the function has not been deployed, its JWT verification is still enabled, or the Email provider is disabled. Inspect the function logs without sharing tokens or passwords.
 
-Without these variables the public site continues normally and `/account` clearly says sign-in is not set up. No pretend authentication or local-only publishing is enabled.
+### Membership maintenance
+
+The surname roster is explicitly allowlisted in `supabase/functions/league-login/handler.mjs`. It covers the 11 current owners other than Dominick, including `frank → jakob-frank-2`. Update and redeploy it when league membership changes; changing a profile display name does not change sign-in.
+
+New owner Auth users have an internal address ending `@owners.ffbffl.invalid`; it is not a mailbox. All editing still goes through the existing row permissions and publishing function. The frontend cannot choose its owner ID or role. The login function only creates role `owner`, never promotes anyone, and never sends privileged credentials to the browser.
+
+If an owner already has a manually provisioned personal-email membership, the function stops with a setup message instead of silently taking over that account. To transition that owner, use the Supabase SQL editor to remove only their old `editor_memberships` row, leaving the old Auth user and revision history intact; then use surname sign-in to create their new profile-only account. This does not delete their published profile.
+
+To revoke a surname account, remove its membership **and leave its Auth user in place**. Repeat login will fail instead of recreating the membership. To permanently retire the owner, also remove their surname from the function roster and redeploy. Deleting both Auth user and membership while keeping the surname allowlisted enables first-time provisioning again. Restore a revoked account by restoring its original owner membership through the SQL editor.
+
+For a fresh project, run migrations `202610110001_editor.sql` and `202610110002_visual_editor.sql` in order, create the commissioner Auth user with a private password, assign its membership to `dominick-cifelli` with role `commissioner`, and set the two public GitHub variables before following the steps above.
 
 ## What is editable
 
 - Owners: their display name, short bio, league message, one of five card inks, and profile photo. Photos are center-cropped, resized to 480px and re-encoded as JPEG before being stored with their profile. This strips original metadata. Public profiles and photos are public content.
-- Commissioner: every owner profile and five text areas: front-page headline, introduction, announcement, owner-directory introduction, and masthead motto. Use **Edit site text**, then the outlined area's edit button.
+- Commissioner: every owner profile and the text/section controls listed in `/admin`. Use **Visual editor**, then the outlined area's edit button.
 - Display names are presentation overrides on profile cards and the card directory; canonical names in historical tables and owner IDs remain intact.
 - Blank text/name/ink restores the original default. A custom homepage headline stays in place across weekly updates until you clear it.
 - Preview before Publish. Drafts are saved explicitly in the current browser tab's session storage, scoped to your account. They are not shared drafts and disappear when that tab's session is cleared. Close without saving discards unsaved work.
@@ -44,9 +57,9 @@ Without these variables the public site continues normally and `/account` clearl
 4. Verify a second stale editor cannot overwrite a newer version; image upload, phone layout, keyboard controls, and sign-out work.
 5. An authenticated user without a membership must receive no editing access.
 
-Security behavior is also covered by `web/tests/editor-database.test.mjs`, which runs this migration against embedded PostgreSQL with simulated Supabase auth roles. Actual email delivery and project configuration still need the live checks above.
+Security behavior is also covered by `web/tests/editor-database.test.mjs`, which runs this migration against embedded PostgreSQL with simulated Supabase auth roles. Hosted function deployment and real sessions still need the live checks above. The login handler also has tests for surname mapping, commissioner isolation, revocation, and malformed requests.
 
-References: https://supabase.com/docs/guides/auth/auth-email-passwordless · https://supabase.com/docs/guides/auth/auth-smtp · https://supabase.com/docs/guides/database/postgres/row-level-security
+References: https://supabase.com/docs/reference/javascript/auth-admin-generatelink · https://supabase.com/docs/reference/javascript/auth-signinwithpassword · https://supabase.com/docs/guides/functions/quickstart-dashboard · https://supabase.com/docs/guides/database/postgres/row-level-security
 
 ## Visual editor upgrade (PR #7)
 
@@ -56,4 +69,4 @@ Commissioners can open `/admin` (or the Admin link above the page) to search all
 
 **Preview on page** closes the dialog and shows your unpublished change on the actual page. The toolbar labels it a private preview; Publish preview makes it public, and Discard preview reverts it. One page preview is supported at a time. Tab drafts and version history still work. Scores, calculated values, sign-in messages, metric definitions, and navigation behavior are not arbitrary editable HTML. This is a content/visibility editor, not a freeform drag-and-drop page builder.
 
-Owners continue to authenticate with their registered email; persistent sessions and the My profile shortcut reduce repeat sign-ins. Selecting a name alone is not authentication and has not been enabled. Owners remain restricted by database permissions to their own profile.
+Owners now use the surname entry described above; persistent sessions and the My profile shortcut reduce repeat sign-ins. Owners remain restricted by database permissions to their own profile.
