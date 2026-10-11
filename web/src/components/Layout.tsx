@@ -1,3 +1,4 @@
+import { EditableText, EditorToolbar } from "./Editorial";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
@@ -60,7 +61,7 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
           <Link to="/" className="nameplate">
             <span>{meta?.league.short_name ?? "League"}</span> The Record
           </Link>
-          <div className="masthead-motto">The owners. The rivalries.<br/>Every season on the record.</div>
+          <div className="masthead-motto"><EditableText id="masthead.motto" fallback="The owners. The rivalries. Every season on the record."/></div>
           <nav aria-label="Primary" className="main-nav">
             {NAV.map((item) => (
               <NavLink
@@ -126,6 +127,7 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
         </div>
       ) : null}
 
+      <EditorToolbar/>
       <main id="main">{children}</main>
 
       <footer

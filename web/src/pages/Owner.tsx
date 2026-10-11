@@ -1,3 +1,4 @@
+import { ProfileEditorial } from "../components/Editorial";
 import { OwnerAlmanac } from "../components/OwnerAlmanac";
 import { Link, useParams } from "react-router-dom";
 import { StatTable, type Column } from "../components/StatTable";
@@ -112,6 +113,7 @@ export default function Owner() {
 
   return (
     <div className="shell" style={{ paddingTop: "2.2rem" }}>
+      <ProfileEditorial ownerId={data.owner_id} name={data.name} />
       <OwnerAlmanac key={data.owner_id} owner={data} />
 
       {familiar ? <div className="rival-plate">

@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, HashRouter } from "react-router-dom";
+import { EditorialProvider } from "./components/Editorial";
 import App from "./App";
 import "./styles/app.css";
 
@@ -13,7 +14,7 @@ const routerProps = standalone ? {} : { basename: import.meta.env.BASE_URL };
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <Router {...routerProps}>
-      <App />
+      <EditorialProvider><App /></EditorialProvider>
     </Router>
   </React.StrictMode>,
 );

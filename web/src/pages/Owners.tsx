@@ -1,3 +1,4 @@
+import { EditableText, useEditorial } from "../components/Editorial";
 import { ownerInk } from "../lib/ownerInk";
 import { useState, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
@@ -10,6 +11,8 @@ import { pct, points, signed, signClass, total } from "../lib/format";
 import type { OwnerIndexRow } from "../lib/types";
 
 export default function Owners() {
+  const {documents}=useEditorial();
+  const profileFor=(id:string)=>documents.find(d=>d.kind==='profile'&&d.key===id)?.body;
   const owners = useOwnerIndex();
   const [view,setView] = useState<"cards"|"table">("cards");
   if (owners.state === "loading") return <Loading what="owners" />;
@@ -88,7 +91,7 @@ export default function Owners() {
     <div className="shell" style={{ paddingTop: "2.2rem" }}>
       <h1 style={{ fontSize: "clamp(1.8rem, 5vw, 2.6rem)" }}>Owners</h1>
       <p className="prose-narrow" style={{ marginTop: "0.6rem" }}>
-        Career records by owner · Regular season
+        <EditableText id="owners.intro" fallback="Career records by owner · Regular season"/>
       </p>
 
       <Band title="Current owners" note={`${active.length} owners`} />
@@ -96,10 +99,10 @@ export default function Owners() {
         <button className="pill" aria-pressed={view==='cards'} onClick={()=>setView('cards')}>Card collection</button>
         <button className="pill" aria-pressed={view==='table'} onClick={()=>setView('table')}>Records table</button>
       </div>
-      {view === 'cards' ? <div className="owner-collection">{active.map(owner=><Link to={`/owners/${owner.owner_id}`} className="collection-card" style={{"--card-ink":ownerInk(owner.owner_id)} as CSSProperties} key={owner.owner_id}>
+      {view === 'cards' ? <div className="owner-collection">{active.map(owner=><Link to={`/owners/${owner.owner_id}`} className="collection-card" style={{"--card-ink":profileFor(owner.owner_id)?.ink || ownerInk(owner.owner_id)} as CSSProperties} key={owner.owner_id}>
         <div className="collection-card-top"><span>FFBFFL</span><span>Since {owner.first_season}</span></div>
-        <div className="collection-monogram" aria-hidden="true">{owner.name.split(/\s+/).filter(Boolean).map(s=>s[0]).slice(0,2).join('').toUpperCase()}</div>
-        <h2>{owner.name}</h2><p>{owner.current_team_name}</p>
+        <div className="collection-monogram" aria-hidden="true">{profileFor(owner.owner_id)?.photo && <img src={profileFor(owner.owner_id)?.photo} alt=""/>}{owner.name.split(/\s+/).filter(Boolean).map(s=>s[0]).slice(0,2).join('').toUpperCase()}</div>
+        <h2>{profileFor(owner.owner_id)?.display_name || owner.name}</h2><p>{owner.current_team_name}</p>
         <div className="collection-record"><strong>{owner.record}</strong><span>{owner.championships?`${owner.championships} ${owner.championships===1?'title':'titles'}`:`${owner.seasons_played} seasons`}</span></div>
         <span className="collection-open">Open owner card →</span>
       </Link>)}</div> : <StatTable

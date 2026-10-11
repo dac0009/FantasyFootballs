@@ -120,7 +120,7 @@ cp .env.example .env
 
 ## Running it yourself
 
-You need Python 3.11+ and Node 20+.
+You need Python 3.11+ and Node 22+.
 
 ```bash
 # one-time setup
@@ -397,6 +397,10 @@ The original notebook has been kept at `notebooks/archive/`, with its credential
 saved output stripped out, because the ESPN endpoint discovery in it is genuinely useful history.
 
 ---
+
+## Owner accounts and text editing
+
+Owner profiles and commissioner text editing are available through an optional Supabase backend. Follow [the editor setup guide](docs/EDITOR_SETUP.md) to activate email sign-in, assign owners, and configure publishing. Without that configuration the public archive still works normally.
 
 ## Further reading
 
