@@ -1,3 +1,4 @@
+import { ScoreRanking } from "../components/charts/ScoreRanking";
 import { StandingsTable } from "../components/StandingsTable";
 import { AboveAverageGrid } from "../components/AboveAverage";
 import { DivergingBars } from "../components/charts/DivergingBars";
@@ -78,6 +79,8 @@ export function SeasonAnalytics({ data, title }: { data: SeasonPayload; title: s
       <Band title="Standings and advanced metrics" note="Switch views, or sort any column" />
       <StandingsTable rows={standings} season={data.season} />
 
+      <Band title="The scoring race" note="Average points per game" />
+      <ScoreRanking rows={standings.filter(r=>r.avg_score!==null).map(r=>({id:r.owner_id,name:r.team_name ?? r.owner_id,score:r.avg_score!}))} mean={data.league_scoring.mean ?? 0} caption="Regular-season scoring" />
       <Band
         title="Points for against points against"
         note="The quadrant a team sits in says more than its record"
@@ -108,8 +111,11 @@ export function SeasonAnalytics({ data, title }: { data: SeasonPayload; title: s
           negativeLabel="Unlucky"
           positiveLabel="Lucky"
         />
-        <AboveAverageGrid rows={aboveAverage} />
+
       </div>
+
+      <Band title="Every team, every week" note="Points relative to the weekly league average" />
+      <AboveAverageGrid rows={aboveAverage} />
 
       <Band title="Weekly scoring" note="Select a team to isolate its line" />
       <div style={{ marginTop: "1rem" }}>
@@ -154,7 +160,7 @@ export function SeasonAnalytics({ data, title }: { data: SeasonPayload; title: s
 
       <style>{`
         .season-split { display: grid; gap: 1.8rem; }
-        @media (min-width: 1000px) { .season-split { grid-template-columns: 1fr 1fr; align-items: start; } }
+        @media (min-width: 1000px) { .season-split { grid-template-columns: 1fr; align-items: start; } }
         .leader-grid { display: grid; gap: 1.6rem 2rem; margin-top: 1.2rem; grid-template-columns: 1fr; }
         @media (min-width: 620px) { .leader-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (min-width: 980px) { .leader-grid { grid-template-columns: repeat(4, 1fr); } }

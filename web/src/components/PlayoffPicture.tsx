@@ -45,9 +45,9 @@ export function PlayoffPicture({ picture }: { picture: Picture }) {
         </table>
       </div>
       <p style={{ color: "var(--ink-faint)", fontSize: "0.78rem", marginTop: "0.6rem" }}>
-        {cut} make the playoffs{picture.byes ? `, top ${picture.byes} get a bye` : ""}; the ember
-        rule is the cut. Odds from {picture.simulations.toLocaleString("en-US")} simulated finishes
-        of the {picture.remaining_regular_season_games} remaining games.
+        {cut} make the playoffs{picture.byes ? `, top ${picture.byes} get a bye` : ""}; teams are ordered by estimated playoff chance. The blue
+        rule marks the top {cut} estimates, not clinched places. Odds from {picture.simulations.toLocaleString("en-US")} simulated finishes
+        of the {picture.remaining_regular_season_games} remaining games. These are estimates, not official clinching scenarios.
       </p>
     </div>
   );
@@ -55,7 +55,7 @@ export function PlayoffPicture({ picture }: { picture: Picture }) {
 
 function Row({ team, picture, isCut }: { team: PlayoffTeam; picture: Picture; isCut: boolean }) {
   const swing = team.this_week;
-  const settled = team.status !== "alive";
+  const settled = picture.remaining_regular_season_games === 0;
   return (
     <tr style={isCut ? { borderBottom: "3px solid var(--ember)" } : undefined}>
       <td style={{ textAlign: "left" }}>
@@ -71,7 +71,7 @@ function Row({ team, picture, isCut }: { team: PlayoffTeam; picture: Picture; is
             color: settled ? "var(--ink-faint)" : "var(--ink)",
           }}
         >
-          {team.status === "clinched" ? "In" : team.status === "eliminated" ? "Out" : pctLabel(team.playoff_pct)}
+          {settled ? (team.playoff_pct >= 0.5 ? "In" : "Out") : pctLabel(team.playoff_pct)}
         </span>
         <span className="cell-bar" style={{ marginTop: "0.28rem" }}>
           <span

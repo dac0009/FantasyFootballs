@@ -22,7 +22,8 @@ import type { StandingsRow } from "../../lib/types";
 export function QuadrantScatter({ rows }: { rows: StandingsRow[] }) {
   const data = rows
     .filter((r) => r.points_for !== null && r.points_against !== null)
-    .map((r) => ({
+    .map((r, index) => ({
+      number: index+1,
       x: r.points_for as number,
       y: r.points_against as number,
       name: r.team_name ?? r.owner_id,
@@ -57,7 +58,7 @@ export function QuadrantScatter({ rows }: { rows: StandingsRow[] }) {
       stroke="none"
       fill={fill ?? "transparent"}
       fillOpacity={fill ? 0.07 : 0}
-      label={{ value: text, fill: CHART.axis, fontSize: 10.5, position: "center" }}
+
     />
   );
 
@@ -138,7 +139,7 @@ export function QuadrantScatter({ rows }: { rows: StandingsRow[] }) {
             strokeWidth={1}
             fillOpacity={0.85}
             label={{
-              dataKey: "name",
+              dataKey: "number",
               position: "top",
               fill: CHART.text,
               fontSize: 10.5,
@@ -147,6 +148,9 @@ export function QuadrantScatter({ rows }: { rows: StandingsRow[] }) {
           />
         </ScatterChart>
       </ResponsiveContainer>
+      <ol style={{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:".3rem 2rem",paddingLeft:"1.3rem",fontSize:".75rem",color:"var(--ink-soft)"}}>
+        {data.map(d=><li key={d.name}>{d.name} · {d.record}</li>)}
+      </ol>
     </div>
   );
 }

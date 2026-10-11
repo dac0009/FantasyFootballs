@@ -1,154 +1,27 @@
 import { OwnerLink } from "./primitives";
+interface Week { week: number; diff: number; beat: boolean; won: boolean; tied: boolean }
+interface TeamRow { ownerId: string; name: string; record: string; weeks: Week[]; beats: number; total: number; aboveRecord: string }
 
-interface Week {
-  week: number;
-  diff: number;
-  beat: boolean;
-  won: boolean;
-  tied: boolean;
-}
-
-interface TeamRow {
-  ownerId: string;
-  name: string;
-  record: string;
-  weeks: Week[];
-  beats: number;
-  total: number;
-  aboveRecord: string;
-}
-
-/**
- * The novel one: every team as a strip of week cells. An ember cell means the
- * team outscored the league average that week; a faint cell means it didn't.
- * A small tick under each cell marks the actual game result. Read together you
- * can see "scored well, lost anyway" (ember cell, loss tick) and "scraped a
- * win on a bad week" (faint cell, win tick) at a glance -- the why behind the
- * schedule-luck number, the whole league in one block.
- */
-export function AboveAverageGrid({ rows }: { rows: TeamRow[] }) {
-  const maxWeeks = rows.reduce((m, r) => Math.max(m, r.total), 0);
-  if (!maxWeeks) {
-    return (
-      <p style={{ color: "var(--ink-faint)", fontSize: "0.88rem" }}>
-        No completed weeks yet this season.
-      </p>
-    );
-  }
-  return (
-    <div>
-      <div className="aa-head" aria-hidden="true">
-        <span />
-        <span className="aa-weeknums">
-          {Array.from({ length: maxWeeks }, (_, i) => (
-            <span key={i}>{i + 1}</span>
-          ))}
-        </span>
-        <span className="aa-reclabel">vs avg</span>
-      </div>
-      <ul className="aa-list">
-        {rows.map((row) => (
-          <li key={row.ownerId} className="aa-row">
-            <span className="aa-name">
-              <OwnerLink ownerId={row.ownerId}>{row.name}</OwnerLink>
-            </span>
-            <span className="aa-cells">
-              {row.weeks.map((w) => (
-                <span
-                  key={w.week}
-                  className={`aa-cell${w.beat ? " aa-beat" : ""}`}
-                  title={`Week ${w.week}: ${w.beat ? "beat" : "below"} the league average by ${Math.abs(
-                    w.diff,
-                  ).toFixed(1)}, ${w.won ? "won" : w.tied ? "tied" : "lost"}`}
-                >
-                  <span className={`aa-tick${w.won ? " aa-won" : w.tied ? " aa-tied" : ""}`} />
-                </span>
-              ))}
-              {Array.from({ length: maxWeeks - row.total }, (_, i) => (
-                <span key={`pad-${i}`} className="aa-cell aa-empty" />
-              ))}
-            </span>
-            <span className="aa-rec">
-              <b>{row.aboveRecord}</b>
-              <span className="aa-real">{row.record} real</span>
-            </span>
-          </li>
-        ))}
-      </ul>
-      <p className="aa-key">
-        <span className="aa-swatch aa-beat" /> beat the league average that week
-        <span className="aa-swatch" style={{ marginLeft: "1rem" }} /> below it
-        <span style={{ marginLeft: "1rem" }}>
-          <span className="aa-tick aa-won aa-inline" /> won
-          <span className="aa-tick aa-inline" style={{ marginLeft: "0.5rem" }} /> lost
-        </span>
-      </p>
-
-      <style>{`
-        .aa-head {
-          display: grid;
-          grid-template-columns: minmax(7rem, 11rem) 1fr 4.2rem;
-          gap: 0 0.7rem;
-          align-items: end;
-          margin-bottom: 0.4rem;
-        }
-        .aa-weeknums { display: flex; gap: 2px; }
-        .aa-weeknums span {
-          flex: 1; text-align: center; font-size: 0.64rem; color: var(--ink-faint);
-          font-variant-numeric: tabular-nums;
-        }
-        .aa-reclabel { font-size: 0.64rem; color: var(--ink-faint); text-align: right; }
-        .aa-list { list-style: none; padding: 0; margin: 0; }
-        .aa-row {
-          display: grid;
-          grid-template-columns: minmax(7rem, 11rem) 1fr 4.2rem;
-          gap: 0 0.7rem;
-          align-items: center;
-          padding: 0.28rem 0;
-          border-bottom: 1px solid var(--rule-soft);
-        }
-        .aa-name {
-          font-size: 0.82rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
-        }
-        .aa-cells { display: flex; gap: 2px; }
-        .aa-cell {
-          flex: 1; aspect-ratio: 1 / 1; min-width: 0;
-          background: var(--rule);
-          display: flex; align-items: flex-end; justify-content: center;
-          position: relative;
-        }
-        .aa-cell.aa-beat { background: var(--ember); }
-        .aa-cell.aa-empty { background: transparent; }
-        .aa-tick {
-          width: 60%; height: 2px; margin-bottom: 1px;
-          background: var(--ink-faint);
-        }
-        .aa-tick.aa-won { background: var(--ink); }
-        .aa-tick.aa-tied { background: var(--ink-soft); }
-        .aa-beat .aa-tick { background: rgba(18, 14, 11, 0.45); }
-        .aa-beat .aa-tick.aa-won { background: var(--paper-deep); }
-        .aa-rec {
-          text-align: right; display: flex; flex-direction: column; line-height: 1.1;
-        }
-        .aa-rec b {
-          font-family: var(--font-display); font-weight: 700; font-size: 1rem;
-          font-variant-numeric: lining-nums tabular-nums;
-        }
-        .aa-real { font-size: 0.64rem; color: var(--ink-faint); }
-        .aa-key {
-          display: flex; align-items: center; flex-wrap: wrap; gap: 0.3rem;
-          margin-top: 0.7rem; font-size: 0.74rem; color: var(--ink-faint);
-        }
-        .aa-swatch {
-          display: inline-block; width: 0.8rem; height: 0.8rem; background: var(--rule);
-          margin-right: 0.3rem; vertical-align: -1px;
-        }
-        .aa-swatch.aa-beat { background: var(--ember); }
-        .aa-tick.aa-inline {
-          display: inline-block; width: 0.8rem; height: 2px; vertical-align: 3px;
-          margin-right: 0.3rem;
-        }
-      `}</style>
-    </div>
-  );
+/** Small multiples use one shared scale; no expanding tiles or hidden result ticks. */
+export function AboveAverageGrid({rows}: {rows: TeamRow[]}) {
+  const weeks = [...new Set(rows.flatMap(row=>row.weeks.map(w=>w.week)))].sort((a,b)=>a-b);
+  if (!weeks.length) return <p>No completed weeks yet.</p>;
+  const limit = Math.ceil(Math.max(10,...rows.flatMap(row=>row.weeks.map(w=>Math.abs(w.diff))))/10)*10;
+  const step = 264/weeks.length;
+  return <div>
+    <p className="figure-label">Points above or below that week's league average. All teams share a ±{limit}-point scale. W/L/T shows the actual game result.</p>
+    <div className="weekly-multiples">{rows.map(row=><section className="weekly-mini" key={row.ownerId}>
+      <div className="weekly-mini-head"><OwnerLink ownerId={row.ownerId}>{row.name}</OwnerLink><span>{row.record}</span></div>
+      <svg viewBox="0 0 300 150" role="img" aria-label={`${row.name}: ${row.weeks.map(w=>`week ${w.week}, ${w.diff.toFixed(1)} points versus average, ${w.won?'won':w.tied?'tied':'lost'}`).join('; ')}`}>
+        <line x1="28" x2="296" y1="66" y2="66" stroke="var(--rule)"/>
+        <text x="0" y="69" fontSize="9" fill="var(--ink-faint)">0</text>
+        {row.weeks.map(w=>{const x=30+weeks.indexOf(w.week)*step, height=Math.abs(w.diff)/limit*43;
+          return <g key={w.week}><rect x={x+step*.2} y={w.diff>=0?66-height:66} width={step*.6} height={Math.max(height,1)} fill={w.diff>=0?'var(--ember)':'#a88572'}/>
+            <text x={x+step*.5} y={w.diff>=0?60-height:78+height} textAnchor="middle" fontSize="9" fill="var(--ink)">{w.diff>0?'+':''}{w.diff.toFixed(0)}</text>
+            <text x={x+step*.5} y="135" textAnchor="middle" fontSize="9" fill="var(--ink-faint)">{w.week}</text>
+            <text x={x+step*.5} y="147" textAnchor="middle" fontSize="9" fill="var(--ink)">{w.won?'W':w.tied?'T':'L'}</text></g>})}
+      </svg>
+    </section>)}</div>
+    <style>{`.weekly-multiples{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.2rem 2rem;margin-top:1rem}.weekly-mini{border-top:1px solid var(--rule);padding-top:.6rem;min-width:0}.weekly-mini-head{display:flex;justify-content:space-between;gap:.5rem;font-size:.8rem}.weekly-mini-head>a{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.weekly-mini-head>span{white-space:nowrap;color:var(--ink-faint)}.weekly-mini svg{display:block;width:100%;height:auto;max-height:160px}@media(max-width:800px){.weekly-multiples{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:480px){.weekly-multiples{grid-template-columns:1fr}.weekly-mini svg{max-height:145px}}`}</style>
+  </div>;
 }

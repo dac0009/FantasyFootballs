@@ -1,7 +1,7 @@
 {
   "generated_at": "2026-10-09T15:48:06+00:00",
   "files": {
-    "current.json": 30673,
+    "current.json": 43194,
     "drafts/2019.json": 44419,
     "drafts/2020.json": 32196,
     "drafts/2021.json": 45060,
@@ -10,7 +10,7 @@
     "drafts/2024.json": 39308,
     "drafts/2025.json": 39469,
     "drafts/2026.json": 38781,
-    "game_of_week.json": 6122,
+    "game_of_week.json": 9345,
     "head_to_head.json": 606282,
     "matchups.json": 336547,
     "meta.json": 12622,
@@ -59,7 +59,8 @@
     "seasons/2025.json": 217455,
     "seasons/2026.json": 93021,
     "team_weeks.json": 495406,
-    "transactions/2026.json": 35901
+    "transactions/2026.json": 35901,
+    "playoffs.json": 9350
   },
-  "total_bytes": 8325474
+  "total_bytes": 8350568
 }
