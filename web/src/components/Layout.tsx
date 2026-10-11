@@ -48,17 +48,19 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
       </a>
       <header className="site-header"
         style={{
-          position: "sticky",
+          position: "relative",
           top: 0,
           zIndex: 20,
           backgroundColor: "var(--paper-deep)",
           paddingTop: "var(--safe-top)",
         }}
       >
+        <div className="shell publication-folio"><span>The fantasy football journal</span><span>{meta ? `${meta.seasons[0]}–${meta.seasons[meta.seasons.length-1]}` : 'League archive'} / The digital edition</span></div>
         <div className="shell masthead">
           <Link to="/" className="nameplate">
-            {meta?.league.short_name ?? "League"}
+            <span>{meta?.league.short_name ?? "League"}</span> The Record
           </Link>
+          <div className="masthead-motto">The owners. The rivalries.<br/>Every season on the record.</div>
           <nav aria-label="Primary" className="main-nav">
             {NAV.map((item) => (
               <NavLink
