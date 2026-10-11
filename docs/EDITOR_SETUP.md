@@ -70,3 +70,13 @@ Commissioners can open `/admin` (or the Admin link above the page) to search all
 **Preview on page** closes the dialog and shows your unpublished change on the actual page. The toolbar labels it a private preview; Publish preview makes it public, and Discard preview reverts it. One page preview is supported at a time. Tab drafts and version history still work. Scores, calculated values, sign-in messages, metric definitions, and navigation behavior are not arbitrary editable HTML. This is a content/visibility editor, not a freeform drag-and-drop page builder.
 
 Owners now use the surname entry described above; persistent sessions and the My profile shortcut reduce repeat sign-ins. Owners remain restricted by database permissions to their own profile.
+
+## Confirming publication and managing profiles
+
+Open `/admin` as commissioner. **Saved on the live site** lists saved document versions and publication timestamps, separate from private previews. **Refresh saved content** reads the current records directly from Supabase and reports failures. The list is publication activity, not a login audit or editor attribution log.
+
+**Owners & sign-in** lists each current owner, their surname entry, and the last published profile edit. Click an owner to edit their profile; select the share text to copy all owner sign-in names and the account link. There are no separate owner passwords to retrieve. Commissioner access uses the existing private Auth password; the site does not reveal or reset it. Disabling accounts still requires the Supabase membership procedure above.
+
+**Publish changes** is available directly in the editor. It writes to Supabase and reads the record back before displaying a verified save with timestamp/version. If the write is acknowledged but read-back fails, the editor preserves the acknowledged version and tells you to verify in Admin. It never treats a failed write as saved. **Save tab draft** stores only a private draft in the current browser tab. **Preview on page** also remains private until published. No GitHub push is needed for content publications.
+
+Live verification: publish one intended change, note the saved version/time, close the dialog, click Refresh saved content in Admin, and open the public page in a private/incognito window. The same published content should appear there. If publication errors, keep the editor open and copy the exact error. Never send your commissioner password.
