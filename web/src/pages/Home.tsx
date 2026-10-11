@@ -1,3 +1,4 @@
+import { EditableText } from "../components/Editorial";
 import { ScoreRanking } from "../components/charts/ScoreRanking";
 import { Link } from "react-router-dom";
 import { GameOfWeekPanel } from "../components/GameOfWeekPanel";
@@ -36,13 +37,7 @@ export default function Home({ meta }: { meta: Meta }) {
             The {data.season} season, {meta.league.name}
           </p>
           <h1 style={{ fontSize: "clamp(1.8rem, 5vw, 2.6rem)", marginTop: "0.25rem" }}>
-            {week ? `Week ${week.week} is in the books` : "Preseason"}
-            {data.upcoming_week ? (
-              <span style={{ color: "var(--color-low)", fontWeight: 500 }}>
-                {" "}
-                — week {data.upcoming_week} next
-              </span>
-            ) : null}
+            <EditableText id="home.headline" fallback={week ? `Week ${week.week} is in the books${data.upcoming_week ? ` — week ${data.upcoming_week} next` : ''}` : 'Preseason'}/>
           </h1>
         </div>
         <ShareButton
@@ -52,6 +47,8 @@ export default function Home({ meta }: { meta: Meta }) {
         />
       </div>
 
+      <EditableText id="home.intro" fallback="" as="p"/>
+      <EditableText id="home.announcement" fallback="" as="p"/>
       <p><Link to="/playoffs" className="pill" style={{display:"inline-block",textDecoration:"none",marginTop:"1rem"}}>Open playoff explorer →</Link></p>
 
       {picture ? (

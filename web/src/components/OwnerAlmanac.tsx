@@ -1,4 +1,5 @@
 import { useState, type CSSProperties, type PointerEvent } from "react";
+import { useEditorial } from "./Editorial";
 import { ownerInk } from "../lib/ownerInk";
 import { OwnerCareerAtlas } from "./OwnerCareerAtlas";
 import { Metric, OwnerLink, WeekLink } from "./primitives";
@@ -7,6 +8,9 @@ import type { OwnerPayload } from "../lib/types";
 import "../styles/almanac.css";
 
 export function OwnerAlmanac({ owner }: { owner: OwnerPayload }) {
+  const { documents } = useEditorial();
+  const profile = documents.find(d=>d.kind==='profile' && d.key===owner.owner_id)?.body;
+  const displayName = profile?.display_name || owner.name;
   const games = [...owner.weekly_history].sort((a,b)=>a.season-b.season||a.week-b.week||a.matchup_id.localeCompare(b.matchup_id));
   const [year,setYear] = useState("all");
   const [selected,setSelected] = useState(games[games.length-1]?.matchup_id ?? "");
@@ -16,7 +20,7 @@ export function OwnerAlmanac({ owner }: { owner: OwnerPayload }) {
   const position = active ? visible.indexOf(active) : 0;
   const season = year === 'all' ? null : owner.seasons_detail.find(s=>String(s.season)===year);
   const summary = season ?? owner;
-  const initials = owner.name.split(/\s+/).filter(Boolean).map(s=>s[0]).slice(0,2).join('').toUpperCase();
+  const initials = displayName.split(/\s+/).filter(Boolean).map(s=>s[0]).slice(0,2).join('').toUpperCase();
   const titleYears = owner.seasons_detail.filter(s=>s.is_champion).map(s=>s.season);
   const traceMax = Math.max(1,...visible.map(g=>g.score));
   const trace = visible.map((g,i)=>`${12+i/Math.max(visible.length-1,1)*336},${162-g.score/traceMax*132}`).join(' ');
@@ -41,7 +45,7 @@ export function OwnerAlmanac({ owner }: { owner: OwnerPayload }) {
     chooseGame(Math.round(Math.max(0,Math.min(1,fraction))*(visible.length-1)));
   }
   function chooseGame(index: number) { const game=visible[index]; if(game)setSelected(game.matchup_id); }
-  return <section style={{"--card-ink":ownerInk(owner.owner_id)} as CSSProperties} className="owner-almanac" aria-label={`${owner.name} owner card`}>
+  return <section style={{"--card-ink":profile?.ink || ownerInk(owner.owner_id)} as CSSProperties} className="owner-almanac" aria-label={`${owner.name} owner card`}>
     <div className="almanac-folio"><span>The owners’ collection</span><span>FFBFFL / Est. 2019</span></div>
     <div className="almanac-opening">
       <div className="owner-card-wrap" onPointerMove={tilt} onPointerLeave={e=>{e.currentTarget.style.setProperty('--tilt-x','0deg');e.currentTarget.style.setProperty('--tilt-y','0deg');}}>
@@ -50,6 +54,7 @@ export function OwnerAlmanac({ owner }: { owner: OwnerPayload }) {
           <div className="card-face card-front" ref={node=>{if(node)node.inert=back;}} aria-hidden={back}>
           <div className="card-topline"><span>FFBFFL / Owners</span><span>{year==='all'?'Career edition':`${year} edition`}</span></div>
             <div className="card-art">
+              {profile?.photo && <img className="card-portrait" src={profile.photo} alt=""/>}
               <span className="card-art-label">THE LEAGUE / PLAYER ARCHIVE</span>
               <div className="card-monogram">{initials}</div>
               <svg className="card-signature" viewBox="0 0 360 180" preserveAspectRatio="none"
@@ -60,11 +65,11 @@ export function OwnerAlmanac({ owner }: { owner: OwnerPayload }) {
                 onKeyDown={e=>{if(['ArrowLeft','ArrowDown','ArrowRight','ArrowUp','Home','End'].includes(e.key)){e.preventDefault();chooseGame(e.key==='Home'?0:e.key==='End'?visible.length-1:Math.max(0,Math.min(visible.length-1,position+(['ArrowLeft','ArrowDown'].includes(e.key)?-1:1))));}}}><polyline points={trace} fill="none" stroke="currentColor" strokeWidth="1.5"/>{active && <circle cx={12+position/Math.max(visible.length-1,1)*336} cy={162-active.score/traceMax*132} r="4" fill="currentColor"/>}</svg>
               <span className="card-tenure">EST. {owner.first_season ?? '—'}</span><span className="card-seal">{owner.championships}<small>TITLES</small></span>
             </div>
-            <div className="card-identity"><span>OWNER / {year==='all'?`${owner.seasons_played} SEASONS`:year}</span><h1>{owner.name}</h1><p>{season?.team_name ?? owner.current_team_name ?? 'League archive'}</p></div>
+            <div className="card-identity"><span>OWNER / {year==='all'?`${owner.seasons_played} SEASONS`:year}</span><h1>{displayName}</h1><p>{season?.team_name ?? owner.current_team_name ?? 'League archive'}</p></div>
             <div className="card-stats"><div><b>{summary.record}</b><span>Record</span></div><div><b>{pct(summary.win_pct)}</b><span>Win rate</span></div><div><b>{points(summary.avg_score,1)}</b><span>Pts / game</span></div></div>
             <div className="card-honors">{year==='all' ? (titleYears.length?`Champion · ${titleYears.join(' / ')}`:'The career collection') : season?.is_champion?'League champion':season?.final_rank?`${ordinal(season.final_rank)} finish`:'Season in progress'}<span>Regular-season statistics</span></div>
           </div><div className="card-face card-back" ref={node=>{if(node)node.inert=!back;}} aria-hidden={!back}><div className="card-topline"><span>FFBFFL / Record office</span><span>{year==='all'?'Career':year}</span></div><div className="card-reverse">
-            <span className="card-overline">The back of the card</span><h2>{owner.name}</h2><p>{year==='all'?'Career totals':`${year} season`} · Regular season</p>
+            <span className="card-overline">The back of the card</span><h2>{displayName}</h2><p>{year==='all'?'Career totals':`${year} season`} · Regular season</p>
             <dl><div><dt>Record</dt><dd>{summary.record}</dd></div><div><dt>Points for</dt><dd>{total(summary.points_for)}</dd></div><div><dt>Points against</dt><dd>{total(summary.points_against)}</dd></div><div><dt>Points / game</dt><dd>{points(summary.avg_score,1)}</dd></div><div><dt><Metric name="all_play">All-play</Metric></dt><dd>{pct(summary.all_play_win_pct)}</dd></div><div><dt>{season?'Finish':'Best finish'}</dt><dd>{ordinal(season?.final_rank ?? (year==='all'?owner.best_finish:null))}</dd></div></dl>
             <div className="card-reverse-note">{year==='all'?`${owner.championships} titles · ${owner.playoff_appearances} playoff appearances`:season?.is_champion?'League champion':season?.made_playoffs?'Playoff appearance':'Season record'}<span>{owner.first_season}–{owner.last_season}</span></div>
           </div></div>

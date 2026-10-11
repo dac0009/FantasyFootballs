@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { ErrorState, Loading } from "./components/primitives";
 import { useMeta } from "./lib/data";
+import Account from "./pages/Account";
 import Playoffs from "./pages/Playoffs";
 import Home from "./pages/Home";
 import CurrentSeason from "./pages/CurrentSeason";
@@ -38,6 +39,7 @@ export default function App() {
   return (
     <Layout meta={meta.data}>
       <Routes>
+        <Route path="/account" element={<Account />} />
         <Route path="/" element={<Home meta={meta.data} />} />
         <Route path="/playoffs" element={<Playoffs />} />
         <Route path="/season" element={<CurrentSeason meta={meta.data} />} />
