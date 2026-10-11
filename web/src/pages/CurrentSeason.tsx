@@ -1,3 +1,4 @@
+import { EditableText } from "../components/Editorial";
 import { ScoreRanking } from "../components/charts/ScoreRanking";
 import { StandingsTable } from "../components/StandingsTable";
 import { AboveAverageGrid } from "../components/AboveAverage";
@@ -75,21 +76,21 @@ export function SeasonAnalytics({ data, title }: { data: SeasonPayload; title: s
         {" "}Regular-season statistics.
       </p>
 
-      <Band title="Standings and advanced metrics" note="Switch views, or sort any column" />
+      <Band title={<EditableText id="site.current-season.309540999a" fallback="Standings and advanced metrics"/>}  note={<EditableText id="site.current-season.72d75f378e" fallback="Switch views, or sort any column"/>}  />
       <StandingsTable rows={standings} season={data.season} />
 
-      <Band title="The scoring race" note="Average points per game" />
+      <Band title={<EditableText id="site.current-season.4f5e312460" fallback="The scoring race"/>}  note={<EditableText id="site.current-season.6000f5f95e" fallback="Average points per game"/>}  />
       <ScoreRanking rows={standings.filter(r=>r.avg_score!==null).map(r=>({id:r.owner_id,name:r.team_name ?? r.owner_id,score:r.avg_score!}))} mean={data.league_scoring.mean ?? 0} caption="Regular-season scoring" />
       <Band
-        title="Points for against points against"
-        note="The quadrant a team sits in says more than its record"
+        title={<EditableText id="site.current-season.7231f925cb" fallback="Points for against points against"/>}
+        note={<EditableText id="site.current-season.248ce2b699" fallback="The quadrant a team sits in says more than its record"/>}
       />
       <div style={{ marginTop: "1rem" }}>
         <QuadrantScatter rows={standings} />
       </div>
 
       <Band
-        title="Record versus the league"
+        title={<EditableText id="site.current-season.4ead4c84c6" fallback="Record versus the league"/>}
         note={
           <>
             <Metric name="schedule_luck">Schedule luck</Metric>, and every team's week-by-week
@@ -113,15 +114,15 @@ export function SeasonAnalytics({ data, title }: { data: SeasonPayload; title: s
 
       </div>
 
-      <Band title="Every team, every week" note="Points relative to the weekly league average" />
+      <Band title={<EditableText id="site.current-season.0bc30f84f8" fallback="Every team, every week"/>}  note={<EditableText id="site.current-season.ead0f2d10e" fallback="Points relative to the weekly league average"/>}  />
       <AboveAverageGrid rows={aboveAverage} />
 
-      <Band title="Weekly scoring" note="Select a team to isolate its line" />
+      <Band title={<EditableText id="site.current-season.b5ec543fe5" fallback="Weekly scoring"/>}  note={<EditableText id="site.current-season.985d56387d" fallback="Select a team to isolate its line"/>}  />
       <div style={{ marginTop: "1rem" }}>
         <WeeklyLines data={lineData} teams={teams} leagueMean={data.league_scoring.mean} />
       </div>
 
-      <Band title="Season leaders" note="Top five in each category" />
+      <Band title={<EditableText id="site.current-season.bc54c90b38" fallback="Season leaders"/>}  note={<EditableText id="site.current-season.c170d8a1b4" fallback="Top five in each category"/>}  />
       <div className="leader-grid">
         {data.leaders.map((board) => (
           <section key={board.id}>

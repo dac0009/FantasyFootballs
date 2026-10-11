@@ -56,12 +56,12 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
           paddingTop: "var(--safe-top)",
         }}
       >
-        <div className="shell publication-folio"><span>The fantasy football journal</span><span>{meta ? `${meta.seasons[0]}–${meta.seasons[meta.seasons.length-1]}` : 'League archive'} / The digital edition</span></div>
+        <div className="shell publication-folio"><span><EditableText id="masthead.folio" fallback="Fantasy football"/></span><span>{meta ? `${meta.seasons[0]}–${meta.seasons[meta.seasons.length-1]}` : 'League archive'} / The digital edition</span></div>
         <div className="shell masthead">
-          <Link to="/" className="nameplate">
-            <span>{meta?.league.short_name ?? "League"}</span> The Record
-          </Link>
-          <div className="masthead-motto"><EditableText id="masthead.motto" fallback="The owners. The rivalries. Every season on the record."/></div>
+          <div className="nameplate">
+            <span><Link to="/">{meta?.league.short_name ?? "League"}</Link></span> <EditableText id="masthead.title" fallback="The Record"/>
+          </div>
+          <div className="masthead-motto"><EditableText id="masthead.motto" fallback=""/></div>
           <nav aria-label="Primary" className="main-nav">
             {NAV.map((item) => (
               <NavLink

@@ -1,3 +1,4 @@
+import { EditableText } from "./Editorial";
 import { useState } from "react";
 import { Band, Metric, OwnerLink, WeekLink } from "./primitives";
 import { gameTypeLabel, points, signed } from "../lib/format";
@@ -32,7 +33,7 @@ export function OwnerCareerAtlas({ owner, year, setYear, selected, setSelected }
   const position = visible.indexOf(active);
   function move(offset:number) { const next=visible[Math.max(0,Math.min(visible.length-1,position+offset))]; setSelected(key(next)); }
   return <section className="career-atlas" aria-label={`${owner.name} interactive career atlas`}>
-    <Band title="Career atlas" note={<Metric name="career_atlas">Explore every game</Metric>} />
+    <Band title={<EditableText id="site.owner-career-atlas.f088727463" fallback="Career atlas"/>}  note={<Metric name="career_atlas">Explore every game</Metric>} />
     <div className="atlas-controls">
       <div className="pill-row" role="group" aria-label="Chart measure">
         <button className="pill" aria-pressed={mode==='margin'} onClick={()=>setMode('margin')}>Winning margin</button>

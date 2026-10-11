@@ -1,3 +1,4 @@
+import { EditableText } from "../components/Editorial";
 import { Link, useParams } from "react-router-dom";
 import { Scoreboard } from "../components/Scoreboard";
 import { Band, Empty, ErrorState, Figure, Loading, OwnerLink } from "../components/primitives";
@@ -17,9 +18,7 @@ export default function Season() {
   return (
     <div>
       <div className="shell" style={{ paddingTop: "2.2rem" }}>
-        <p style={{ color: "var(--color-brass)", fontSize: "0.82rem", fontWeight: 600, margin: 0 }}>
-          Season archive
-        </p>
+        <p style={{ color: "var(--color-brass)", fontSize: "0.82rem", fontWeight: 600, margin: 0 }}><EditableText id="site.season.3f4b988f74" fallback="Season archive"/></p>
         <h1 style={{ fontSize: "clamp(2rem, 7vw, 3.4rem)", marginTop: "0.4rem" }}>
           {data.season}
           {data.meta.league_name ? (
@@ -68,7 +67,7 @@ export default function Season() {
 
         {data.bracket.has_playoffs ? (
           <>
-            <Band title="Postseason" note={`Champion determined from ${data.champion_source ?? "ESPN"}`} />
+            <Band title={<EditableText id="site.season.d5c387bd16" fallback="Postseason"/>}  note={`Champion determined from ${data.champion_source ?? "ESPN"}`} />
             <div className="bracket">
               {data.bracket.rounds.map((round) => (
                 <section key={round.week}>
@@ -90,8 +89,8 @@ export default function Season() {
         ) : null}
 
         <Band
-          title="Weeks"
-          note="Every scheduled week this season"
+          title={<EditableText id="site.season.7d75266a53" fallback="Weeks"/>}
+          note={<EditableText id="site.season.db7921b694" fallback="Every scheduled week this season"/>}
           action={
             <div className="pill-row">
               {data.scheduled_weeks.map((week) => (
@@ -109,7 +108,7 @@ export default function Season() {
         />
         {!data.completed_weeks.length ? <Empty>No games have been played yet.</Empty> : null}
 
-        <Band title="Final standings" note="Where ESPN ranked each team at the end of the season" />
+        <Band title={<EditableText id="site.season.191f4bfb21" fallback="Final standings"/>}  note={<EditableText id="site.season.a8dc4be9da" fallback="Where ESPN ranked each team at the end of the season"/>}  />
         <ol style={{ listStyle: "none", padding: 0, margin: 0 }}>
           {[...data.standings]
             .filter((r) => r.final_rank)

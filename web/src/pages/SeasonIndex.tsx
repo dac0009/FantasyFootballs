@@ -1,3 +1,4 @@
+import { EditableText } from "../components/Editorial";
 import { Link } from "react-router-dom";
 import { Band, ErrorState, Loading, OwnerLink } from "../components/primitives";
 import { useSeasonIndex } from "../lib/data";
@@ -12,13 +13,10 @@ export default function SeasonIndex() {
 
   return (
     <div className="shell" style={{ paddingTop: "2.2rem" }}>
-      <h1 style={{ fontSize: "clamp(1.6rem, 4vw, 2.2rem)" }}>Season archive</h1>
-      <p className="prose-narrow" style={{ marginTop: "0.6rem" }}>
-        Every season the league has played, rebuilt from ESPN's own record. Open a season for its
-        standings, full schedule, playoff bracket and week-by-week results.
-      </p>
+      <h1 style={{ fontSize: "clamp(1.6rem, 4vw, 2.2rem)" }}><EditableText id="site.season-index.3f4b988f74" fallback="Season archive"/></h1>
+      <p className="prose-narrow" style={{ marginTop: "0.6rem" }}><EditableText id="site.season-index.bcc04d7949" fallback="Every season the league has played, rebuilt from ESPN's own record. Open a season for its standings, full schedule, playoff bracket and week-by-week results."/></p>
 
-      <Band title="Seasons" note={`${ordered.length} seasons on record`} />
+      <Band title={<EditableText id="site.season-index.27d882d46a" fallback="Seasons"/>}  note={`${ordered.length} seasons on record`} />
       <ol style={{ listStyle: "none", padding: 0, margin: 0 }}>
         {ordered.map((season) => (
           <li key={season.season} className="season-row">

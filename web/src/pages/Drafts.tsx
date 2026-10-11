@@ -1,3 +1,4 @@
+import { EditableText } from "../components/Editorial";
 import { useMemo, useState } from "react";
 import { Band, Empty, Loading, OwnerLink } from "../components/primitives";
 import { useDraft, usePlayers } from "../lib/data";
@@ -36,10 +37,8 @@ export default function Drafts({ meta }: { meta: Meta }) {
 
   return (
     <div className="shell" style={{ paddingTop: "2.2rem" }}>
-      <h1 style={{ fontSize: "clamp(1.8rem, 5vw, 2.6rem)" }}>Draft archive</h1>
-      <p className="prose-narrow" style={{ marginTop: "0.6rem" }}>
-        Every pick ESPN still has on record, laid out as the board looked on draft day.
-      </p>
+      <h1 style={{ fontSize: "clamp(1.8rem, 5vw, 2.6rem)" }}><EditableText id="site.drafts.3b0ba980b2" fallback="Draft archive"/></h1>
+      <p className="prose-narrow" style={{ marginTop: "0.6rem" }}><EditableText id="site.drafts.84c064c9e6" fallback="Every pick ESPN still has on record, laid out as the board looked on draft day."/></p>
 
       <div className="pill-row" style={{ marginTop: "1.3rem" }}>
         {seasons.map((year) => (
@@ -115,10 +114,7 @@ export default function Drafts({ meta }: { meta: Meta }) {
               </tbody>
             </table>
           </div>
-          <p className="prose-narrow" style={{ marginTop: "1rem", fontSize: "0.84rem" }}>
-            Columns follow the first-round order. Later rounds are placed by owner, so a snake
-            draft reads left to right and then right to left down the board.
-          </p>
+          <p className="prose-narrow" style={{ marginTop: "1rem", fontSize: "0.84rem" }}><EditableText id="site.drafts.42886d1f3d" fallback="Columns follow the first-round order. Later rounds are placed by owner, so a snake draft reads left to right and then right to left down the board."/></p>
         </>
       ) : null}
     </div>

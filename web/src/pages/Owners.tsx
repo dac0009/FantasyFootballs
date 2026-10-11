@@ -89,12 +89,12 @@ export default function Owners() {
 
   return (
     <div className="shell" style={{ paddingTop: "2.2rem" }}>
-      <h1 style={{ fontSize: "clamp(1.8rem, 5vw, 2.6rem)" }}>Owners</h1>
+      <h1 style={{ fontSize: "clamp(1.8rem, 5vw, 2.6rem)" }}><EditableText id="site.owners.4eaec4bc0f" fallback="Owners"/></h1>
       <p className="prose-narrow" style={{ marginTop: "0.6rem" }}>
         <EditableText id="owners.intro" fallback="Career records by owner · Regular season"/>
       </p>
 
-      <Band title="Current owners" note={`${active.length} owners`} />
+      <Band title={<EditableText id="site.owners.7da7376534" fallback="Current owners"/>}  note={`${active.length} owners`} />
       <div className="pill-row" role="group" aria-label="Owner directory view" style={{marginBottom:"1.2rem"}}>
         <button className="pill" aria-pressed={view==='cards'} onClick={()=>setView('cards')}>Card collection</button>
         <button className="pill" aria-pressed={view==='table'} onClick={()=>setView('table')}>Records table</button>
@@ -124,13 +124,10 @@ export default function Owners() {
       {rows.some((r) => r.unlinked) ? (
         <>
           <Band
-            title="Unlinked teams"
-            note="Teams ESPN did not attach to a member account"
+            title={<EditableText id="site.owners.03ca718219" fallback="Unlinked teams"/>}
+            note={<EditableText id="site.owners.7ca6b600f7" fallback="Teams ESPN did not attach to a member account"/>}
           />
-          <p className="prose-narrow" style={{ fontSize: "0.86rem" }}>
-            These historical teams have no confirmed owner account. Their records stay separate
-            until ownership can be verified.
-          </p>
+          <p className="prose-narrow" style={{ fontSize: "0.86rem" }}><EditableText id="site.owners.8ca4462842" fallback="These historical teams have no confirmed owner account. Their records stay separate until ownership can be verified."/></p>
           <StatTable
             rows={rows.filter((r) => r.unlinked)}
             columns={columns}

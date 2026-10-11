@@ -1,3 +1,4 @@
+import { EditableText } from "../components/Editorial";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Band, Empty, ErrorState, Loading, OwnerLink, WeekLink } from "../components/primitives";
@@ -45,7 +46,7 @@ export default function Records() {
 
   return (
     <div className="shell" style={{ paddingTop: "2.2rem" }}>
-      <h1 style={{ fontSize: "clamp(1.8rem, 5vw, 2.6rem)" }}>Record book</h1>
+      <h1 style={{ fontSize: "clamp(1.8rem, 5vw, 2.6rem)" }}><EditableText id="site.records.25bf322f41" fallback="Record book"/></h1>
       <p className="prose-narrow" style={{ marginTop: "0.6rem" }}>
         Every all-time list, with enough context on each entry to understand it: who held it, in
         which season and week, and against whom. Career and season records aggregate by{" "}
