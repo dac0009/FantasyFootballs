@@ -8,12 +8,13 @@ const key = (game: Game) => game.matchup_id || `${game.season}-${game.week}`;
 const ink = (game: Game) => game.result === "W" ? "var(--ember)" : game.result === "L" ? "#a88572" : "var(--ink-faint)";
 
 /** Each season is a trace of actual games, with a shared week axis and value scale. */
-export function OwnerCareerAtlas({ owner }: { owner: OwnerPayload }) {
+export function OwnerCareerAtlas({ owner, year, setYear, selected, setSelected }: {
+  owner: OwnerPayload; year: string; setYear: (year: string) => void;
+  selected: string; setSelected: (game: string) => void;
+}) {
   const games = [...owner.weekly_history].sort((a,b)=>a.season-b.season || a.week-b.week || key(a).localeCompare(key(b)));
   const seasons = [...new Set(games.map(g=>g.season))];
-  const [year,setYear] = useState("all");
   const [mode,setMode] = useState<"margin"|"score">("margin");
-  const [selected,setSelected] = useState(games.length ? key(games[games.length-1]) : "");
   const visible = games.filter(g=>year === "all" || String(g.season) === year);
   const active = visible.find(g=>key(g)===selected) ?? visible[visible.length-1];
   if (!games.length || !active) return null;

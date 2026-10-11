@@ -1,4 +1,4 @@
-import { OwnerCareerAtlas } from "../components/OwnerCareerAtlas";
+import { OwnerAlmanac } from "../components/OwnerAlmanac";
 import { Link, useParams } from "react-router-dom";
 import { StatTable, type Column } from "../components/StatTable";
 import { WeeklyLines, type WeeklyPoint } from "../components/charts/WeeklyLines";
@@ -6,7 +6,6 @@ import {
   Band,
   Empty,
   ErrorState,
-  Figure,
   Loading,
   Metric,
   OwnerLink,
@@ -113,14 +112,8 @@ export default function Owner() {
 
   return (
     <div className="shell" style={{ paddingTop: "2.2rem" }}>
-      <p style={{ color: "var(--color-brass)", fontSize: "0.82rem", fontWeight: 600, margin: 0 }}>
-        Owner profile
-      </p>
-      <h1 style={{ fontSize: "clamp(1.9rem, 6vw, 3rem)", marginTop: "0.35rem" }}>{data.name}</h1>
-      <p style={{ color: "var(--color-mid)", marginTop: "0.4rem" }}>
-        {data.current_team_name}
-        {data.seasons_played ? `, ${data.seasons_played} seasons, ${data.first_season}\u2013${data.last_season}` : ""}
-      </p>
+      <OwnerAlmanac key={data.owner_id} owner={data} />
+
       {familiar ? <div className="rival-plate">
         <span className="rival-label">Most-played current opponent</span>
         <span className="rival-name"><RivalryLink a={data.owner_id} b={familiar.opponent_owner_id}>{familiar.opponent_name}</RivalryLink></span>
@@ -133,24 +126,8 @@ export default function Owner() {
         </p>
       ) : null}
 
-      <div className="owner-figures">
-        <Figure value={data.record} label="Career record (regular season)" size="1.7rem" />
-        <Figure value={pct(data.win_pct)} label="Win percentage" size="1.7rem" />
-        <Figure
-          value={data.championships || "\u2014"}
-          label={data.championships === 1 ? "Championship" : "Championships"}
-          size="1.7rem"
-          tone={data.championships ? "var(--color-brass)" : undefined}
-        />
-        <Figure value={data.playoff_appearances || "\u2014"} label="Playoff appearances" size="1.7rem" />
-        <Figure value={total(data.points_for)} label="Career points for" size="1.7rem" />
-        <Figure value={points(data.avg_score, 1)} label="Points per game" size="1.7rem" />
-        <Figure value={ordinal(data.best_finish)} label="Best finish" size="1.7rem" />
-        <Figure value={points(data.avg_finish, 1)} label="Average finish" size="1.7rem" />
-      </div>
-
-      <OwnerCareerAtlas key={data.owner_id} owner={data} />
-
+      <details className="owner-record-book">
+        <summary>The record book</summary>
       <Band title="Team names" note="The same owner, every franchise identity" />
       <ol className="timeline">
         {data.team_name_timeline.map((row, index) => {
@@ -340,6 +317,8 @@ export default function Owner() {
           </tbody>
         </table>
       </div>
+
+      </details>
 
       <style>{`
         .rival-plate {

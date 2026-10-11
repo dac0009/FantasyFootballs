@@ -13,9 +13,9 @@ export interface MetricDefinition {
 export const METRICS: Record<string, MetricDefinition> = {
   career_atlas: {
     label: "Career atlas",
-    short: "Each row is one season; each point is one completed game. Select a point with a mouse, touch, or keyboard to open its scorecard.",
+    short: "Each row is one season; each point is one completed game. Select a point with a mouse, touch, or keyboard to update the owner’s game reel.",
     formula: "The horizontal axis is week. Winning-margin mode plots owner score minus opponent score around zero; points-scored mode starts at zero. Both use a common scale across the owner's full career, including when a season is isolated.",
-    limitation: "Blue marks wins, brown marks losses, gray marks ties; outlined points are championship-playoff games. Consolation games remain in the archive and are labeled in the scorecard. Season summaries here include every recorded game, unlike the regular-season career totals above. Unplayed weeks have no point, and gaps are not joined. Arrow buttons move chronologically; a year label selects that season's latest game.",
+    limitation: "Blue marks wins, brown marks losses, gray marks ties; outlined points are championship-playoff games. Consolation games remain in the archive and are labeled in the scorecard. The owner card uses regular-season statistics for the selected chapter; the game reel and atlas include every recorded game type. Unplayed weeks have no point, and gaps are not joined. The chapter ribbon changes the card, reel and atlas together. The reel slider and arrow buttons move chronologically; a year label in the atlas selects that season’s latest game.",
   },
   winning_margin: {
     label: "Winning margin",

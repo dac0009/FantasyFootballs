@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import "../styles/almanac.css";
 import { StatTable, type Column } from "../components/StatTable";
 import { Band, ErrorState, Loading, Metric, OwnerLink } from "../components/primitives";
 import { currentOwners } from "../lib/rivalries";
@@ -7,6 +10,7 @@ import type { OwnerIndexRow } from "../lib/types";
 
 export default function Owners() {
   const owners = useOwnerIndex();
+  const [view,setView] = useState<"cards"|"table">("cards");
   if (owners.state === "loading") return <Loading what="owners" />;
   if (owners.state === "error") return <ErrorState error={owners.error} what="Owner records" />;
 
@@ -87,13 +91,23 @@ export default function Owners() {
       </p>
 
       <Band title="Current owners" note={`${active.length} owners`} />
-      <StatTable
+      <div className="pill-row" role="group" aria-label="Owner directory view" style={{marginBottom:"1.2rem"}}>
+        <button className="pill" aria-pressed={view==='cards'} onClick={()=>setView('cards')}>Card collection</button>
+        <button className="pill" aria-pressed={view==='table'} onClick={()=>setView('table')}>Records table</button>
+      </div>
+      {view === 'cards' ? <div className="owner-collection">{active.map(owner=><Link to={`/owners/${owner.owner_id}`} className="collection-card" key={owner.owner_id}>
+        <div className="collection-card-top"><span>FFBFFL</span><span>Since {owner.first_season}</span></div>
+        <div className="collection-monogram" aria-hidden="true">{owner.name.split(/\s+/).filter(Boolean).map(s=>s[0]).slice(0,2).join('').toUpperCase()}</div>
+        <h2>{owner.name}</h2><p>{owner.current_team_name}</p>
+        <div className="collection-record"><strong>{owner.record}</strong><span>{owner.championships?`${owner.championships} ${owner.championships===1?'title':'titles'}`:`${owner.seasons_played} seasons`}</span></div>
+        <span className="collection-open">Open owner card →</span>
+      </Link>)}</div> : <StatTable
         rows={active}
         columns={columns}
         rowKey={(r) => r.owner_id}
         initialSort={{ key: "pct", direction: "desc" }}
         caption="Career owner records"
-      />
+      />}
 
       {former.length ? (
         <details style={{ marginTop: "2rem" }}>
