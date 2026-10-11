@@ -1,5 +1,6 @@
 import { StatTable, type Column } from "../components/StatTable";
 import { Band, ErrorState, Loading, Metric, OwnerLink } from "../components/primitives";
+import { currentOwners } from "../lib/rivalries";
 import { useOwnerIndex } from "../lib/data";
 import { pct, points, signed, signClass, total } from "../lib/format";
 import type { OwnerIndexRow } from "../lib/types";
@@ -10,7 +11,9 @@ export default function Owners() {
   if (owners.state === "error") return <ErrorState error={owners.error} what="Owner records" />;
 
   const rows = owners.data;
-  const active = rows.filter((r) => !r.unlinked);
+  const active = currentOwners(rows);
+  const currentIds = new Set(active.map((owner) => owner.owner_id));
+  const former = rows.filter((owner) => !owner.unlinked && !currentIds.has(owner.owner_id));
 
   const columns: Column<OwnerIndexRow>[] = [
     {
@@ -85,7 +88,7 @@ export default function Owners() {
         each owner's page.
       </p>
 
-      <Band title="Career records" note={`${active.length} owners`} />
+      <Band title="Current owners" note={`${active.length} owners`} />
       <StatTable
         rows={active}
         columns={columns}
@@ -94,15 +97,23 @@ export default function Owners() {
         caption="Career owner records"
       />
 
-      {rows.length !== active.length ? (
+      {former.length ? (
+        <details style={{ marginTop: "2rem" }}>
+          <summary className="link-quiet" style={{ cursor: "pointer" }}>Former owners · {former.length}</summary>
+          <StatTable rows={former} columns={columns} rowKey={(r) => r.owner_id}
+            initialSort={{ key: "pct", direction: "desc" }} caption="Former owner career records" />
+        </details>
+      ) : null}
+
+      {rows.some((r) => r.unlinked) ? (
         <>
           <Band
             title="Unlinked teams"
             note="Teams ESPN did not attach to a member account"
           />
           <p className="prose-narrow" style={{ fontSize: "0.86rem" }}>
-            These appear as separate owners because ESPN returned no account for them. Merging
-            them into a real owner is a two-line edit in <code>config/owners.yml</code>.
+            These historical teams have no confirmed owner account. Their records stay separate
+            until ownership can be verified.
           </p>
           <StatTable
             rows={rows.filter((r) => r.unlinked)}

@@ -137,7 +137,6 @@ export default function Owner() {
                 ? `, won last ${data.rival.current_streak.length}`
                 : `, lost last ${data.rival.current_streak.length}`
               : ""}
-            {!data.rival.reciprocal ? ", though they'd name someone else" : ""}
           </span>
         </div>
       ) : null}
