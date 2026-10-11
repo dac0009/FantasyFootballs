@@ -11,6 +11,35 @@ export interface MetricDefinition {
 }
 
 export const METRICS: Record<string, MetricDefinition> = {
+  career_atlas: {
+    label: "Career atlas",
+    short: "Each row is one season; each point is one completed game. Select a point with a mouse, touch, or keyboard to open its scorecard.",
+    formula: "The horizontal axis is week. Winning-margin mode plots owner score minus opponent score around zero; points-scored mode starts at zero. Both use a common scale across the owner's full career, including when a season is isolated.",
+    limitation: "Blue marks wins, brown marks losses, gray marks ties; outlined points are championship-playoff games. Consolation games remain in the archive and are labeled in the scorecard. Season summaries here include every recorded game, unlike the regular-season career totals above. Unplayed weeks have no point, and gaps are not joined. Arrow buttons move chronologically; a year label selects that season's latest game.",
+  },
+  winning_margin: {
+    label: "Winning margin",
+    short: "Your score minus your opponent's score. Positive is a win; negative is a loss; zero is a tie.",
+    formula: "Owner points − opponent points. Average winning margin on the rivalry page uses the absolute difference, so it measures closeness regardless of the winner.",
+  },
+  weekly_scoring: {
+    label: "Weekly scoring charts",
+    short: "Each team's small chart shows its score relative to that week's league average. Blue bars are above average; brown bars are below. W, L and T are actual matchup results.",
+    formula: "Team score − mean score of all teams with a recorded regular-season result in that week. Every small chart uses the same vertical scale.",
+    limitation: "This comparison is against the weekly mean, not the median or every opponent individually. A score above average does not guarantee a matchup win.",
+  },
+  playoff_scenarios: {
+    label: "Playoff scenarios",
+    short: "Pick winners and simulate the unpicked regular-season games 3,000 times in your browser. Picks stay on the page and do not change league results.",
+    formula: "Scoring models pull early team averages toward the league mean and draw random weekly scores using pooled variability. Final standings rank by wins (ties count as half), then total points. Picked games use the selected winner and expected scores for the points tiebreaker. Baseline and scenario share random draws. Change is measured in percentage points.",
+    limitation: "These are model estimates, not official clinching scenarios or ESPN projections. Injuries, roster changes, division rules and other ESPN tiebreakers are not modeled. Zero or 100% in a simulation is not proof of elimination or a clinch. The homepage uses 5,000 simulations, so baseline estimates can differ slightly. Seed distributions show final regular-season position, not championship probability. Reset clears every pick across all weeks.",
+  },
+  rivalry_history: {
+    label: "Rivalry history",
+    short: "The ledger compares current owners with at least three completed meetings. All recorded game types count, including playoffs and consolation games.",
+    formula: "Most meetings: total games. Most evenly split wins: smallest absolute win difference divided by games. Smallest average winning margin: mean absolute score difference. Most playoff meetings: championship-playoff games only. Ties in a sort use total meetings, then stable owner IDs.",
+    limitation: "There is no combined rivalry score in the current interface. Records follow confirmed owner accounts through team renames. Archived links can include departed owners. Most-played opponent callouts consider only current owners; career opponent tables retain the historical archive.",
+  },
   all_play: {
     label: "All-play record",
     short:

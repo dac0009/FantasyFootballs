@@ -1,4 +1,4 @@
-import { OwnerLink } from "./primitives";
+import { Metric, OwnerLink } from "./primitives";
 interface Week { week: number; diff: number; beat: boolean; won: boolean; tied: boolean }
 interface TeamRow { ownerId: string; name: string; record: string; weeks: Week[]; beats: number; total: number; aboveRecord: string }
 
@@ -9,7 +9,7 @@ export function AboveAverageGrid({rows}: {rows: TeamRow[]}) {
   const limit = Math.ceil(Math.max(10,...rows.flatMap(row=>row.weeks.map(w=>Math.abs(w.diff))))/10)*10;
   const step = 264/weeks.length;
   return <div>
-    <p className="figure-label">Points above or below that week's league average. All teams share a ±{limit}-point scale. W/L/T shows the actual game result.</p>
+    <p className="figure-label"><Metric name="weekly_scoring">Versus weekly average</Metric> · Scale: ±{limit} pts · W/L/T: result</p>
     <div className="weekly-multiples">{rows.map(row=><section className="weekly-mini" key={row.ownerId}>
       <div className="weekly-mini-head"><OwnerLink ownerId={row.ownerId}>{row.name}</OwnerLink><span>{row.record}</span></div>
       <svg viewBox="0 0 300 150" role="img" aria-label={`${row.name}: ${row.weeks.map(w=>`week ${w.week}, ${w.diff.toFixed(1)} points versus average, ${w.won?'won':w.tied?'tied':'lost'}`).join('; ')}`}>
