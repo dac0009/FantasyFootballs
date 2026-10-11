@@ -10,7 +10,7 @@ export default function NotFound() {
       </p>
       <ul style={{ listStyle: "none", padding: 0, margin: "1.2rem 0 0", display: "grid", gap: "0.5rem" }}>
         {[
-          { to: "/", label: "This week" },
+          { to: "/home", label: "This week" },
           { to: "/seasons", label: "Season archive" },
           { to: "/records", label: "Record book" },
           { to: "/owners", label: "Owners" },

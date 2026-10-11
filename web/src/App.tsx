@@ -2,6 +2,8 @@ import { Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { ErrorState, Loading } from "./components/primitives";
 import { useMeta } from "./lib/data";
+import { useEditorial } from "./components/Editorial";
+import WelcomeTour from "./components/WelcomeTour";
 import Admin from "./pages/Admin";
 import Account from "./pages/Account";
 import Playoffs from "./pages/Playoffs";
@@ -19,6 +21,11 @@ import Glossary from "./pages/Glossary";
 import { Navigate } from "react-router-dom";
 import NotFound from "./pages/NotFound";
 
+function AppEntrance(){
+  const {ready,session,member}=useEditorial();
+  if(!ready)return <Loading what="your account"/>;
+  return <Navigate replace to={session&&member?(member.owner_id?`/owners/${member.owner_id}`:'/admin'):'/account?entry=1'}/>;
+}
 export default function App() {
   const meta = useMeta();
 
@@ -39,10 +46,12 @@ export default function App() {
 
   return (
     <Layout meta={meta.data}>
+      <WelcomeTour/>
       <Routes>
         <Route path="/admin" element={<Admin />} />
         <Route path="/account" element={<Account />} />
-        <Route path="/" element={<Home meta={meta.data} />} />
+        <Route path="/" element={<AppEntrance />} />
+        <Route path="/home" element={<Home meta={meta.data} />} />
         <Route path="/playoffs" element={<Playoffs />} />
         <Route path="/season" element={<CurrentSeason meta={meta.data} />} />
         <Route path="/seasons" element={<SeasonIndex />} />

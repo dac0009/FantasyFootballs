@@ -1,9 +1,15 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEditorial } from '../components/Editorial';
 import { editorClient } from '../lib/editor';
 export default function Account(){
   const {session,member,ready,error}=useEditorial();
+  const navigate=useNavigate(),location=useLocation();
+  const [justSignedIn,setJustSignedIn]=useState(false);
+  useEffect(()=>{
+    if(ready&&session&&member&&(justSignedIn||new URLSearchParams(location.search).has('entry')))
+      navigate(member.owner_id?`/owners/${member.owner_id}`:'/admin',{replace:true});
+  },[ready,session,member,justSignedIn,location.search,navigate]);
   const [mode,setMode]=useState<'owner'|'commissioner'>('owner');
   const [surname,setSurname]=useState(''),[password,setPassword]=useState('');
   const [busy,setBusy]=useState(false),[status,setStatus]=useState('');
@@ -20,10 +26,10 @@ export default function Account(){
       if(!result.data?.access_token||!result.data?.refresh_token)throw new Error('No session was returned. Please try again.');
       const signedIn=await editorClient.auth.setSession(result.data);
       if(signedIn.error)throw signedIn.error;
-      setPassword('');setStatus('Signed in.');
+      setPassword('');setJustSignedIn(true);setStatus('Opening your profile…');
     }catch(error){setStatus((error as Error).message);}finally{setBusy(false);}
   }
-  return <div className="shell account-page"><span className="section-kicker">The owners’ entrance</span><h1>Owner account</h1>
+  return <div className="shell account-page"><img className="account-logo" src={`${import.meta.env.BASE_URL}branding/icon-512-v2.png`} alt="FFBFFL" width="180" height="180"/><span className="section-kicker">The owners’ entrance</span><h1>Owner account</h1>
     {!editorClient?<p>Owner sign-in is being set up. The public league archive remains available.</p>:!ready?<p>Checking your account…</p>:session?<>
       <p>{member?.role==='commissioner'?'Commissioner access':member?'Owner access':'Checking editing access…'}</p>
       {member?<><p>{member.role==='commissioner'?'Open the editing desk or use “Visual editor” above.':'You can edit your profile’s photo, name, bio, message, and card color.'}</p>
@@ -41,6 +47,6 @@ export default function Account(){
         <div className="editor-actions"><button className="pill" disabled={busy}>{busy?'Signing in…':'Sign in'}</button></div>
       </form>
     </>}
-    <p role="status">{status||error}</p><p><Link to="/">Back to the league</Link></p>
+    <p role="status">{status||error}</p><p><Link to="/home">Back to the league</Link></p>
   </div>;
 }
