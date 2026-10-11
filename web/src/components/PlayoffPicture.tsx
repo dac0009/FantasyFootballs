@@ -45,9 +45,9 @@ export function PlayoffPicture({ picture }: { picture: Picture }) {
         </table>
       </div>
       <p style={{ color: "var(--ink-faint)", fontSize: "0.78rem", marginTop: "0.6rem" }}>
-        {cut} make the playoffs{picture.byes ? `, top ${picture.byes} get a bye` : ""}; teams are ordered by estimated playoff chance. The blue
-        rule marks the top {cut} estimates, not clinched places. Odds from {picture.simulations.toLocaleString("en-US")} simulated finishes
-        of the {picture.remaining_regular_season_games} remaining games. These are estimates, not official clinching scenarios.
+        {cut} spots{picture.byes ? ` · ${picture.byes} byes` : ""} ·{" "}
+        <Metric name="playoff_odds">{picture.simulations.toLocaleString("en-US")} simulations</Metric>
+        {" "}· Blue rule: top {cut} estimates
       </p>
     </div>
   );

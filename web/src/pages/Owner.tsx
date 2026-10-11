@@ -1,3 +1,4 @@
+import { OwnerCareerAtlas } from "../components/OwnerCareerAtlas";
 import { Link, useParams } from "react-router-dom";
 import { StatTable, type Column } from "../components/StatTable";
 import { WeeklyLines, type WeeklyPoint } from "../components/charts/WeeklyLines";
@@ -128,8 +129,7 @@ export default function Owner() {
       {data.note ? <p className="notice" style={{ marginTop: "0.9rem" }}>{data.note}</p> : null}
       {data.unlinked ? (
         <p className="notice" style={{ marginTop: "0.9rem" }}>
-          ESPN did not link this team to a member account, so this profile covers only the seasons
-          where that team id appeared. Merge it with a real owner in <code>config/owners.yml</code>.
+          Unconfirmed owner identity · <Link to="/glossary#ground-rules" className="link-quiet">About these records</Link>
         </p>
       ) : null}
 
@@ -148,6 +148,8 @@ export default function Owner() {
         <Figure value={ordinal(data.best_finish)} label="Best finish" size="1.7rem" />
         <Figure value={points(data.avg_finish, 1)} label="Average finish" size="1.7rem" />
       </div>
+
+      <OwnerCareerAtlas key={data.owner_id} owner={data} />
 
       <Band title="Team names" note="The same owner, every franchise identity" />
       <ol className="timeline">

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Band, Empty, ErrorState, Loading, OwnerLink } from "../components/primitives";
+import { Band, Empty, ErrorState, Loading, Metric, OwnerLink } from "../components/primitives";
 import { useCurrent, useMatchups } from "../lib/data";
 import { simulateScenario, type Picks } from "../lib/playoffScenario";
 import type { CurrentPayload, Matchup, PlayoffPicture } from "../lib/types";
@@ -31,7 +31,7 @@ function Explorer({current, games, picture}: {current: CurrentPayload; games: Ma
   const pct = (n: number) => `${(100*n).toFixed(1)}%`;
   return <>
     <p className="prose-narrow">{picture.playoff_teams} playoff spots. Results through week {current.latest_completed_week ?? 0}.
-      Choose winners in any remaining week; every unpicked game is simulated. Your picks stay on this page and never change league results.</p>
+      {" "}<Metric name="playoff_scenarios">Scenario methodology</Metric>.</p>
     <div className="scenario-layout">
       <section>
         <Band title="Your picks" note={`${Object.keys(picks).length} games picked`} />
@@ -51,7 +51,7 @@ function Explorer({current, games, picture}: {current: CurrentPayload; games: Ma
       </section>
       <section aria-live="polite" aria-atomic="true">
         <Band title="Chance to make the playoffs" note="Blue bar: your scenario · Tick: baseline" />
-        <p className="figure-label">3,000 simulated finishes · Change shown in percentage points</p>
+        <p className="figure-label"><Metric name="playoff_scenarios">3,000 simulations · Change in pp</Metric></p>
         <div className="odds-axis"><span>0%</span><span>50%</span><span>100%</span></div>
         {result.map(row=>{const previous=base.get(row.ownerId)!;const delta=(row.odds-previous.odds)*100;return <div className="odds-row" key={row.ownerId}>
           <div className="odds-caption"><OwnerLink ownerId={row.ownerId}>{row.name}</OwnerLink><span>{pct(row.odds)} <small className={delta>0?'num-pos':delta<0?'num-neg':''}>({delta>0?'+':''}{delta.toFixed(1)} pp)</small></span></div>
@@ -68,11 +68,8 @@ function Explorer({current, games, picture}: {current: CurrentPayload; games: Ma
     {selected ? <div className="seed-chart" role="img" aria-label={`${selected.name} seed probabilities: ${selected.seeds.map((p,i)=>`seed ${i+1}: ${pct(p)}`).join(', ')}`}>
       {selected.seeds.map((prob,i)=><div className="seed-column" key={i}><span>{Math.round(prob*100)}%</span><div style={{height:`${prob*160}px`,background:i<picture.playoff_teams?'var(--ember)':'var(--ink-faint)'}}/><span>#{i+1}</span></div>)}
     </div> : null}
-    <p className="figure-label">Blue seeds qualify. Gray seeds miss the playoffs. Vertical scale: 0–100%.</p>
-    <details className="model-note"><summary>How to read these estimates</summary>
-      <p>Each unpicked game draws scores from a team's season scoring model, with early averages pulled toward the league average. Standings rank by wins, then total points. Picked games use the chosen winner and each team's expected score for the points tiebreaker.</p>
-      <p>These are model estimates, not official clinching scenarios or ESPN projections. They do not account for injuries, roster changes, division rules, or other ESPN tiebreakers. Zero or 100% in a simulation is not mathematical elimination or a clinch. Baseline and scenario use the same 3,000 random draws; baseline may differ slightly from the homepage's 5,000-run estimate.</p>
-    </details>
+    <p className="figure-label">Blue: playoff seeds · Gray: out · Scale: 0–100%</p>
+
     <style>{`
       .scenario-layout {display:grid;gap:2.5rem;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
       .scenario-controls {display:flex;gap:1rem;align-items:center;flex-wrap:wrap;margin:1rem 0}

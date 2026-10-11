@@ -83,9 +83,7 @@ export default function Owners() {
     <div className="shell" style={{ paddingTop: "2.2rem" }}>
       <h1 style={{ fontSize: "clamp(1.8rem, 5vw, 2.6rem)" }}>Owners</h1>
       <p className="prose-narrow" style={{ marginTop: "0.6rem" }}>
-        Careers are tracked by person, not by team name. Every rename, every franchise, every
-        season belongs to whoever managed it. Regular-season games only; playoff records are on
-        each owner's page.
+        Career records by owner · Regular season
       </p>
 
       <Band title="Current owners" note={`${active.length} owners`} />

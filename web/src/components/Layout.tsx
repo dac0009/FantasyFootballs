@@ -33,8 +33,13 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
 
   useEffect(() => {
     setMenuOpen(false);
-    window.scrollTo(0, 0);
-  }, [location.pathname]);
+    const frame = window.requestAnimationFrame(() => {
+      const anchor = location.hash ? document.getElementById(location.hash.slice(1)) : null;
+      if (anchor) anchor.scrollIntoView({ block: "start" });
+      else window.scrollTo(0, 0);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [location.pathname, location.hash, meta]);
 
   return (
     <>

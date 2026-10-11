@@ -9,6 +9,11 @@ import type { Meta } from "../lib/types";
  */
 export default function Glossary({ meta }: { meta: Meta }) {
   const order = [
+    "career_atlas",
+    "winning_margin",
+    "weekly_scoring",
+    "playoff_scenarios",
+    "rivalry_history",
     "playoff_odds",
     "win_probability",
     "playoff_swing",
@@ -35,7 +40,7 @@ export default function Glossary({ meta }: { meta: Meta }) {
         your selected winners; those scenarios never alter the official results.
       </p>
 
-      <Band title="Ground rules" />
+      <Band title="Ground rules" id="ground-rules" />
       <div className="prose-narrow" style={{ marginTop: "0.8rem" }}>
         <ul style={{ paddingLeft: "1.2rem", display: "grid", gap: "0.55rem" }}>
           <li>

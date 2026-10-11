@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { currentOwners, currentRivalries, type RivalrySort } from "../lib/rivalries";
 import { useSearchParams } from "react-router-dom";
-import { Band, Empty, ErrorState, Figure, Loading, OwnerLink, WeekLink } from "../components/primitives";
+import { Band, Empty, ErrorState, Figure, Loading, Metric, OwnerLink, WeekLink } from "../components/primitives";
 import { useHeadToHead, useOwnerIndex, pairKey } from "../lib/data";
 import { gameTypeLabel, points, signed, total } from "../lib/format";
 import type { H2HRecord, Meeting, ScopeRecord } from "../lib/types";
@@ -207,7 +207,7 @@ export default function HeadToHead() {
               </div>;
             })}
           </div>
-          <p className="figure-label">Above the line: {leftName} won. Below: {rightName} won. Labels show year · week. Full scores follow below.</p>
+          <p className="figure-label">Above: {leftName} · Below: {rightName} · Year/week · <Metric name="winning_margin">Point margin</Metric></p>
           <Band title="Defining games" />
           <div className="highlight-grid">
             <SeriesGame
@@ -270,8 +270,7 @@ export default function HeadToHead() {
         <>
           <Band title="The rivalry ledger" note={`${ownerList.length} current owners · Three meetings to qualify`} />
           <p className="prose-narrow" style={{ fontSize: "0.85rem" }}>
-            Compare actual history: how often they meet, how evenly they split wins, and how close
-            the scores are. No combined rivalry score. All completed meetings count.
+            <Metric name="rivalry_history">How series are compared</Metric>
           </p>
           <label className="figure-label" style={{display:"block",margin:"1rem 0"}}>Order series by{" "}
             <select className="select" value={sort} onChange={e=>setSort(e.target.value as RivalrySort)}>

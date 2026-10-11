@@ -72,8 +72,7 @@ export function SeasonAnalytics({ data, title }: { data: SeasonPayload; title: s
       <p className="prose-narrow" style={{ marginTop: "0.6rem" }}>
         {seasonMeta.team_count} teams, {seasonMeta.regular_season_weeks}-week regular season
         {seasonMeta.playoff_team_count ? `, ${seasonMeta.playoff_team_count}-team playoff` : ""}.
-        Records and rate statistics below cover the regular season only; postseason games appear
-        separately on the season page.
+        {" "}Regular-season statistics.
       </p>
 
       <Band title="Standings and advanced metrics" note="Switch views, or sort any column" />
