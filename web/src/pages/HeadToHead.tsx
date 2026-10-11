@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { currentOwners, currentRivalries } from "../lib/rivalries";
 import { useSearchParams } from "react-router-dom";
 import { Band, Empty, ErrorState, Figure, Loading, Metric, OwnerLink, WeekLink } from "../components/primitives";
 import { useHeadToHead, useOwnerIndex, pairKey } from "../lib/data";
@@ -26,10 +27,14 @@ export default function HeadToHead() {
   if (owners.state === "error") return <ErrorState error={owners.error} what="Owner records" />;
   if (pairs.state === "error") return <ErrorState error={pairs.error} what="Rivalry records" />;
 
-  const ownerList = owners.data.filter((o) => !o.unlinked);
-  const sortedRivalries = Object.values(pairs.data).sort(
-    (x, y) => (y.rivalry_index.score ?? 0) - (x.rivalry_index.score ?? 0),
-  );
+  const ownerList = currentOwners(owners.data);
+  const activeIds = new Set(ownerList.map((owner) => owner.owner_id));
+  const archivedSelection = Boolean(record && (!activeIds.has(a) || !activeIds.has(b)));
+  const sortedRivalries = currentRivalries(owners.data, Object.values(pairs.data));
+  // Preserve historical deep links without adding departed owners to the default picker.
+  const selectedFormer = owners.data.filter((owner) =>
+    !activeIds.has(owner.owner_id) && [a, b].includes(owner.owner_id));
+  const pickerOwners = [...ownerList, ...selectedFormer];
 
   function choose(side: "a" | "b", value: string) {
     const next = new URLSearchParams(params);
@@ -63,10 +68,11 @@ export default function HeadToHead() {
 
   return (
     <div className="shell" style={{ paddingTop: "2.2rem" }}>
-      <h1 style={{ fontSize: "clamp(1.8rem, 5vw, 2.6rem)" }}>Head to head</h1>
+      <div className="section-kicker">The record book / Rivalries</div>
+      <h1 style={{ fontSize: "clamp(2.4rem, 6vw, 3.7rem)" }}>Familiar names. Unfinished business.</h1>
       <p className="prose-narrow" style={{ marginTop: "0.6rem" }}>
-        Pick any two owners. Every meeting since {owners.data.reduce((min, o) => Math.min(min, o.first_season ?? 9999), 9999)}{" "}
-        counts, through every team name either of them has used.
+        Today’s owners, their entire shared history. Team names change; the series stays with
+        the people who played it.
       </p>
 
       <div className="h2h-picker">
@@ -74,9 +80,9 @@ export default function HeadToHead() {
           <span>Owner A</span>
           <select className="select" value={a} onChange={(e) => choose("a", e.target.value)}>
             <option value="">Select an owner</option>
-            {ownerList.map((owner) => (
+            {pickerOwners.map((owner) => (
               <option key={owner.owner_id} value={owner.owner_id}>
-                {owner.name}
+                {owner.name}{activeIds.has(owner.owner_id) ? "" : " (archive)"}
               </option>
             ))}
           </select>
@@ -86,9 +92,9 @@ export default function HeadToHead() {
           <span>Owner B</span>
           <select className="select" value={b} onChange={(e) => choose("b", e.target.value)}>
             <option value="">Select an owner</option>
-            {ownerList.map((owner) => (
+            {pickerOwners.map((owner) => (
               <option key={owner.owner_id} value={owner.owner_id}>
-                {owner.name}
+                {owner.name}{activeIds.has(owner.owner_id) ? "" : " (archive)"}
               </option>
             ))}
           </select>
@@ -102,6 +108,8 @@ export default function HeadToHead() {
           league do not overlap.
         </Empty>
       ) : null}
+
+      {archivedSelection ? <p className="prose-narrow">Archived series · Includes a former owner. <button className="sort-btn link-quiet" onClick={() => setParams({})}>Back to current rivalries</button></p> : null}
 
       {record ? (
         <>
@@ -246,12 +254,17 @@ export default function HeadToHead() {
         </>
       ) : (
         <>
-          <Band title="Best rivalries in the league" note="Ranked by rivalry index" />
+          <Band title="The rivalry ledger" note={`${ownerList.length} current owners · Three meetings to qualify`} />
+          <p className="prose-narrow" style={{ fontSize: "0.85rem" }}>
+            Ordered by <Metric name="rivalry_index">rivalry index</Metric>. All completed meetings count,
+            including past seasons. Select a series to open its record.
+          </p>
+          {!sortedRivalries.length ? <Empty>No current-owner series has reached three meetings yet.</Empty> : null}
           <ol style={{ listStyle: "none", padding: 0, margin: 0 }}>
-            {sortedRivalries.slice(0, 12).map((rivalry) => (
+            {sortedRivalries.slice(0, 10).map((rivalry, index) => (
               <li key={rivalry.pair_key} className="rivalry-row">
                 <span className="figure" style={{ fontSize: "1.1rem", color: "var(--color-brass)" }}>
-                  {points(rivalry.rivalry_index.score, 0)}
+                  {String(index + 1).padStart(2, "0")}
                 </span>
                 <button
                   type="button"
@@ -264,14 +277,13 @@ export default function HeadToHead() {
                   }}
                   style={{ textAlign: "left" }}
                 >
-                  <span className="link-quiet">
+                  <span className="rivalry-title link-quiet">
                     {rivalry.left_owner_name} v {rivalry.right_owner_name}
                   </span>
                 </button>
                 <span style={{ color: "var(--color-mid)", fontSize: "0.85rem" }}>
-                  {rivalry.overall.record}, {rivalry.overall.games} meetings, avg
-                  margin {points(rivalry.avg_abs_margin, 1)}
-                  {rivalry.playoff.games ? `, ${rivalry.playoff.games} in the playoffs` : ""}
+                  <strong className="rivalry-record">{rivalry.overall.record}</strong>
+                  <span>{rivalry.overall.games} meetings · {points(rivalry.avg_abs_margin, 1)} avg. margin</span>
                 </span>
               </li>
             ))}
@@ -300,10 +312,20 @@ export default function HeadToHead() {
         @media (min-width: 680px) { .h2h-figures { grid-template-columns: repeat(4, 1fr); } }
         .highlight-grid { display: grid; gap: 0 2.5rem; margin-top: 0.8rem; }
         @media (min-width: 760px) { .highlight-grid { grid-template-columns: 1fr 1fr; } }
+        .rivalry-title { font-family: var(--font-display); font-size: 1.3rem; color: var(--ink); }
+        .rivalry-record { display: block; font-size: 1rem; color: var(--ink); }
         .rivalry-row {
           display: grid; grid-template-columns: 2.6rem minmax(10rem, 1fr) 1fr; gap: 0.9rem;
-          align-items: baseline; padding: 0.5rem 0;
+          align-items: baseline; padding: 1rem 0;
           border-bottom: 1px solid var(--color-line-soft);
+        }
+        @media (max-width: 600px) {
+          .rivalry-row { grid-template-columns: 1.8rem minmax(0, 1fr); gap: 0.3rem 0.7rem; }
+          .rivalry-row > :last-child { grid-column: 2; }
+          .rivalry-record { display: inline; margin-right: 0.8rem; }
+          .h2h-picker label { flex: 1 1 100%; min-width: 0; }
+          .h2h-picker > span { display: none; }
+          .select { width: 100%; }
         }
       `}</style>
     </div>

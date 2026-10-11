@@ -197,8 +197,14 @@ def assemble(dataset: dict) -> dict:
 
     # "Currently in the league" = anyone with a team in the current season.
     active_owner_ids = sorted(
-        {r["owner_id"] for r in all_team_weeks if r["season"] == current_season}
+        {
+            t["owner_id"]
+            for t in season_data[current_season]["teams"]
+            if t.get("owner_id") and not owners_by_id[t["owner_id"]].get("unlinked")
+        }
     )
+    for career in careers:
+        career["is_active"] = career["owner_id"] in active_owner_ids
     rivals = head_to_head.designate_rivals(h2h, active_owner_ids)
 
     owner_payloads = {}
@@ -507,6 +513,7 @@ def publish(assembled: dict, data_dir: Path | None = None, *, allow_shrink: bool
                     "longest_win_streak",
                     "longest_loss_streak",
                     "unlinked",
+                    "is_active",
                     "team_name_timeline",
                 )
             }

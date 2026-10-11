@@ -1,26 +1,19 @@
-/* ==========================================================================
-   FFBFFL Record Book -- the night edition.
-
-   A broadsheet printed after dark: tobacco-black paper, parchment ink,
-   serif headlines over double rules, reference-grade tables. One ember
-   accent, used where the stakes are. Numbers are the news here, so the
-   data face is a quiet sans with tabular figures; the voice is the serif.
-   ========================================================================== */
+/* A quiet broadsheet: warm paper, black ink, serif headlines and fine rules. */
 
 :root {
   /* paper and ink */
-  --paper: #191410;        /* tobacco-dark page */
-  --paper-deep: #120e0b;   /* masthead, footer, boxes */
-  --ink: #eae1cf;          /* parchment: primary text and rules */
-  --ink-soft: #c4b89f;     /* secondary text */
-  --ink-faint: #998d74;    /* captions, folios */
-  --rule: #3a3227;         /* hairline between rows */
-  --rule-soft: #2a241c;
+  --paper: #faf9f6;        /* warm paper */
+  --paper-deep: #f2f0eb;   /* masthead, footer, boxes */
+  --ink: #202020;          /* primary ink */
+  --ink-soft: #505050;     /* secondary text */
+  --ink-faint: #6b6964;    /* captions, folios */
+  --rule: #bcb9b2;         /* hairline between rows */
+  --rule-soft: #e1ded7;
 
   /* signals */
-  --ember: #e0742f;        /* the burn: cut lines, decisive numbers */
-  --pos: #a6c98a;          /* gains */
-  --neg: #e08a6d;          /* losses */
+  --ember: #32627c;        /* restrained editorial accent */
+  --pos: #37634b;          /* gains */
+  --neg: #9a4037;          /* losses */
 
   /* legacy names used across pages */
   --color-bg: var(--paper);
@@ -118,7 +111,7 @@ a { color: inherit; }
 .figure-label { color: var(--ink-faint); font-size: 0.8rem; font-family: var(--font-body); }
 
 /* --------------------------------------------------------------------------
-   Tables: the agate page. Parchment header rule, hairline rows.
+   Tables: the agate page. Ink header rule, hairline rows.
    -------------------------------------------------------------------------- */
 .sheet { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .sheet table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
@@ -137,7 +130,7 @@ a { color: inherit; }
   border-bottom: 1px solid var(--rule-soft);
   white-space: nowrap;
 }
-.sheet tbody tr:hover { background: rgba(234, 225, 207, 0.04); }
+.sheet tbody tr:hover { background: rgba(32, 32, 32, 0.04); }
 .sheet [data-secondary="true"] { color: var(--ink-faint); }
 
 .num-pos { color: var(--pos); }
@@ -146,7 +139,7 @@ a { color: inherit; }
 .cell-bar {
   display: block;
   height: 3px;
-  background: rgba(234, 225, 207, 0.12);
+  background: rgba(32, 32, 32, 0.12);
   overflow: hidden;
 }
 .cell-bar > span { display: block; height: 100%; }
@@ -192,7 +185,7 @@ a { color: inherit; }
 .link-quiet {
   color: var(--ink-soft);
   text-decoration: underline;
-  text-decoration-color: rgba(234, 225, 207, 0.28);
+  text-decoration-color: rgba(32, 32, 32, 0.28);
   text-underline-offset: 2px;
 }
 .link-quiet:hover { color: var(--ink); text-decoration-color: var(--ink); }
@@ -200,7 +193,7 @@ a { color: inherit; }
 /* a term with a definition in the glossary */
 .term {
   color: inherit;
-  text-decoration: underline dotted rgba(234, 225, 207, 0.45);
+  text-decoration: underline dotted rgba(32, 32, 32, 0.45);
   text-underline-offset: 3px;
 }
 .term:hover { text-decoration-style: solid; color: var(--ink); }
@@ -258,3 +251,5 @@ a { color: inherit; }
   .sheet table { font-size: 0.84rem; }
   .sheet th, .sheet td { padding: 0.42rem 0.45rem; }
 }
+
+.section-kicker { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.85rem; }

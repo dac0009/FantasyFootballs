@@ -1,32 +1,32 @@
-/** Chart tokens for the night edition: parchment ink on dark paper. */
+/** Chart tokens for the print edition: dark ink on warm paper. */
 
 export const CHART = {
-  base: "#191410",
-  surface: "#120e0b",
-  grid: "#2a241c",
-  axis: "#998d74",
-  text: "#c4b89f",
-  textHi: "#eae1cf",
-  brass: "#e0742f", // ember
-  steel: "#c4b89f",
-  pos: "#a6c98a",
-  neg: "#e08a6d",
+  base: "#faf9f6",
+  surface: "#f2f0eb",
+  grid: "#e1ded7",
+  axis: "#6b6964",
+  text: "#505050",
+  textHi: "#202020",
+  brass: "#32627c", // editorial blue
+  steel: "#505050",
+  pos: "#37634b",
+  neg: "#9a4037",
 } as const;
 
-/** Series palette: inks that read on dark paper; ember anchors the first. */
+/** Series palette: distinct inks with sufficient contrast on warm paper. */
 export const SERIES = [
-  "#e0742f",
-  "#eae1cf",
-  "#a6c98a",
-  "#e08a6d",
-  "#9db8d2",
-  "#cdb36a",
-  "#b795c9",
-  "#8fbfae",
-  "#d99a84",
-  "#998d74",
-  "#7f9fc9",
-  "#c98fa6",
+  "#32627c",
+  "#202020",
+  "#37634b",
+  "#9a4037",
+  "#516c93",
+  "#8a691f",
+  "#785b8c",
+  "#3b766e",
+  "#9a6149",
+  "#6b6964",
+  "#49658d",
+  "#92576d",
 ] as const;
 
 export function seriesColor(index: number): string {

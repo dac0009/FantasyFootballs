@@ -308,3 +308,25 @@ def _no_nan(node) -> bool:
     if isinstance(node, list):
         return all(_no_nan(v) for v in node)
     return True
+
+
+def test_current_membership_comes_from_roster_before_first_result():
+    """Returning owners with no new results remain active."""
+    league = LeagueConfig(league_id=1, first_season=2025, last_season=2026,
+                         team_count_hint=12, name="Test")
+    dataset = build.collect(
+        league, Credentials(swid="{x}", espn_s2="y"),
+        seasons=[2025, 2026], use_cache=False, client=SampleClient(1),
+    )
+    latest = dataset["seasons"][2026]
+    latest["team_weeks"] = []
+    for matchup in latest["matchups"]:
+        matchup["completed"] = False
+    expected = {team["owner_id"] for team in latest["teams"]}
+    result = build.assemble(dataset)
+    assert {row["owner_id"] for row in result["careers"] if row["is_active"]} == expected
+    for owner_id, payload in result["owner_payloads"].items():
+        assert payload["is_active"] == (owner_id in expected)
+        if payload["rival"]:
+            assert owner_id in expected
+            assert payload["rival"]["rival_owner_id"] in expected

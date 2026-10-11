@@ -235,6 +235,7 @@ export interface SeasonIndexRow {
 }
 
 export interface OwnerIndexRow {
+  is_active?: boolean;
   owner_id: string;
   name: string;
   current_team_name: string | null;
