@@ -46,7 +46,7 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
       <a className="skip-link" href="#main">
         Skip to content
       </a>
-      <header
+      <header className="site-header"
         style={{
           position: "sticky",
           top: 0,

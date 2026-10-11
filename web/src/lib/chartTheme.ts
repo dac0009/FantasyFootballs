@@ -1,22 +1,22 @@
 /** Chart tokens for the print edition: dark ink on warm paper. */
 
 export const CHART = {
-  base: "#faf9f6",
-  surface: "#f2f0eb",
-  grid: "#e1ded7",
-  axis: "#6b6964",
-  text: "#505050",
-  textHi: "#202020",
-  brass: "#32627c", // editorial blue
-  steel: "#505050",
+  base: "#e9e3d6",
+  surface: "#ded5c3",
+  grid: "#cdc3ae",
+  axis: "#62655d",
+  text: "#445354",
+  textHi: "#1d303a",
+  brass: "#285568", // editorial blue
+  steel: "#445354",
   pos: "#37634b",
   neg: "#9a4037",
 } as const;
 
 /** Series palette: distinct inks with sufficient contrast on warm paper. */
 export const SERIES = [
-  "#32627c",
-  "#202020",
+  "#285568",
+  "#1d303a",
   "#37634b",
   "#9a4037",
   "#516c93",
@@ -24,7 +24,7 @@ export const SERIES = [
   "#785b8c",
   "#3b766e",
   "#9a6149",
-  "#6b6964",
+  "#62655d",
   "#49658d",
   "#92576d",
 ] as const;
