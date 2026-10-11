@@ -15,32 +15,23 @@ export function Band({
 }) {
   return (
     <div className="band" id={id}>
-      <h2 className="band-title">{title}</h2>
-      {action ?? (note ? <p className="band-note">{note}</p> : null)}
+      <div className="band-head">
+        <h2 className="band-title">{title}</h2>
+        {action ?? (note ? <p className="band-note">{note}</p> : null)}
+      </div>
+      <hr className="yardline" aria-hidden="true" />
     </div>
   );
 }
 
-/** A metric name with its definition available on hover and focus. */
+/** A statistic's name, linking to its definition in the glossary. */
 export function Metric({ name, children }: { name: keyof typeof METRICS | string; children?: ReactNode }) {
   const definition = METRICS[name];
   if (!definition) return <>{children}</>;
-  const title = definition.formula
-    ? `${definition.short}\n\nFormula: ${definition.formula}${
-        definition.limitation ? `\n\nLimitation: ${definition.limitation}` : ""
-      }`
-    : definition.short;
   return (
-    <abbr
-      title={title}
-      style={{
-        textDecoration: "none",
-        borderBottom: "1px dotted var(--color-low)",
-        cursor: "help",
-      }}
-    >
+    <Link to={`/glossary#${String(name).replace(/_/g, "-")}`} className="term">
       {children ?? definition.label}
-    </abbr>
+    </Link>
   );
 }
 
@@ -141,7 +132,7 @@ export function Figure({
       <div className="figure" style={{ fontSize: size, color: tone }}>
         {value}
       </div>
-      <div style={{ color: "var(--color-low)", fontSize: "0.78rem", marginTop: "0.3rem" }}>
+      <div className="figure-label" style={{ marginTop: "0.3rem" }}>
         {label}
       </div>
     </div>

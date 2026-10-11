@@ -40,7 +40,7 @@ looks wrong you can open the relevant `.json` file and see it.
 | Owners | A profile per person: career record, every team name they've used, highs and lows |
 | Head to head | Any two owners, their full series history and a rivalry page |
 | Drafts | Draft boards for each season ESPN still has |
-| Methodology | Every custom statistic defined, with its formula and its limitations |
+| Glossary | Every custom statistic defined, with its formula and its limitations |
 
 ---
 

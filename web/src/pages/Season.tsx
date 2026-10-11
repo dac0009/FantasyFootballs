@@ -38,7 +38,7 @@ export default function Season() {
                   {data.champion.team_name}
                 </OwnerLink>
               }
-              label={`Champion \u00b7 ${data.champion.owner_name ?? ""} \u00b7 ${data.champion.record}`}
+              label={`Champion, ${data.champion.owner_name ?? ""}, ${data.champion.record}`}
               size="1.6rem"
               tone="var(--color-brass)"
             />

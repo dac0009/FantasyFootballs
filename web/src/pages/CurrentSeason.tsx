@@ -52,7 +52,15 @@ export function SeasonAnalytics({ data, title }: { data: SeasonPayload; title: s
         <QuadrantScatter rows={standings} />
       </div>
 
-      <Band title="Schedule luck" note="Actual wins minus expected wins" />
+      <Band
+        title="Schedule luck"
+        note={
+          <>
+            <Metric name="schedule_luck">Schedule luck</Metric> and{" "}
+            <Metric name="expected_wins">expected wins</Metric>
+          </>
+        }
+      />
       <div className="season-split" style={{ marginTop: "1rem" }}>
         <DivergingBars
           data={standings
@@ -60,7 +68,7 @@ export function SeasonAnalytics({ data, title }: { data: SeasonPayload; title: s
             .map((r) => ({
               name: r.team_name ?? r.owner_id,
               value: r.schedule_luck as number,
-              detail: `${r.record} \u00b7 expected ${points(r.expected_wins, 1)}`,
+              detail: `${r.record}, expected ${points(r.expected_wins, 1)}`,
             }))}
           axisLabel="Wins above or below expected"
           negativeLabel="Unlucky"
@@ -126,19 +134,13 @@ export function SeasonAnalytics({ data, title }: { data: SeasonPayload; title: s
             .map((r) => ({
               name: r.team_name ?? r.owner_id,
               value: (r.fortunate_win_index ?? 0) - (r.bad_beat_index ?? 0),
-              detail: `bad beats ${points(r.bad_beat_index, 2)} \u00b7 fortunate wins ${points(r.fortunate_win_index, 2)}`,
+              detail: `bad beats ${points(r.bad_beat_index, 2)}, fortunate wins ${points(r.fortunate_win_index, 2)}`,
             }))}
           axisLabel="Fortunate wins minus bad beats"
           negativeLabel="Deserved better"
           positiveLabel="Got away with it"
         />
         <div>
-          <p className="prose-narrow" style={{ fontSize: "0.86rem" }}>
-            <Metric name="bad_beat_index">Bad Beat Index</Metric> adds up how far above the weekly
-            league average a team was in the weeks it lost.{" "}
-            <Metric name="fortunate_win_index">Fortunate Win Index</Metric> does the reverse for
-            wins. The bar above is the difference: positive means the season flattered the team.
-          </p>
           <ul style={{ listStyle: "none", padding: 0, margin: "1rem 0 0" }}>
             {standings
               .filter((r) => r.worst_bad_beat)

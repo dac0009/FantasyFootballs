@@ -23,7 +23,7 @@ const MORE: NavItem[] = [
   { to: "/seasons", label: "Season archive" },
   { to: "/head-to-head", label: "Head to head" },
   { to: "/drafts", label: "Drafts" },
-  { to: "/methodology", label: "Methodology" },
+  { to: "/glossary", label: "Glossary" },
 ];
 
 export function Layout({ meta, children }: { meta: Meta | null; children: ReactNode }) {
@@ -45,9 +45,8 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
           position: "sticky",
           top: 0,
           zIndex: 20,
-          backgroundColor: "color-mix(in srgb, var(--color-base) 92%, transparent)",
-          backdropFilter: "blur(8px)",
-          borderBottom: "1px solid var(--color-line)",
+          backgroundColor: "var(--turf-deep)",
+          borderBottom: "2px solid var(--chalk)",
           paddingTop: "var(--safe-top)",
         }}
       >
@@ -65,13 +64,14 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
             style={{
               fontFamily: "var(--font-display)",
               fontWeight: 800,
-              fontSize: "1.02rem",
-              letterSpacing: "-0.03em",
+              fontSize: "1.45rem",
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
               whiteSpace: "nowrap",
+              textDecoration: "none",
             }}
           >
             {meta?.league.short_name ?? "League"}
-            <span style={{ color: "var(--color-brass)" }}>.</span>
           </Link>
 
           <nav aria-label="Primary" className="main-nav">
@@ -156,14 +156,15 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
           style={{ display: "flex", flexWrap: "wrap", gap: "0.8rem 2rem", justifyContent: "space-between" }}
         >
           <p style={{ margin: 0 }}>
-            {meta?.league.name ?? "League"} archive
-            {meta ? ` \u00b7 ${meta.seasons[0]}\u2013${meta.seasons[meta.seasons.length - 1]}` : ""}
+            {meta?.league.name ?? "League"} record book,{" "}
+            {meta ? `${meta.seasons[0]}\u2013${meta.seasons[meta.seasons.length - 1]}` : ""}
           </p>
           <p style={{ margin: 0 }}>
             {meta
-              ? `Data updated ${generatedAt(meta.generated_at, meta.league.timezone)} \u00b7 ${
-                  meta.source === "espn" ? "ESPN" : "sample data"
-                }`
+              ? `${meta.source === "espn" ? "ESPN data" : "Sample data"}, updated ${generatedAt(
+                  meta.generated_at,
+                  meta.league.timezone,
+                )}`
               : ""}
           </p>
           <p style={{ margin: 0, display: "flex", gap: "1.1rem", flexWrap: "wrap" }}>
@@ -191,7 +192,7 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
         .nav-item:hover { color: var(--color-hi); }
         .nav-item-quiet { color: var(--color-low); font-size: 0.8rem; }
         .nav-sep { width: 1px; height: 1rem; background: var(--color-line); align-self: center; }
-        .nav-item-active { color: var(--color-hi); border-bottom-color: var(--color-brass); }
+        .nav-item-active { color: var(--color-hi); border-bottom-color: var(--amber); }
         @media (min-width: 940px) {
           .main-nav { display: flex; }
           .nav-toggle { display: none; }

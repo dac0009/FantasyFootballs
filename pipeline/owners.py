@@ -71,6 +71,7 @@ class OwnerRegistry:
         self._owner_specs: list[dict] = list(overrides.get("owners") or [])
         self._guid_to_owner: dict[str, str] = {}
         self._hash_to_owner: dict[str, str] = {}
+        self._display_name_to_owner: dict[str, str] = {}
         self._pinned_name: dict[str, str] = {}
         self._notes: dict[str, str] = {}
         self._hidden: set[str] = set()
@@ -95,6 +96,8 @@ class OwnerRegistry:
                 self._guid_to_owner[self._canonical_guid(guid)] = owner_id
             for member_hash in spec.get("espn_member_hashes") or []:
                 self._hash_to_owner[str(member_hash).strip().lower()] = owner_id
+            for display in spec.get("espn_display_names") or []:
+                self._display_name_to_owner[" ".join(str(display).split()).lower()] = owner_id
 
     @staticmethod
     def _canonical_guid(guid: str) -> str:
@@ -153,8 +156,11 @@ class OwnerRegistry:
         return team_to_owner
 
     def _owner_id_for_guid(self, guid: str, member: dict | None) -> str:
-        configured = self._guid_to_owner.get(guid) or self._hash_to_owner.get(
-            hash_member_id(guid)
+        display = " ".join(member_display_name(member).split()).lower() if member else ""
+        configured = (
+            self._guid_to_owner.get(guid)
+            or self._hash_to_owner.get(hash_member_id(guid))
+            or self._display_name_to_owner.get(display)
         )
         if configured:
             owner_id = configured

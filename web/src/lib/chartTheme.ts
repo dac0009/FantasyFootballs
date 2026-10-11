@@ -1,32 +1,33 @@
-/** Shared chart tokens so every figure matches the page, not Recharts' defaults. */
+/** Shared chart tokens: chalk on turf, like the rest of the field. */
 
 export const CHART = {
-  base: "#0f1115",
-  surface: "#171a20",
-  grid: "#242a33",
-  axis: "#6a7280",
-  text: "#98a1ae",
-  textHi: "#e8ebf0",
-  brass: "#c8963e",
-  steel: "#6e9bc5",
-  pos: "#4e9e72",
-  neg: "#c25b52",
+  base: "#1e3b2b",
+  surface: "#162d20",
+  grid: "#2b4836",
+  axis: "#90ab97",
+  text: "#b7c9ba",
+  textHi: "#edf1e6",
+  brass: "#ffb52e", // scoreboard amber
+  steel: "#b7c9ba",
+  pos: "#93dc9e",
+  neg: "#ff9183",
 } as const;
 
-/** A restrained 12-step series palette: cool neutrals with two warm anchors. */
+/** Series palette: chalk-adjacent tones that stay legible on turf, with the
+ *  amber anchor first so a highlighted line reads as the scoreboard. */
 export const SERIES = [
-  "#6e9bc5",
-  "#c8963e",
-  "#79b394",
-  "#b4788f",
-  "#8d93c7",
-  "#c58d6e",
-  "#6fa9b0",
-  "#a9a86e",
-  "#9d7fb0",
-  "#5f8878",
-  "#c47a74",
-  "#8697a8",
+  "#ffb52e",
+  "#edf1e6",
+  "#93dc9e",
+  "#ff9183",
+  "#9fd0e8",
+  "#d8c27a",
+  "#c5a3d6",
+  "#8fc7b2",
+  "#e8a46b",
+  "#a9bfad",
+  "#7fa8d9",
+  "#d98fa6",
 ] as const;
 
 export function seriesColor(index: number): string {

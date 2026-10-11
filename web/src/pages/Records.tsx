@@ -97,14 +97,14 @@ export default function Records() {
       {!categories.length ? (
         <Empty>
           {group === "player"
-            ? "Player records need ESPN lineup data, which was not available for this league. See the methodology page for what ESPN exposes."
+            ? "Player records need ESPN lineup data, which was not available for this league. See the glossary for what ESPN exposes."
             : "No records match that filter."}
         </Empty>
       ) : null}
 
       {categories.map((category) => (
         <section key={category.id} id={category.id} style={{ scrollMarginTop: "4.5rem" }}>
-          <Band title={category.title} note={`${category.unit} \u00b7 ${category.better === "high" ? "higher is better" : "lower is better"}`} />
+          <Band title={category.title} note={`${category.unit}, ${category.better === "high" ? "higher is better" : "lower is better"}`} />
           <p className="prose-narrow" style={{ margin: "0.5rem 0 0.8rem", fontSize: "0.86rem" }}>
             {category.description}
           </p>
@@ -121,7 +121,7 @@ export default function Records() {
       ))}
 
       <p style={{ marginTop: "2.5rem", fontSize: "0.85rem" }}>
-        <Link to="/methodology" className="link-quiet">
+        <Link to="/glossary" className="link-quiet">
           How each of these is defined
         </Link>
       </p>
@@ -153,7 +153,7 @@ function describe(entry: RecordEntry) {
         <strong style={{ color: "var(--color-hi)", fontWeight: 600 }}>{entry.player_name}</strong>{" "}
         <span style={{ color: "var(--color-low)" }}>
           {entry.position}
-          {entry.nfl_team ? ` \u00b7 ${entry.nfl_team}` : ""}
+          {entry.nfl_team ? `, ${entry.nfl_team}` : ""}
         </span>
         {entry.owner_id ? (
           <>
@@ -170,7 +170,7 @@ function describe(entry: RecordEntry) {
           </>
         ) : null}
         {entry.lineup_slot ? (
-          <span style={{ color: "var(--color-low)" }}> &middot; {entry.lineup_slot}</span>
+          <span style={{ color: "var(--color-low)" }}>, {entry.lineup_slot}</span>
         ) : null}
       </>
     );
@@ -188,7 +188,7 @@ function describe(entry: RecordEntry) {
             <WeekLink season={entry.season} week={entry.week}>
               {entry.season} week {entry.week}
             </WeekLink>
-            {entry.game_type && entry.game_type !== "regular" ? ` \u00b7 ${gameTypeLabel(entry.game_type)}` : ""}
+            {entry.game_type && entry.game_type !== "regular" ? `, ${gameTypeLabel(entry.game_type)}` : ""}
           </span>
         ) : null}
       </>
@@ -228,13 +228,13 @@ function describe(entry: RecordEntry) {
         </>
       ) : null}
       {entry.record && !entry.opponent_team_name ? (
-        <span style={{ color: "var(--color-low)" }}> &middot; {entry.record}</span>
+        <span style={{ color: "var(--color-low)" }}>, {entry.record}</span>
       ) : null}
       {entry.seasons ? (
-        <span style={{ color: "var(--color-low)" }}> &middot; {entry.seasons} seasons</span>
+        <span style={{ color: "var(--color-low)" }}>, {entry.seasons} seasons</span>
       ) : null}
       {entry.game_type && entry.game_type !== "regular" ? (
-        <span style={{ color: "var(--color-low)" }}> &middot; {gameTypeLabel(entry.game_type)}</span>
+        <span style={{ color: "var(--color-low)" }}>, {gameTypeLabel(entry.game_type)}</span>
       ) : null}
     </>
   );

@@ -102,10 +102,8 @@ export function MatchupPreviewCard({ preview, featured }: { preview: Preview; fe
 export function PreviewLegend() {
   return (
     <p style={{ color: "var(--color-low)", fontSize: "0.78rem", margin: "0.7rem 0 0" }}>
-      Percentages are <Metric name="win_probability">win probability</Metric> from each team's scoring
-      so far; the range is one standard deviation around a team's expected score; the green/red pair is{" "}
-      <Metric name="playoff_swing">playoff odds if they win / if they lose</Metric>. Games are ordered
-      by how much they move the playoff picture.
+      <Metric name="win_probability">Win probability</Metric>, typical scoring range, and{" "}
+      <Metric name="playoff_swing">playoff odds if win / if loss</Metric>.
     </p>
   );
 }

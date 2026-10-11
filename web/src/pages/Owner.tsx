@@ -118,7 +118,7 @@ export default function Owner() {
       <h1 style={{ fontSize: "clamp(1.9rem, 6vw, 3rem)", marginTop: "0.35rem" }}>{data.name}</h1>
       <p style={{ color: "var(--color-mid)", marginTop: "0.4rem" }}>
         {data.current_team_name}
-        {data.seasons_played ? ` \u00b7 ${data.seasons_played} seasons \u00b7 ${data.first_season}\u2013${data.last_season}` : ""}
+        {data.seasons_played ? `, ${data.seasons_played} seasons, ${data.first_season}\u2013${data.last_season}` : ""}
       </p>
       {data.note ? <p className="notice" style={{ marginTop: "0.9rem" }}>{data.note}</p> : null}
       {data.unlinked ? (

@@ -119,6 +119,27 @@ class TestOverrides:
         assert records[0]["owner_id"] == "jakob-frank"
         assert records[0]["seasons"] == [2019, 2020]
 
+    def test_two_accounts_merge_by_display_name(self):
+        """An explicit espn_display_names entry merges every account whose
+        ESPN name matches, so a known duplicate can be fixed before any
+        hashes have ever been published."""
+        overrides = {
+            "owners": [
+                {
+                    "owner_id": "jakob-frank",
+                    "name": "Jakob Frank",
+                    "espn_display_names": ["Jakob  Frank"],  # whitespace-insensitive
+                }
+            ]
+        }
+        registry = OwnerRegistry(overrides)
+        registry.register_season(2019, [member(GUID_A, "Jakob", "Frank")], [team(6, "Lil B", GUID_A)])
+        registry.register_season(2020, [member(GUID_B, "Jakob", "Frank")], [team(16, "Other", GUID_B)])
+        records = registry.to_records()
+        assert len(records) == 1
+        assert records[0]["owner_id"] == "jakob-frank"
+        assert records[0]["seasons"] == [2019, 2020]
+
     def test_guid_without_braces_in_config_still_matches(self):
         overrides = {
             "owners": [

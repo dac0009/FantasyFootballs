@@ -20,7 +20,7 @@ export function GameOfWeekPanel({ data }: { data: GameOfWeek }) {
       style={{ borderTopWidth: 3, borderTopColor: "var(--color-brass)", borderRadius: "0 0 3px 3px" }}
     >
       <p style={{ color: "var(--color-brass)", fontSize: "0.8rem", margin: 0, fontWeight: 600 }}>
-        Game of the week &middot; Week {week}
+        Game of the week, Week {week}
       </p>
 
       <h3 style={{ fontSize: "clamp(1.25rem, 3vw, 1.7rem)", margin: "0.5rem 0 0.1rem" }}>
@@ -56,7 +56,7 @@ export function GameOfWeekPanel({ data }: { data: GameOfWeek }) {
 
       {pick.preview ? (
         <p style={{ color: "var(--color-mid)", fontSize: "0.88rem", margin: "0.7rem 0 0" }}>
-          {pick.preview.away_team_name} {Math.round(pick.preview.away_win_pct * 100)}% &middot;{" "}
+          {pick.preview.away_team_name} {Math.round(pick.preview.away_win_pct * 100)}%, 
           {pick.preview.home_team_name} {Math.round(pick.preview.home_win_pct * 100)}%{" "}
           <span style={{ color: "var(--color-low)" }}>
             win probability from each team's scoring so far, not an ESPN projection.
@@ -92,7 +92,7 @@ export function GameOfWeekPanel({ data }: { data: GameOfWeek }) {
           Rivalry history
         </RivalryLink>
         <span style={{ color: "var(--color-line)", margin: "0 0.6rem" }}>|</span>
-        <Link to="/methodology#game-of-the-week" className="link-quiet">
+        <Link to="/glossary#game-of-the-week" className="link-quiet">
           <Metric name="game_of_week">How the pick is made</Metric>
         </Link>
       </p>

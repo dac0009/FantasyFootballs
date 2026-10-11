@@ -12,7 +12,8 @@ import Owners from "./pages/Owners";
 import Owner from "./pages/Owner";
 import HeadToHead from "./pages/HeadToHead";
 import Drafts from "./pages/Drafts";
-import Methodology from "./pages/Methodology";
+import Glossary from "./pages/Glossary";
+import { Navigate } from "react-router-dom";
 import NotFound from "./pages/NotFound";
 
 export default function App() {
@@ -46,7 +47,8 @@ export default function App() {
         <Route path="/owners/:ownerId" element={<Owner />} />
         <Route path="/head-to-head" element={<HeadToHead />} />
         <Route path="/drafts" element={<Drafts meta={meta.data} />} />
-        <Route path="/methodology" element={<Methodology meta={meta.data} />} />
+        <Route path="/glossary" element={<Glossary meta={meta.data} />} />
+        <Route path="/methodology" element={<Navigate to="/glossary" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>

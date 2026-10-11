@@ -36,7 +36,7 @@ export default function SeasonIndex() {
                   </OwnerLink>
                   <span style={{ color: "var(--color-low)" }}>
                     {" "}
-                    as {season.champion.team_name} &middot; {season.champion.record} &middot;{" "}
+                    as {season.champion.team_name}, {season.champion.record},{" "}
                     {total(season.champion.points_for)} points
                   </span>
                 </p>
@@ -46,9 +46,9 @@ export default function SeasonIndex() {
                 </p>
               )}
               <p style={{ margin: "0.25rem 0 0", color: "var(--color-low)", fontSize: "0.83rem" }}>
-                {season.team_count} teams &middot; {season.regular_season_weeks}-week regular season
-                &middot; {season.completed_weeks.length} weeks played
-                {season.runner_up ? ` \u00b7 runner-up ${season.runner_up.team_name}` : ""}
+                {season.team_count} teams, {season.regular_season_weeks}-week regular season
+               , {season.completed_weeks.length} weeks played
+                {season.runner_up ? `, runner-up ${season.runner_up.team_name}` : ""}
               </p>
             </div>
           </li>

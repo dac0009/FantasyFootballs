@@ -4,12 +4,9 @@ import { MatchupPreviewCard, PreviewLegend } from "../components/MatchupPreview"
 import { PlayoffPicture } from "../components/PlayoffPicture";
 import { Scoreboard } from "../components/Scoreboard";
 import { ShareButton } from "../components/ShareButton";
-import { StandingsTable } from "../components/StandingsTable";
-import { DivergingBars } from "../components/charts/DivergingBars";
-import { QuadrantScatter } from "../components/charts/QuadrantScatter";
-import { Band, Empty, ErrorState, Figure, Loading, Metric, OwnerLink, WeekLink } from "../components/primitives";
+import { Band, Empty, ErrorState, Figure, Loading, OwnerLink, WeekLink } from "../components/primitives";
 import { useCurrent, useGameOfWeek } from "../lib/data";
-import { points, total } from "../lib/format";
+import { points } from "../lib/format";
 import type { CurrentPayload, Meta } from "../lib/types";
 
 /**
@@ -35,14 +32,14 @@ export default function Home({ meta }: { meta: Meta }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: "1rem", flexWrap: "wrap" }}>
         <div>
           <p style={{ color: "var(--color-brass)", fontSize: "0.82rem", fontWeight: 600, margin: 0 }}>
-            {meta.league.name} &middot; {data.season}
+            {meta.league.name} {data.season}
           </p>
           <h1 style={{ fontSize: "clamp(1.7rem, 5vw, 2.4rem)", marginTop: "0.3rem" }}>
             {week ? `Week ${week.week} is in the books` : "Preseason"}
             {data.upcoming_week ? (
               <span style={{ color: "var(--color-low)", fontWeight: 500 }}>
                 {" "}
-                &middot; Week {data.upcoming_week} next
+                \u2014 week {data.upcoming_week} next
               </span>
             ) : null}
           </h1>
@@ -58,7 +55,7 @@ export default function Home({ meta }: { meta: Meta }) {
         <>
           <Band
             title="Playoff picture"
-            note={`After week ${picture.as_of_week} \u00b7 ${picture.remaining_regular_season_games} games left`}
+            note={`After week ${picture.as_of_week}, ${picture.remaining_regular_season_games} games left`}
           />
           <PlayoffPicture picture={picture} />
         </>
@@ -99,7 +96,7 @@ export default function Home({ meta }: { meta: Meta }) {
               value={points(week.summary.high?.score, 1)}
               label={
                 <>
-                  High &middot;{" "}
+                  High, 
                   <OwnerLink ownerId={week.summary.high?.owner_id}>{week.summary.high?.team_name}</OwnerLink>
                 </>
               }
@@ -109,7 +106,7 @@ export default function Home({ meta }: { meta: Meta }) {
               value={points(week.summary.low?.score, 1)}
               label={
                 <>
-                  Low &middot;{" "}
+                  Low, 
                   <OwnerLink ownerId={week.summary.low?.owner_id}>{week.summary.low?.team_name}</OwnerLink>
                 </>
               }
@@ -158,51 +155,11 @@ export default function Home({ meta }: { meta: Meta }) {
         </>
       ) : null}
 
-      <Band
-        title="Standings"
-        action={
-          <p className="band-note">
-            <Link to="/season" className="link-quiet">
-              Full season analytics
-            </Link>
-          </p>
-        }
-      />
-      <StandingsTable rows={data.standings} season={data.season} />
-
-      <Band title="Record versus performance" note="Who is better, or worse, than their record" />
-      <div className="home-split" style={{ marginTop: "1rem" }}>
-        <QuadrantScatter rows={data.standings} />
-        <DivergingBars
-          data={data.standings
-            .filter((r) => r.schedule_luck !== null)
-            .map((r) => ({
-              name: r.team_name ?? r.owner_id,
-              value: r.schedule_luck as number,
-              detail: `${r.record} \u00b7 expected ${points(r.expected_wins, 1)}`,
-            }))}
-          axisLabel="Wins above or below expected"
-          negativeLabel="Unlucky"
-          positiveLabel="Lucky"
-        />
-      </div>
-      <p className="prose-narrow" style={{ marginTop: "0.9rem", fontSize: "0.84rem" }}>
-        <Metric name="schedule_luck">Schedule luck</Metric> is actual wins minus{" "}
-        <Metric name="expected_wins">expected wins</Metric> from each team's{" "}
-        <Metric name="all_play">all-play record</Metric>. A team far left of zero is better than its record.
+      <p style={{ marginTop: "2.6rem" }}>
+        <Link to="/season" className="link-quiet">
+          Full standings and season analytics
+        </Link>
       </p>
-
-      <Band title="Scoring leaders" note="Highest average this season" />
-      <ul className="move-list">
-        {data.scoring_leaders.map((row) => (
-          <li key={row.owner_id}>
-            <OwnerLink ownerId={row.owner_id}>{row.team_name}</OwnerLink>
-            <span style={{ fontSize: "0.85rem", color: "var(--color-mid)" }}>
-              {points(row.avg_score, 1)} per game &middot; {total(row.points_for)} total
-            </span>
-          </li>
-        ))}
-      </ul>
 
       <style>{`
         .home-figures {
@@ -213,11 +170,6 @@ export default function Home({ meta }: { meta: Meta }) {
         .home-split { display: grid; gap: 1.6rem; margin-top: 1rem; }
         @media (min-width: 1000px) {
           .home-split { grid-template-columns: 1.25fr 1fr; align-items: start; gap: 2.4rem; }
-        }
-        .move-list { list-style: none; padding: 0; margin: 0.8rem 0 0; }
-        .move-list li {
-          display: flex; justify-content: space-between; gap: 1rem;
-          padding: 0.5rem 0; border-bottom: 1px solid var(--color-line-soft);
         }
       `}</style>
     </div>

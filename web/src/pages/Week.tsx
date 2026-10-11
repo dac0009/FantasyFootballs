@@ -281,10 +281,10 @@ function WeekRosterHighlights({ season, week }: { season: number; week: number }
                 <span style={{ color: "var(--color-low)" }}>
                   {" "}
                   {player?.position}
-                  {player?.nfl_team ? ` \u00b7 ${player.nfl_team}` : ""}
+                  {player?.nfl_team ? `, ${player.nfl_team}` : ""}
                 </span>
                 <span style={{ color: "var(--color-low)", display: "block", fontSize: "0.78rem" }}>
-                  <OwnerLink ownerId={row.owner_id}>roster</OwnerLink> &middot; {row.lineup_slot}
+                  <OwnerLink ownerId={row.owner_id}>roster</OwnerLink>, {row.lineup_slot}
                 </span>
               </span>
               <span className="figure" style={{ fontSize: "1rem" }}>

@@ -59,7 +59,7 @@ export default function Drafts({ meta }: { meta: Meta }) {
       {draft.state === "error" ? (
         <Empty>
           ESPN has no draft data for {season}. Draft history is one of the datasets ESPN does not
-          serve consistently for older seasons; the methodology page lists what is available.
+          serve consistently for older seasons; the glossary lists what is available.
         </Empty>
       ) : null}
 
@@ -99,9 +99,9 @@ export default function Drafts({ meta }: { meta: Meta }) {
                               </span>
                               <span style={{ color: "var(--color-low)", fontSize: "0.76rem" }}>
                                 {player?.position ?? ""}
-                                {player?.nfl_team ? ` \u00b7 ${player.nfl_team}` : ""}
-                                {pick.overall_pick ? ` \u00b7 #${pick.overall_pick}` : ""}
-                                {pick.keeper ? " \u00b7 keeper" : ""}
+                                {player?.nfl_team ? `, ${player.nfl_team}` : ""}
+                                {pick.overall_pick ? `, #${pick.overall_pick}` : ""}
+                                {pick.keeper ? ", keeper" : ""}
                               </span>
                             </>
                           ) : (

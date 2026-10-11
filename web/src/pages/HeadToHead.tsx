@@ -269,18 +269,14 @@ export default function HeadToHead() {
                   </span>
                 </button>
                 <span style={{ color: "var(--color-mid)", fontSize: "0.85rem" }}>
-                  {rivalry.overall.record} &middot; {rivalry.overall.games} meetings &middot; avg
+                  {rivalry.overall.record}, {rivalry.overall.games} meetings, avg
                   margin {points(rivalry.avg_abs_margin, 1)}
-                  {rivalry.playoff.games ? ` \u00b7 ${rivalry.playoff.games} in the playoffs` : ""}
+                  {rivalry.playoff.games ? `, ${rivalry.playoff.games} in the playoffs` : ""}
                 </span>
               </li>
             ))}
           </ol>
-          <p className="prose-narrow" style={{ marginTop: "1rem", fontSize: "0.85rem" }}>
-            <Metric name="rivalry_index">Rivalry index</Metric> weights meetings played, how even
-            the series is, how close the games have been, and playoff history equally. It is a
-            sorting convenience, not a measurement.
-          </p>
+
         </>
       )}
 
@@ -341,7 +337,7 @@ function SeriesGame({
           <WeekLink season={m.season} week={m.week}>
             {m.season} week {m.week}
           </WeekLink>
-          {m.game_type !== "regular" ? ` \u00b7 ${gameTypeLabel(m.game_type)}` : ""}
+          {m.game_type !== "regular" ? `, ${gameTypeLabel(m.game_type)}` : ""}
         </div>
       </div>
       <div className="figure" style={{ fontSize: "1.2rem" }}>

@@ -22,6 +22,8 @@
 #       - a81b22c9d0ef
 #     espn_member_ids:            # or raw ESPN account GUIDs, if you have them
 #       - "{AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE}"
+#     espn_display_names:         # or merge every account with this exact name
+#       - Jane Doe
 #     note: "Took over the Harbor City franchise in 2021."
 
 owners:
@@ -31,12 +33,10 @@ owners:
   - owner_id: tyler-kuiken
     name: Tyler Kuiken
 
-  # Jakob Frank appears twice in the ESPN data (2019 under one account,
-  # 2020 onward under another). After the next refresh, data/meta.json will
-  # contain a warning with his two member hashes; paste them here to merge:
-  #
-  # - owner_id: jakob-frank
-  #   name: Jakob Frank
-  #   espn_member_hashes:
-  #     - <hash from the warning>
-  #     - <hash from the warning>
+  # Jakob Frank played 2019 under one ESPN account and 2020 onward under
+  # another. Both accounts carry the same display name, so merging by name is
+  # unambiguous here. (espn_member_hashes or espn_member_ids work too.)
+  - owner_id: jakob-frank
+    name: Jakob Frank
+    espn_display_names:
+      - Jakob Frank
