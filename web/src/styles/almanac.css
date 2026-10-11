@@ -33,3 +33,39 @@
 .collection-card h2{font-size:1.4rem;line-height:1.05;margin:.85rem 0 .3rem;text-transform:uppercase;overflow-wrap:anywhere}.collection-card>p{font-size:.7rem;color:#53605d;margin:0 0 .85rem;flex:1}.collection-record{border-top:1px solid #a99c82;padding:.6rem 0;display:flex;justify-content:space-between;align-items:baseline;gap:.5rem}.collection-record strong{font:600 1.4rem var(--font-display)}.collection-record>span{font-size:.6rem}.collection-open{font-size:.57rem;letter-spacing:.07em;text-transform:uppercase;border-top:1px solid #a99c82;padding-top:.5rem}
 @media(prefers-reduced-motion:no-preference){.collection-card{transition:transform .18s,box-shadow .18s}.collection-card:hover{transform:translateY(-4px);box-shadow:0 10px 20px #172d3925}}
 @media(max-width:1000px){.owner-collection{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:700px){.owner-collection{grid-template-columns:repeat(2,minmax(0,1fr));gap:.85rem}.collection-card h2{font-size:1.15rem}.collection-card-top{font-size:.45rem}.collection-monogram{font-size:3rem}}
+
+/* Special editions: dimensional stock and a signature made from actual scores. */
+.owner-card-wrap{padding:0;background:transparent;box-shadow:none;transform:perspective(1200px) rotateX(var(--tilt-x,0deg)) rotateY(var(--tilt-y,0deg));position:relative;isolation:isolate}
+.card-stage{perspective:1400px;filter:drop-shadow(0 18px 14px #172d3929)}
+.owner-card{display:grid;overflow:visible;border:0;transform-style:preserve-3d;animation:none;background:transparent}
+.owner-card.owner-card-back{transform:rotateY(180deg)}
+.card-face{grid-area:1/1;backface-visibility:hidden;background:var(--card-paper);border:7px solid #e3d8bf;outline:1px solid #a99c82;position:relative;min-width:0;overflow:hidden}
+.card-face:after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at var(--light-x,30%) var(--light-y,15%),#fff8,transparent 65%);mix-blend-mode:soft-light;opacity:.35}
+.card-back{transform:rotateY(180deg)}
+.card-topline{font-size:.55rem;padding:.85rem .7rem;letter-spacing:.12em}
+.card-art{height:252px;margin:0;background:radial-gradient(ellipse at 80% 10%,#ffffff16,transparent 65%),var(--card-ink);align-items:start;justify-content:start}
+.card-art:before{inset:0;border:0;border-radius:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,#ece3ce0c 3px,#ece3ce0c 4px)}
+.card-art:after{inset:12px;border-radius:0;border:1px solid #ece3ce45}
+.card-art-label{position:absolute;top:24px;left:24px;font-size:.48rem;letter-spacing:.22em;color:#e3d8bf}
+.card-monogram{font-style:italic;font-weight:700;font-size:9.7rem;letter-spacing:-.13em;line-height:1;position:absolute;top:38px;left:19px;opacity:.93;text-shadow:3px 3px 0 #ffffff12}
+.card-signature{position:absolute;inset:65px 0 10px;width:100%;height:180px;color:#d8b975;z-index:2;filter:drop-shadow(0 2px 3px #0006)}
+.card-tenure{left:24px;bottom:23px;padding:0;background:transparent;font-size:.5rem;color:#f0e6ce}
+.card-seal{position:absolute;right:22px;bottom:23px;border:1px solid #d8b975;border-radius:50%;width:50px;height:50px;text-align:center;line-height:1;padding-top:7px;color:#e7d1a0;font:500 1.25rem var(--font-display)}
+.card-seal small{display:block;font: .4rem var(--font-body);letter-spacing:.12em}
+.card-identity{padding:1.15rem 1rem .9rem;background:linear-gradient(120deg,#fffa,transparent)}
+.card-identity h1{font-size:clamp(2.1rem,3.4vw,3rem);letter-spacing:-.06em;text-transform:none}
+.card-honors{min-height:3.2rem}.card-flip{margin-top:14px;background:transparent;color:var(--card-ink);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:.8rem}.card-flip:hover{background:#d5c8ae55}
+.card-caption{display:flex;justify-content:space-between;gap:.5rem;font-size:.5rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-faint);margin-top:.65rem}
+.card-reverse{min-height:0;padding:1.5rem 1.1rem;animation:none}.card-reverse h2{font-size:2.5rem;letter-spacing:-.05em;margin:.6rem 0 1rem}.card-reverse dl>div{padding:.85rem 0}
+.almanac-folio{border-top:3px solid var(--ink);padding-top:.7rem;margin-bottom:2.5rem}
+.almanac-story-heading{padding-top:.2rem}.almanac-story-heading h2{font-size:clamp(2.5rem,4.8vw,4rem);line-height:1;letter-spacing:-.055em;font-weight:500}
+.game-reel{background:transparent;border-top:3px double var(--ink);padding:1.15rem 0}.reel-result>b{font-style:italic;font-size:2.6rem}.reel-bar{height:6px}.reel-bar>span{background:var(--card-ink)}
+.collection-card{background:#eee6d5;border:0;border-top:3px solid var(--card-ink);padding:.8rem;box-shadow:0 6px 15px #172d3918}
+.collection-monogram{position:relative;overflow:hidden;background:repeating-linear-gradient(0deg,transparent,transparent 3px,#ece3ce0c 3px,#ece3ce0c 4px),var(--card-ink);color:#ece3ce;font-size:5.5rem;font-style:italic;line-height:1.4;border:0;letter-spacing:-.12em;text-shadow:3px 3px #ffffff15}
+.collection-monogram:after{content:"";position:absolute;inset:10px;border:1px solid #c5a76a99;background:linear-gradient(135deg,#fff2,transparent 65%)}
+.collection-card h2{text-transform:none;font-size:1.65rem;letter-spacing:-.04em}.collection-open{padding-top:.75rem}
+@media(prefers-reduced-motion:no-preference){.owner-card{transition:transform .7s cubic-bezier(.2,.65,.3,1)}.owner-card-wrap{transition:transform .12s ease-out}.collection-card:hover{transform:translateY(-6px) rotate(-1deg)}}
+@media(prefers-reduced-motion:reduce){.owner-card-wrap{transform:none}.owner-card{transition:none}}
+@media(max-width:800px){.owner-card-wrap{max-width:23rem;width:100%}.almanac-opening{gap:2.5rem}.almanac-story-heading h2{font-size:2.7rem}.card-identity h1{font-size:2.6rem}}
+@media(max-width:700px){.collection-monogram{font-size:4rem}.collection-card h2{font-size:1.3rem}}
+.card-signature{cursor:ew-resize;touch-action:none}.card-signature:focus-visible{outline:2px solid #f0e6ce;outline-offset:-5px;background:#ffffff0a}

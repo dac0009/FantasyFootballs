@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { ownerInk } from "../lib/ownerInk";
+import { useState, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import "../styles/almanac.css";
 import { StatTable, type Column } from "../components/StatTable";
@@ -95,7 +96,7 @@ export default function Owners() {
         <button className="pill" aria-pressed={view==='cards'} onClick={()=>setView('cards')}>Card collection</button>
         <button className="pill" aria-pressed={view==='table'} onClick={()=>setView('table')}>Records table</button>
       </div>
-      {view === 'cards' ? <div className="owner-collection">{active.map(owner=><Link to={`/owners/${owner.owner_id}`} className="collection-card" key={owner.owner_id}>
+      {view === 'cards' ? <div className="owner-collection">{active.map(owner=><Link to={`/owners/${owner.owner_id}`} className="collection-card" style={{"--card-ink":ownerInk(owner.owner_id)} as CSSProperties} key={owner.owner_id}>
         <div className="collection-card-top"><span>FFBFFL</span><span>Since {owner.first_season}</span></div>
         <div className="collection-monogram" aria-hidden="true">{owner.name.split(/\s+/).filter(Boolean).map(s=>s[0]).slice(0,2).join('').toUpperCase()}</div>
         <h2>{owner.name}</h2><p>{owner.current_team_name}</p>

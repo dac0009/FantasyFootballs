@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, type CSSProperties, type PointerEvent } from "react";
+import { ownerInk } from "../lib/ownerInk";
 import { OwnerCareerAtlas } from "./OwnerCareerAtlas";
 import { Metric, OwnerLink, WeekLink } from "./primitives";
 import { gameTypeLabel, ordinal, pct, points, signed, total } from "../lib/format";
@@ -17,31 +18,59 @@ export function OwnerAlmanac({ owner }: { owner: OwnerPayload }) {
   const summary = season ?? owner;
   const initials = owner.name.split(/\s+/).filter(Boolean).map(s=>s[0]).slice(0,2).join('').toUpperCase();
   const titleYears = owner.seasons_detail.filter(s=>s.is_champion).map(s=>s.season);
+  const traceMax = Math.max(1,...visible.map(g=>g.score));
+  const trace = visible.map((g,i)=>`${12+i/Math.max(visible.length-1,1)*336},${162-g.score/traceMax*132}`).join(' ');
+  function tilt(event: PointerEvent<HTMLDivElement>) {
+    if(event.pointerType !== 'mouse' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const rect=event.currentTarget.getBoundingClientRect();
+    const x=(event.clientX-rect.left)/rect.width, y=(event.clientY-rect.top)/rect.height;
+    event.currentTarget.style.setProperty('--tilt-x',`${(0.5-y)*7}deg`);
+    event.currentTarget.style.setProperty('--tilt-y',`${(x-0.5)*9}deg`);
+    event.currentTarget.style.setProperty('--light-x',`${x*100}%`);
+    event.currentTarget.style.setProperty('--light-y',`${y*100}%`);
+  }
   const scoreMax = active ? Math.max(active.score,active.opponent_score,1) : 1;
   function chooseYear(value: string) {
     setYear(value);
     const next=games.filter(g=>value==='all'||String(g.season)===value);
     setSelected(next[next.length-1]?.matchup_id ?? '');
   }
+  function scrub(event: PointerEvent<SVGSVGElement>) {
+    const rect=event.currentTarget.getBoundingClientRect();
+    const fraction=((event.clientX-rect.left)/rect.width*360-12)/336;
+    chooseGame(Math.round(Math.max(0,Math.min(1,fraction))*(visible.length-1)));
+  }
   function chooseGame(index: number) { const game=visible[index]; if(game)setSelected(game.matchup_id); }
-  return <section className="owner-almanac" aria-label={`${owner.name} owner card`}>
+  return <section style={{"--card-ink":ownerInk(owner.owner_id)} as CSSProperties} className="owner-almanac" aria-label={`${owner.name} owner card`}>
     <div className="almanac-folio"><span>The owners’ collection</span><span>FFBFFL / Est. 2019</span></div>
     <div className="almanac-opening">
-      <div className="owner-card-wrap">
+      <div className="owner-card-wrap" onPointerMove={tilt} onPointerLeave={e=>{e.currentTarget.style.setProperty('--tilt-x','0deg');e.currentTarget.style.setProperty('--tilt-y','0deg');}}>
+        <div className="card-stage">
         <div className={`owner-card${back?' owner-card-back':''}`}>
-          <div className="card-topline"><span>FFBFFL</span><span>{year==='all'?'Career edition':`${year} edition`}</span></div>
-          {!back ? <>
-            <div className="card-art" aria-hidden="true"><div className="card-diamond"/><div className="card-monogram">{initials}</div><span className="card-tenure">SINCE {owner.first_season ?? '—'}</span></div>
+          <div className="card-face card-front" ref={node=>{if(node)node.inert=back;}} aria-hidden={back}>
+          <div className="card-topline"><span>FFBFFL / Owners</span><span>{year==='all'?'Career edition':`${year} edition`}</span></div>
+            <div className="card-art">
+              <span className="card-art-label">THE LEAGUE / PLAYER ARCHIVE</span>
+              <div className="card-monogram">{initials}</div>
+              <svg className="card-signature" viewBox="0 0 360 180" preserveAspectRatio="none"
+                role="slider" tabIndex={visible.length ? 0 : -1} aria-label="Scoring signature game" aria-valuemin={1} aria-valuemax={Math.max(1,visible.length)} aria-valuenow={position+1}
+                aria-valuetext={active ? `${active.season}, week ${active.week}: ${points(active.score,2)} points` : 'No games'}
+                onPointerDown={e=>{e.stopPropagation();e.currentTarget.setPointerCapture(e.pointerId);scrub(e);}}
+                onPointerMove={e=>{if(e.currentTarget.hasPointerCapture(e.pointerId)){e.stopPropagation();scrub(e);}}}
+                onKeyDown={e=>{if(['ArrowLeft','ArrowDown','ArrowRight','ArrowUp','Home','End'].includes(e.key)){e.preventDefault();chooseGame(e.key==='Home'?0:e.key==='End'?visible.length-1:Math.max(0,Math.min(visible.length-1,position+(['ArrowLeft','ArrowDown'].includes(e.key)?-1:1))));}}}><polyline points={trace} fill="none" stroke="currentColor" strokeWidth="1.5"/>{active && <circle cx={12+position/Math.max(visible.length-1,1)*336} cy={162-active.score/traceMax*132} r="4" fill="currentColor"/>}</svg>
+              <span className="card-tenure">EST. {owner.first_season ?? '—'}</span><span className="card-seal">{owner.championships}<small>TITLES</small></span>
+            </div>
             <div className="card-identity"><span>OWNER / {year==='all'?`${owner.seasons_played} SEASONS`:year}</span><h1>{owner.name}</h1><p>{season?.team_name ?? owner.current_team_name ?? 'League archive'}</p></div>
             <div className="card-stats"><div><b>{summary.record}</b><span>Record</span></div><div><b>{pct(summary.win_pct)}</b><span>Win rate</span></div><div><b>{points(summary.avg_score,1)}</b><span>Pts / game</span></div></div>
             <div className="card-honors">{year==='all' ? (titleYears.length?`Champion · ${titleYears.join(' / ')}`:'The career collection') : season?.is_champion?'League champion':season?.final_rank?`${ordinal(season.final_rank)} finish`:'Season in progress'}<span>Regular-season statistics</span></div>
-          </> : <div className="card-reverse">
-            <span className="card-overline">The back of the card</span><h1>{owner.name}</h1><p>{year==='all'?'Career totals':`${year} season`} · Regular season</p>
+          </div><div className="card-face card-back" ref={node=>{if(node)node.inert=!back;}} aria-hidden={!back}><div className="card-topline"><span>FFBFFL / Record office</span><span>{year==='all'?'Career':year}</span></div><div className="card-reverse">
+            <span className="card-overline">The back of the card</span><h2>{owner.name}</h2><p>{year==='all'?'Career totals':`${year} season`} · Regular season</p>
             <dl><div><dt>Record</dt><dd>{summary.record}</dd></div><div><dt>Points for</dt><dd>{total(summary.points_for)}</dd></div><div><dt>Points against</dt><dd>{total(summary.points_against)}</dd></div><div><dt>Points / game</dt><dd>{points(summary.avg_score,1)}</dd></div><div><dt><Metric name="all_play">All-play</Metric></dt><dd>{pct(summary.all_play_win_pct)}</dd></div><div><dt>{season?'Finish':'Best finish'}</dt><dd>{ordinal(season?.final_rank ?? (year==='all'?owner.best_finish:null))}</dd></div></dl>
             <div className="card-reverse-note">{year==='all'?`${owner.championships} titles · ${owner.playoff_appearances} playoff appearances`:season?.is_champion?'League champion':season?.made_playoffs?'Playoff appearance':'Season record'}<span>{owner.first_season}–{owner.last_season}</span></div>
-          </div>}
+          </div></div>
+        </div></div>
           <button className="card-flip" onClick={()=>setBack(value=>!value)} aria-pressed={back}>{back?'Front of card ↶':'Turn card over ↷'}</button>
-        </div>
+        <div className="card-caption"><span>Scoring signature · {visible.length} games</span><span>Drag the gold line ↔</span></div>
       </div>
       <div className="almanac-story">
         <div className="almanac-story-heading"><span className="section-kicker">{year==='all'?'The complete career':`Chapter ${year}`}</span><h2>{year==='all'?'Every season has a story.':season?.team_name ?? `${year} season`}</h2></div>
