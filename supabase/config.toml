@@ -1,0 +1,4 @@
+[functions.league-login]
+# This is the entry point for visitors who do not have a session yet.
+# The handler enforces its fixed owner roster and commissioner password.
+verify_jwt = false
