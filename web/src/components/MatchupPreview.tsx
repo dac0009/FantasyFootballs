@@ -37,7 +37,7 @@ function Side({
       >
         <OwnerLink ownerId={ownerId}>{name}</OwnerLink>
       </div>
-      <div className="figure" style={{ fontSize: "1.5rem", marginTop: "0.15rem", color: favourite ? "var(--color-hi)" : "var(--color-mid)" }}>
+      <div className="figure" style={{ fontSize: "1.55rem", marginTop: "0.1rem", color: favourite ? "var(--ink)" : "var(--ink-faint)" }}>
         {pct(winPct)}
       </div>
       <div style={{ color: "var(--color-low)", fontSize: "0.76rem", marginTop: "0.25rem" }}>
@@ -67,8 +67,8 @@ export function MatchupPreviewCard({ preview, featured }: { preview: Preview; fe
         gridTemplateColumns: "1fr auto 1fr",
         gap: "0.8rem",
         alignItems: "start",
-        padding: featured ? undefined : "0.8rem 0",
-        borderBottom: featured ? undefined : "1px solid var(--color-line-soft)",
+        padding: featured ? undefined : "0.85rem 0",
+        borderBottom: featured ? undefined : "1px solid var(--rule-soft)",
       }}
     >
       <Side

@@ -20,7 +20,7 @@ export function GameOfWeekPanel({ data }: { data: GameOfWeek }) {
       style={{ borderTopWidth: 3, borderTopColor: "var(--color-brass)", borderRadius: "0 0 3px 3px" }}
     >
       <p style={{ color: "var(--color-brass)", fontSize: "0.8rem", margin: 0, fontWeight: 600 }}>
-        Game of the week, Week {week}
+        Game of the Week, week {week}
       </p>
 
       <h3 style={{ fontSize: "clamp(1.25rem, 3vw, 1.7rem)", margin: "0.5rem 0 0.1rem" }}>

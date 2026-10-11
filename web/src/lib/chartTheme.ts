@@ -1,33 +1,32 @@
-/** Shared chart tokens: chalk on turf, like the rest of the field. */
+/** Chart tokens for the night edition: parchment ink on dark paper. */
 
 export const CHART = {
-  base: "#1e3b2b",
-  surface: "#162d20",
-  grid: "#2b4836",
-  axis: "#90ab97",
-  text: "#b7c9ba",
-  textHi: "#edf1e6",
-  brass: "#ffb52e", // scoreboard amber
-  steel: "#b7c9ba",
-  pos: "#93dc9e",
-  neg: "#ff9183",
+  base: "#191410",
+  surface: "#120e0b",
+  grid: "#2a241c",
+  axis: "#998d74",
+  text: "#c4b89f",
+  textHi: "#eae1cf",
+  brass: "#e0742f", // ember
+  steel: "#c4b89f",
+  pos: "#a6c98a",
+  neg: "#e08a6d",
 } as const;
 
-/** Series palette: chalk-adjacent tones that stay legible on turf, with the
- *  amber anchor first so a highlighted line reads as the scoreboard. */
+/** Series palette: inks that read on dark paper; ember anchors the first. */
 export const SERIES = [
-  "#ffb52e",
-  "#edf1e6",
-  "#93dc9e",
-  "#ff9183",
-  "#9fd0e8",
-  "#d8c27a",
-  "#c5a3d6",
-  "#8fc7b2",
-  "#e8a46b",
-  "#a9bfad",
-  "#7fa8d9",
-  "#d98fa6",
+  "#e0742f",
+  "#eae1cf",
+  "#a6c98a",
+  "#e08a6d",
+  "#9db8d2",
+  "#cdb36a",
+  "#b795c9",
+  "#8fbfae",
+  "#d99a84",
+  "#998d74",
+  "#7f9fc9",
+  "#c98fa6",
 ] as const;
 
 export function seriesColor(index: number): string {

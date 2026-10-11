@@ -45,35 +45,14 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
           position: "sticky",
           top: 0,
           zIndex: 20,
-          backgroundColor: "var(--turf-deep)",
-          borderBottom: "2px solid var(--chalk)",
+          backgroundColor: "var(--paper-deep)",
           paddingTop: "var(--safe-top)",
         }}
       >
-        <div
-          className="shell"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "1.4rem",
-            minHeight: "3.5rem",
-          }}
-        >
-          <Link
-            to="/"
-            style={{
-              fontFamily: "var(--font-display)",
-              fontWeight: 800,
-              fontSize: "1.45rem",
-              letterSpacing: "0.04em",
-              textTransform: "uppercase",
-              whiteSpace: "nowrap",
-              textDecoration: "none",
-            }}
-          >
+        <div className="shell masthead">
+          <Link to="/" className="nameplate">
             {meta?.league.short_name ?? "League"}
           </Link>
-
           <nav aria-label="Primary" className="main-nav">
             {NAV.map((item) => (
               <NavLink
@@ -96,7 +75,6 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
               </NavLink>
             ))}
           </nav>
-
           <button
             type="button"
             className="pill nav-toggle"
@@ -107,6 +85,7 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
             {menuOpen ? "Close" : "Menu"}
           </button>
         </div>
+        <hr className="yardline" style={{ opacity: 1 }} aria-hidden="true" />
 
         {menuOpen ? (
           <nav
@@ -178,22 +157,36 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
       </footer>
 
       <style>{`
-        .main-nav { display: none; gap: 1.1rem; margin-left: auto; }
+        .masthead {
+          display: flex; align-items: baseline; gap: 1.4rem;
+          min-height: 3.6rem; padding-top: 0.55rem; padding-bottom: 0.45rem;
+        }
+        .nameplate {
+          font-family: var(--font-display);
+          font-weight: 700;
+          font-size: 1.7rem;
+          line-height: 1;
+          letter-spacing: 0.01em;
+          text-decoration: none;
+          color: var(--ink);
+        }
+        .main-nav { display: none; gap: 1.05rem; margin-left: auto; align-items: baseline; }
         .nav-toggle { margin-left: auto; }
-        .mobile-nav { display: flex; flex-direction: column; gap: 0.1rem; }
+        .mobile-nav { display: flex; flex-direction: column; gap: 0.1rem; padding-bottom: 0.9rem; }
         .nav-item {
-          color: var(--color-mid);
-          font-size: 0.86rem;
+          color: var(--ink-soft);
+          font-size: 0.85rem;
+          font-weight: 500;
           padding: 0.45rem 0;
           border-bottom: 2px solid transparent;
           white-space: nowrap;
-          transition: color 120ms ease;
+          text-decoration: none;
         }
-        .nav-item:hover { color: var(--color-hi); }
-        .nav-item-quiet { color: var(--color-low); font-size: 0.8rem; }
-        .nav-sep { width: 1px; height: 1rem; background: var(--color-line); align-self: center; }
-        .nav-item-active { color: var(--color-hi); border-bottom-color: var(--amber); }
-        @media (min-width: 940px) {
+        .nav-item:hover { color: var(--ink); }
+        .nav-item-quiet { color: var(--ink-faint); font-size: 0.79rem; }
+        .nav-sep { width: 1px; height: 0.95rem; background: var(--rule); align-self: center; }
+        .nav-item-active { color: var(--ink); border-bottom-color: var(--ember); }
+        @media (min-width: 980px) {
           .main-nav { display: flex; }
           .nav-toggle { display: none; }
           .mobile-nav { display: none; }

@@ -31,10 +31,10 @@ export default function Home({ meta }: { meta: Meta }) {
     <div className="shell" style={{ paddingTop: "2rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: "1rem", flexWrap: "wrap" }}>
         <div>
-          <p style={{ color: "var(--color-brass)", fontSize: "0.82rem", fontWeight: 600, margin: 0 }}>
-            {meta.league.name} {data.season}
+          <p style={{ color: "var(--ink-faint)", fontSize: "0.84rem", margin: 0, fontStyle: "italic", fontFamily: "var(--font-display)" }}>
+            The {data.season} season, {meta.league.name}
           </p>
-          <h1 style={{ fontSize: "clamp(1.7rem, 5vw, 2.4rem)", marginTop: "0.3rem" }}>
+          <h1 style={{ fontSize: "clamp(1.8rem, 5vw, 2.6rem)", marginTop: "0.25rem" }}>
             {week ? `Week ${week.week} is in the books` : "Preseason"}
             {data.upcoming_week ? (
               <span style={{ color: "var(--color-low)", fontWeight: 500 }}>
@@ -61,19 +61,21 @@ export default function Home({ meta }: { meta: Meta }) {
         </>
       ) : null}
 
-      {previews.length ? (
+      {previews.length || pick ? (
         <>
           <Band
-            title={`Week ${picture?.next_week} preview`}
-            note="Ordered by how much each game moves the playoff picture"
+            title={`Week ${picture?.next_week ?? pick?.week ?? data.upcoming_week} preview`}
+            note={previews.length ? "Ordered by how much each game moves the playoff picture" : undefined}
           />
           <div className="home-split" style={{ marginTop: "0.4rem" }}>
-            <div>
-              {previews.map((preview) => (
-                <MatchupPreviewCard key={preview.matchup_id} preview={preview} />
-              ))}
-              <PreviewLegend />
-            </div>
+            {previews.length ? (
+              <div>
+                {previews.map((preview) => (
+                  <MatchupPreviewCard key={preview.matchup_id} preview={preview} />
+                ))}
+                <PreviewLegend />
+              </div>
+            ) : null}
             {pick ? <GameOfWeekPanel data={pick} /> : null}
           </div>
         </>

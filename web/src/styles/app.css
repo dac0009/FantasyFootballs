@@ -1,65 +1,64 @@
 /* ==========================================================================
-   FFBFFL Record Book -- the field.
+   FFBFFL Record Book -- the night edition.
 
-   The whole visual system comes from football's own furniture:
-   turf, chalk lines, hash marks, the chain-gang marker, scoreboard amber.
-   One glowing thing per screen (amber); the chain orange appears only where
-   the stakes are (the playoff cut). Everything else is chalk on turf.
+   A broadsheet printed after dark: tobacco-black paper, parchment ink,
+   serif headlines over double rules, reference-grade tables. One ember
+   accent, used where the stakes are. Numbers are the news here, so the
+   data face is a quiet sans with tabular figures; the voice is the serif.
    ========================================================================== */
 
 :root {
-  /* turf */
-  --turf: #1e3b2b;        /* playing surface */
-  --turf-deep: #162d20;   /* sidelines: header, footer, panels */
-  --turf-line: #35543f;   /* worn line between sections */
-  --turf-hash: #4a6a53;   /* hash marks */
-
-  /* chalk */
-  --chalk: #edf1e6;       /* primary text, field lines */
-  --chalk-dim: #b7c9ba;   /* secondary text */
-  --chalk-faint: #90ab97; /* tertiary, captions */
+  /* paper and ink */
+  --paper: #191410;        /* tobacco-dark page */
+  --paper-deep: #120e0b;   /* masthead, footer, boxes */
+  --ink: #eae1cf;          /* parchment: primary text and rules */
+  --ink-soft: #c4b89f;     /* secondary text */
+  --ink-faint: #998d74;    /* captions, folios */
+  --rule: #3a3227;         /* hairline between rows */
+  --rule-soft: #2a241c;
 
   /* signals */
-  --amber: #ffb52e;       /* scoreboard: the number that matters */
-  --chain: #e8571f;       /* chain gang: the cut line, must-win stakes */
-  --pos: #93dc9e;         /* gained ground */
-  --neg: #ff9183;         /* lost ground */
+  --ember: #e0742f;        /* the burn: cut lines, decisive numbers */
+  --pos: #a6c98a;          /* gains */
+  --neg: #e08a6d;          /* losses */
 
-  /* legacy variable names used across pages map onto the field system,
-     so every inline style keeps working. */
-  --color-bg: var(--turf);
-  --color-panel: var(--turf-deep);
-  --color-line: var(--turf-line);
-  --color-line-soft: #2b4836;
-  --color-hi: var(--chalk);
-  --color-mid: var(--chalk-dim);
-  --color-low: var(--chalk-faint);
-  --color-brass: var(--amber);
-  --color-steel: var(--chalk-dim);
+  /* legacy names used across pages */
+  --color-bg: var(--paper);
+  --color-panel: var(--paper-deep);
+  --color-line: var(--rule);
+  --color-line-soft: var(--rule-soft);
+  --color-hi: var(--ink);
+  --color-mid: var(--ink-soft);
+  --color-low: var(--ink-faint);
+  --color-brass: var(--ember);
+  --color-steel: var(--ink-soft);
   --color-pos: var(--pos);
   --color-neg: var(--neg);
+  /* retired field-theme aliases still referenced by a few components */
+  --chalk: var(--ink);
+  --chalk-dim: var(--ink-soft);
+  --chalk-faint: var(--ink-faint);
+  --amber: var(--ember);
+  --chain: var(--ember);
+  --turf-deep: var(--paper-deep);
+  --turf-hash: var(--rule);
 
-  --font-display: "Big Shoulders", "Arial Narrow", sans-serif;
-  --font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --font-display: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-body: "Inter", system-ui, sans-serif;
 
-  --shell: 72rem;
+  --shell: 70rem;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 * { box-sizing: border-box; }
 
-html { background: var(--turf); }
+html { background: var(--paper-deep); scroll-padding-top: calc(4.6rem + var(--safe-top)); }
 
 body {
   margin: 0;
-  background:
-    /* faint mow stripes: alternating light passes across the turf */
-    repeating-linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0.016) 0 7rem,
-      rgba(0, 0, 0, 0.03) 7rem 14rem
-    ),
-    var(--turf);
-  color: var(--chalk);
+  background: var(--paper);
+  color: var(--ink);
   font-family: var(--font-body);
   font-size: 15.5px;
   line-height: 1.55;
@@ -69,187 +68,185 @@ body {
 
 h1, h2, h3 {
   font-family: var(--font-display);
-  font-weight: 700;
-  line-height: 1.02;
-  letter-spacing: 0.01em;
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: 0;
   margin: 0;
-  text-transform: uppercase;
 }
+h1 { font-weight: 700; }
 
 a { color: inherit; }
 
-.shell {
-  max-width: var(--shell);
-  margin: 0 auto;
-  padding: 0 1.1rem 4rem;
-}
+.shell { max-width: var(--shell); margin: 0 auto; padding: 0 1.1rem 4rem; }
 
 /* --------------------------------------------------------------------------
-   Field furniture
+   Editorial furniture
    -------------------------------------------------------------------------- */
 
-/* A yard line with hash marks: the section divider. The ticks are drawn with
-   a repeating gradient so the rule reads as field marking, not a hairline. */
+/* The double rule: a newspaper section break. Thick over thin. */
 .yardline {
   border: 0;
-  height: 10px;
+  height: 5px;
   margin: 0;
   background:
-    repeating-linear-gradient(
-      90deg,
-      var(--turf-hash) 0 2px,
-      transparent 2px 26px
-    ) top / 100% 5px no-repeat,
-    linear-gradient(var(--chalk) 0 0) bottom / 100% 2px no-repeat;
-  opacity: 0.85;
+    linear-gradient(var(--ink) 0 0) top / 100% 2px no-repeat,
+    linear-gradient(var(--ink) 0 0) bottom / 100% 1px no-repeat;
+  opacity: 0.9;
 }
 
-/* Section header: condensed display over a yard line. */
-.band { margin-top: 3rem; }
+.band { margin-top: 3.1rem; }
 .band-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.45rem;
 }
-.band-title { font-size: clamp(1.5rem, 4vw, 2.1rem); }
-.band-note { margin: 0; color: var(--chalk-faint); font-size: 0.82rem; }
-.band-note a { color: var(--chalk-dim); }
+.band-title { font-size: clamp(1.45rem, 4vw, 1.9rem); }
+.band-note { margin: 0; color: var(--ink-faint); font-size: 0.82rem; }
+.band-note a { color: var(--ink-soft); }
 
-/* Scoreboard figure: a big amber number with a plain label. */
+/* Figures: serif numerals, like a pull statistic in a column. */
 .figure {
   font-family: var(--font-display);
   font-weight: 700;
-  letter-spacing: 0.015em;
-  color: var(--chalk);
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--ink);
 }
-.figure-amber { color: var(--amber); }
-.figure-label { color: var(--chalk-faint); font-size: 0.8rem; font-family: var(--font-body); }
+.figure-ember { color: var(--ember); }
+.figure-label { color: var(--ink-faint); font-size: 0.8rem; font-family: var(--font-body); }
 
 /* --------------------------------------------------------------------------
-   Tables: the box score. Dense, chalk rules, sentence-case headers.
+   Tables: the agate page. Parchment header rule, hairline rows.
    -------------------------------------------------------------------------- */
 .sheet { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.sheet table {
-  border-collapse: collapse;
-  width: 100%;
-  font-size: 0.88rem;
-}
+.sheet table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
 .sheet th {
   font-weight: 600;
-  font-size: 0.78rem;
-  color: var(--chalk-faint);
+  font-size: 0.76rem;
+  color: var(--ink-faint);
   text-align: right;
   padding: 0.45rem 0.55rem;
-  border-bottom: 2px solid var(--chalk);
+  border-bottom: 2px solid var(--ink);
   white-space: nowrap;
 }
 .sheet td {
-  padding: 0.5rem 0.55rem;
+  padding: 0.52rem 0.55rem;
   text-align: right;
-  border-bottom: 1px solid var(--color-line-soft);
+  border-bottom: 1px solid var(--rule-soft);
   white-space: nowrap;
 }
-.sheet tbody tr:hover { background: rgba(237, 241, 230, 0.045); }
-.sheet [data-secondary="true"] { color: var(--chalk-faint); }
+.sheet tbody tr:hover { background: rgba(234, 225, 207, 0.04); }
+.sheet [data-secondary="true"] { color: var(--ink-faint); }
 
 .num-pos { color: var(--pos); }
 .num-neg { color: var(--neg); }
 
-/* magnitude bar inside table cells */
 .cell-bar {
   display: block;
   height: 3px;
-  background: rgba(237, 241, 230, 0.12);
-  border-radius: 0;
+  background: rgba(234, 225, 207, 0.12);
   overflow: hidden;
 }
 .cell-bar > span { display: block; height: 100%; }
 
-/* sortable header buttons */
-.sort-btn {
-  background: none;
-  border: 0;
-  padding: 0;
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-}
-.sort-btn:hover { color: var(--chalk); }
+.sort-btn { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; }
+.sort-btn:hover { color: var(--ink); }
 
 /* --------------------------------------------------------------------------
    Controls
    -------------------------------------------------------------------------- */
 .pill {
-  font: 600 0.84rem var(--font-body);
-  color: var(--chalk);
+  font: 600 0.82rem var(--font-body);
+  color: var(--ink);
   background: transparent;
-  border: 1.5px solid var(--turf-hash);
+  border: 1px solid var(--ink-faint);
   padding: 0.38rem 0.85rem;
   cursor: pointer;
 }
-.pill:hover { border-color: var(--chalk-dim); }
-.pill[aria-pressed="true"] {
-  background: var(--chalk);
-  color: var(--turf-deep);
-  border-color: var(--chalk);
-}
+.pill:hover { border-color: var(--ink); }
+.pill[aria-pressed="true"] { background: var(--ink); color: var(--paper-deep); border-color: var(--ink); }
 
 .select {
   font: inherit;
-  color: var(--chalk);
-  background: var(--turf-deep);
-  border: 1.5px solid var(--turf-hash);
+  color: var(--ink);
+  background: var(--paper-deep);
+  border: 1px solid var(--rule);
   padding: 0.4rem 0.6rem;
 }
 
 .tag {
   font: 600 0.68rem var(--font-body);
   letter-spacing: 0.02em;
-  color: var(--turf-deep);
-  background: var(--chalk-dim);
+  color: var(--paper-deep);
+  background: var(--ink-soft);
   padding: 0.12rem 0.42rem;
   white-space: nowrap;
 }
-.tag-champ { background: var(--amber); }
-.tag-chain { background: var(--chain); color: #fff; }
+.tag-champ { background: var(--ember); color: var(--paper-deep); font-weight: 700; }
+.tag-chain { background: var(--ember); color: var(--paper-deep); font-weight: 700; }
 
-.panel {
-  background: var(--turf-deep);
-  border: 1px solid var(--color-line-soft);
-  padding: 1.1rem 1.2rem;
-}
+.panel { background: var(--paper-deep); border: 1px solid var(--rule); border-top: 3px solid var(--ember); padding: 1.1rem 1.2rem; }
 
-/* quiet inline links: chalk underline on hover only */
 .link-quiet {
-  color: var(--chalk-dim);
+  color: var(--ink-soft);
   text-decoration: underline;
-  text-decoration-color: rgba(237, 241, 230, 0.25);
+  text-decoration-color: rgba(234, 225, 207, 0.28);
   text-underline-offset: 2px;
 }
-.link-quiet:hover { color: var(--chalk); text-decoration-color: var(--chalk); }
+.link-quiet:hover { color: var(--ink); text-decoration-color: var(--ink); }
 
-/* glossary term: looks like data, opens the definition */
+/* a term with a definition in the glossary */
 .term {
   color: inherit;
-  text-decoration: underline dotted rgba(237, 241, 230, 0.4);
+  text-decoration: underline dotted rgba(234, 225, 207, 0.45);
   text-underline-offset: 3px;
 }
-.term:hover { text-decoration-style: solid; color: var(--chalk); }
+.term:hover { text-decoration-style: solid; color: var(--ink); }
 
-.prose-narrow { max-width: 42rem; color: var(--chalk-dim); }
-.prose-narrow strong { color: var(--chalk); }
-
+.prose-narrow { max-width: 42rem; color: var(--ink-soft); }
+.prose-narrow strong { color: var(--ink); }
 
 /* --------------------------------------------------------------------------
-   Focus, motion, small screens
+   Globals pages rely on
    -------------------------------------------------------------------------- */
-:focus-visible {
-  outline: 2px solid var(--amber);
-  outline-offset: 2px;
+.skip-link {
+  position: absolute; left: -9999px; top: 0;
+  background: var(--ember); color: var(--paper-deep);
+  padding: 0.5rem 0.9rem; z-index: 100; font-weight: 700;
 }
+.skip-link { color: var(--paper-deep); } .skip-link:focus { left: 0.5rem; top: calc(0.5rem + var(--safe-top)); }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* sample-data notice: an editor's correction box */
+.notice {
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--ember);
+  background: var(--paper-deep);
+  color: var(--ink-soft);
+  padding: 0.7rem 0.9rem;
+  font-size: 0.86rem;
+  max-width: 46rem;
+}
+.notice code { color: var(--ink); font-family: var(--font-body); font-weight: 600; }
+
+.pill-row { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.9rem; }
+.chart-frame { max-width: 46rem; }
+
+/* scorelines: serif numerals, like results agate */
+.scoreline {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-size: 1.12rem;
+}
+
+:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
@@ -260,59 +257,4 @@ a { color: inherit; }
   .shell { padding: 0 0.9rem 3.5rem; }
   .sheet table { font-size: 0.84rem; }
   .sheet th, .sheet td { padding: 0.42rem 0.45rem; }
-}
-
-/* --------------------------------------------------------------------------
-   Globals that pages rely on
-   -------------------------------------------------------------------------- */
-:root {
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-}
-html { scroll-padding-top: calc(4.2rem + var(--safe-top)); }
-
-.skip-link {
-  position: absolute;
-  left: -9999px;
-  top: 0;
-  background: var(--amber);
-  color: var(--turf-deep);
-  padding: 0.5rem 0.9rem;
-  z-index: 100;
-  font-weight: 600;
-}
-.skip-link:focus { left: 0.5rem; top: calc(0.5rem + var(--safe-top)); }
-
-.sr-only {
-  position: absolute;
-  width: 1px; height: 1px;
-  padding: 0; margin: -1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* The sample-data notice: a sideline board, not an alert card. */
-.notice {
-  border-left: 4px solid var(--amber);
-  background: var(--turf-deep);
-  color: var(--chalk-dim);
-  padding: 0.7rem 0.9rem;
-  font-size: 0.86rem;
-  max-width: 46rem;
-}
-.notice code { color: var(--chalk); font-family: var(--font-body); font-weight: 600; }
-
-.pill-row { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.9rem; }
-
-/* Chart container: charts sit directly on the turf; cap width for legibility. */
-.chart-frame { max-width: 46rem; }
-
-/* Scorelines (week results): condensed figures for the numbers. */
-.scoreline {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.15rem;
-  letter-spacing: 0.02em;
 }
