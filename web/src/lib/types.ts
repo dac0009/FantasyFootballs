@@ -612,3 +612,49 @@ export interface RosterRow {
   points: number | null;
   projected: number | null;
 }
+
+export interface TradePlayerValue {
+  player_id: number;
+  name: string;
+  position: string;
+  nfl_team: string | null;
+  value_base: number | null;
+  season_games: number;
+  career_rate: number | null;
+  reliability_factor: number;
+  reliability_games: number;
+  recent_form_factor: number;
+  recent_form_games: number;
+}
+
+export interface TradeNeedFit {
+  team_avg: number;
+  league_avg: number;
+  started_weeks: number;
+  need_fit_factor: number;
+}
+
+export interface TradeTeamValue {
+  owner_id: string;
+  need_fit: Record<string, TradeNeedFit>;
+  leverage_factor: number;
+  playoff_pct: number | null;
+}
+
+export interface TradeValues {
+  season: number;
+  players: Record<string, TradePlayerValue>;
+  teams: Record<string, TradeTeamValue>;
+  positions: Record<string, { reliability_baseline: number; value_rate: number }>;
+  model: {
+    value_base_shrinkage_games: number;
+    reliability_shrinkage_games: number;
+    reliability_clamp: [number, number];
+    need_fit_shrinkage_games: number;
+    need_fit_clamp: [number, number];
+    leverage_span: number;
+    recent_form_window: number;
+    recent_form_clamp: [number, number];
+    notes: string;
+  };
+}

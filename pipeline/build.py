@@ -12,7 +12,7 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 
-from . import extract, gotw, head_to_head, metrics, playoffs, records, transform
+from . import extract, gotw, head_to_head, metrics, playoffs, records, trade_value, transform
 from .config import (
     DATA_DIR,
     PIPELINE_VERSION,
@@ -184,6 +184,19 @@ def assemble(dataset: dict) -> dict:
         owners_by_id,
     )
 
+    # -- trade analyzer (roster data permitting) --------------------------
+    trade_values = None
+    if all_rosters:
+        picture = current_payload.get("playoff_picture") or {}
+        trade_values = trade_value.build_trade_values(
+            current_season, all_rosters, players, picture.get("teams")
+        )
+    else:
+        limitations.append(
+            "Trade Analyzer is unavailable because ESPN returned no "
+            "lineup-level data."
+        )
+
     season_payloads = {
         season: transform.build_season_payload(
             season,
@@ -268,6 +281,7 @@ def assemble(dataset: dict) -> dict:
         "records": record_book,
         "head_to_head": h2h,
         "efficiency": efficiency,
+        "trade_values": trade_values,
         "current": current_payload,
         "game_of_week": game_of_week,
         "current_season": current_season,
@@ -535,6 +549,7 @@ def publish(assembled: dict, data_dir: Path | None = None, *, allow_shrink: bool
     emit("playoffs.json", assembled["current"].get("playoff_picture"))
     emit("game_of_week.json", assembled["game_of_week"])
     emit("players.json", list(assembled["players"].values()))
+    emit("trade_values.json", assembled["trade_values"])
 
     for season, picks in assembled["drafts"].items():
         if picks:

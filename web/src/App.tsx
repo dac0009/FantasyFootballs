@@ -7,6 +7,7 @@ import WelcomeTour from "./components/WelcomeTour";
 import Admin from "./pages/Admin";
 import Account from "./pages/Account";
 import Playoffs from "./pages/Playoffs";
+import TradeAnalyzer from "./pages/TradeAnalyzer";
 import Home from "./pages/Home";
 import CurrentSeason from "./pages/CurrentSeason";
 import SeasonIndex from "./pages/SeasonIndex";
@@ -53,6 +54,7 @@ export default function App() {
         <Route path="/" element={<AppEntrance />} />
         <Route path="/home" element={<Home meta={meta.data} />} />
         <Route path="/playoffs" element={<Playoffs />} />
+        <Route path="/trade-analyzer" element={<TradeAnalyzer />} />
         <Route path="/season" element={<CurrentSeason meta={meta.data} />} />
         <Route path="/seasons" element={<SeasonIndex />} />
         <Route path="/seasons/:year" element={<Season />} />

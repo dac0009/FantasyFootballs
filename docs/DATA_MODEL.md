@@ -23,6 +23,7 @@ is hand-edited. Regenerating is always safe.
 | `drafts/{year}.json` | Draft picks | draft page |
 | `rosters/{year}.json` | Per-week lineup rows | week page |
 | `transactions/{year}.json` | Adds, drops, waivers, trades — **only when ESPN provides them** | — |
+| `trade_values.json` | Per-player and per-team precomputed Trade Analyzer inputs for the current season (`null` when no roster data is available) | Trade Analyzer (commissioner beta) |
 
 `matchups.json` and `team_weeks.json` are the raw normalized tables. The site mostly reads the
 pre-assembled per-season and per-owner payloads instead, but these are published so the data is

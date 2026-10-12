@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useMeta } from '../lib/data';
 import type { Session } from '@supabase/supabase-js';
-import { canEdit, copyLabels, editorClient, preparePhoto, profileDefaults, type DocumentBody, type Membership, type PublishedDocument, resolvedCopy, sectionLabels } from '../lib/editor';
+import { canEdit, canUseTradeAnalyzer, copyLabels, editorClient, preparePhoto, profileDefaults, type DocumentBody, type Membership, type PublishedDocument, resolvedCopy, sectionLabels } from '../lib/editor';
 import '../styles/editor.css';
 import { publishAndVerify } from '../lib/editorPersistence.mjs';
 
@@ -69,7 +69,7 @@ export function EditorToolbar(){
       replace(doc);setPagePreview(null);setStatus(verified?`Saved to Supabase · version ${doc.version} · ${new Date(doc.updated_at).toLocaleTimeString()}`:'Supabase accepted the save, but read-back was unavailable. Use Refresh saved content in Admin to verify.');
     }catch(error){setStatus((error as {message?:string}).message??'Could not publish. Your preview is still here.');}finally{setBusy(false);}
   }
-  return <div className="editor-toolbar shell"><Link to="/account">{member?'My account':'Owner sign in'}</Link>{member?.owner_id&&<Link to={`/owners/${member.owner_id}`}>My profile</Link>}{member&&<button className="pill" onClick={()=>window.dispatchEvent(new Event('ffbffl:tour'))}>Site guide</button>}{member?.role==='commissioner' && <><Link to="/admin">Admin</Link><button className="pill" aria-pressed={editMode} onClick={()=>setEditMode(!editMode)}>{editMode?'Finish editing':'Visual editor'}</button></>}
+  return <div className="editor-toolbar shell"><Link to="/account">{member?'My account':'Owner sign in'}</Link>{member?.owner_id&&<Link to={`/owners/${member.owner_id}`}>My profile</Link>}{member&&<button className="pill" onClick={()=>window.dispatchEvent(new Event('ffbffl:tour'))}>Site guide</button>}{member?.role==='commissioner' && <><Link to="/admin">Admin</Link><button className="pill" aria-pressed={editMode} onClick={()=>setEditMode(!editMode)}>{editMode?'Finish editing':'Visual editor'}</button></>}{canUseTradeAnalyzer(member) && <Link to="/trade-analyzer">Trade Analyzer (Beta)</Link>}
     {pagePreview&&<div className="page-preview-bar"><strong>Private preview · not published</strong><button className="pill" disabled={busy} onClick={()=>void publishPreview()}>Publish preview</button><button className="pill" disabled={busy} onClick={()=>{setPagePreview(null);setStatus('Preview discarded.');}}>Discard preview</button></div>}
     {status&&<span role="status">{status}</span>}
   </div>;

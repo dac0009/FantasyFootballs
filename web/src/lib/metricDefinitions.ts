@@ -148,4 +148,13 @@ export const METRICS: Record<string, MetricDefinition> = {
     limitation:
       "Current-season only; rivalry history is not a factor. Uses no ESPN projection. Before a team has three games its scoring is still stabilising, so early-season picks lean on leverage.",
   },
+  trade_value: {
+    label: "Trade Value",
+    short:
+      "A signed, per-team score for a proposed trade: positive means that team comes out ahead by this metric, negative means they lose the deal. The two teams' scores are not required to sum to zero.",
+    formula:
+      "value(player, team) = value_base × reliability_factor × recent_form_factor × need_fit_factor(team) × leverage_factor(team). value_base is the player's shrunk average weekly ESPN projection (not actual points, and not a forecast for a specific upcoming week — ESPN does not expose one outside a live scoring period). reliability_factor is a career-long sum(points)/sum(projected) ratio, normalized against the player's position, measuring whether he has historically beaten or missed his own projection. recent_form_factor is the same idea over just his last 3 games this season — a labeled approximation standing in for schedule strength, which this pipeline has no clean data source for. need_fit_factor and leverage_factor depend on the team receiving or losing him: need_fit from how that team's lineup has scored at his position this season versus the league average, leverage from how much is riding on that team's remaining season (from the playoff-odds model). A team's trade value sums the value of players received minus the value of players given up, each valued to that team.",
+    limitation:
+      "Every shrinkage constant and clamp range is a documented, chosen-not-fitted free parameter, designed so a thin sample pulls toward neutral rather than toward a loud number — see pipeline/trade_value.py. need_fit measures what a team has scored at a position, not what is realistically available to trade for. leverage is a frozen snapshot of the current playoff race, not re-simulated for the hypothetical post-trade world. recent_form is not opponent-adjusted — it folds in matchup difficulty, role change and injury recovery indistinguishably. This is a UI access gate for the beta, not a security boundary: the underlying roster data is already public.",
+  },
 };
