@@ -30,6 +30,15 @@ export const copyLabels: Record<string, string> = {
 export function canEdit(member: Membership | null, kind: string, key: string) {
   return !!member && (member.role === 'commissioner' || (kind === 'profile' && member.owner_id === key));
 }
+/** Trade Analyzer is a UI access gate, not a security boundary — the roster data
+ * it reads is already public in data/. Change this to 'owner' to open the beta
+ * to every signed-in owner instead of just the commissioner; nothing else needs
+ * to change. */
+export const TRADE_ANALYZER_MIN_ROLE: Membership['role'] = 'commissioner';
+export function canUseTradeAnalyzer(member: Membership | null) {
+  if (!member) return false;
+  return TRADE_ANALYZER_MIN_ROLE === 'commissioner' ? member.role === 'commissioner' : true;
+}
 export async function preparePhoto(file: File): Promise<string> {
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 8 * 1024 * 1024)
     throw new Error('Choose a JPG, PNG, or WebP under 8 MB.');

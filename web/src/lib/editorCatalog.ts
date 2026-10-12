@@ -271,5 +271,17 @@ export const editorialCatalog: Record<string, {label:string; fallback:string}> =
   "site.owner-career-atlas.f088727463": {
     "label": "owner career atlas · Career atlas",
     "fallback": "Career atlas"
+  },
+  "site.trade-analyzer.a1c3e5f7b9": {
+    "label": "trade-analyzer · Trade Analyzer",
+    "fallback": "Trade Analyzer"
+  },
+  "site.trade-analyzer.d2e4f6a8c0": {
+    "label": "trade-analyzer · Pick players going each direction and the composite Trade Value score ",
+    "fallback": "Pick players going each direction and the composite Trade Value score updates live. This is this league's own metric, not an outside grade — the breakdown below shows exactly what drove every number."
+  },
+  "site.trade-analyzer.b3d5f7a9c1": {
+    "label": "trade-analyzer · Positive Trade Value means that team comes out ahead by this metric; ",
+    "fallback": "Positive Trade Value means that team comes out ahead by this metric; negative means they lose the deal. Both sides are scored independently and are not required to sum to zero."
   }
 };

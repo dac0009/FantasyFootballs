@@ -15,6 +15,7 @@ import type {
   SeasonIndexRow,
   SeasonPayload,
   TeamWeek,
+  TradeValues,
 } from "./types";
 
 /**
@@ -143,6 +144,7 @@ export const paths = {
   owner: (ownerId: string) => `owners/${ownerId}.json`,
   draft: (year: number | string) => `drafts/${year}.json`,
   roster: (year: number | string) => `rosters/${year}.json`,
+  tradeValues: "trade_values.json",
 };
 
 export const useMeta = () => useData<Meta>(paths.meta);
@@ -162,6 +164,7 @@ export const useDraft = (year: number | string | null) =>
 export const useRoster = (year: number | string | null) =>
   useData<RosterRow[]>(year ? paths.roster(year) : null);
 export const usePlayers = () => useData<Player[]>(paths.players);
+export const useTradeValues = () => useData<TradeValues | null>(paths.tradeValues);
 export const useMatchups = () => useData<Matchup[]>(paths.matchups);
 export const useTeamWeeks = () => useData<TeamWeek[]>(paths.teamWeeks);
 

@@ -29,6 +29,7 @@ export default function Glossary({ meta }: { meta: Meta }) {
     "manager_efficiency",
     "bench_regret",
     "game_of_week",
+    "trade_value",
   ];
 
   return (
@@ -145,6 +146,33 @@ export default function Glossary({ meta }: { meta: Meta }) {
           while a week is live, and never for a future week or historically. Rather than invent
           one, matchup win estimates come from each team’s scoring model, with early-season
           averages pulled toward the league mean.
+        </p>
+      </div>
+
+      <Band title="Trade Analyzer" id="trade-analyzer" />
+      <div className="prose-narrow" style={{ marginTop: "0.8rem" }}>
+        <p>
+          A commissioner-beta tool that scores a proposed trade for each team, live in the
+          browser. A player's value to a specific team is his shrunk average weekly ESPN
+          projection, adjusted by four multipliers: how reliably he has beaten his own projection
+          across this league's eight recorded seasons (the signal almost no other tool has),
+          a short-term recent-form trend, how badly the receiving team needs his position, and
+          how much is riding on that team's remaining season. Each team's score is the value of
+          what it receives minus the value of what it gives up — valued to that team, not to a
+          neutral observer, so the two sides of a trade are not required to agree.
+        </p>
+        <p>
+          <strong>What it does not do.</strong> It has no opponent or NFL-schedule data, so the
+          "recent form" multiplier is a labeled approximation — the player's own last three games,
+          not a schedule-adjusted forecast. "Need fit" measures what a team has actually scored at
+          a position this season, not what is realistically available on the trade market.
+          "Leverage" is a frozen snapshot of the current playoff odds, not re-simulated for the
+          hypothetical world after the trade. Every shrinkage and clamp constant is a deliberate,
+          documented choice (see <code>pipeline/trade_value.py</code>), not a fitted parameter.
+        </p>
+        <p>
+          This is a UI access gate for the beta, not a security boundary — the roster data behind
+          it is already public in this site's data files.
         </p>
       </div>
 

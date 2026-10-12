@@ -162,6 +162,74 @@ as such wherever it appears.
 
 ---
 
+## Trade Value (Trade Analyzer, beta)
+
+**What it measures.** A signed score per team for a proposed trade: positive means that team
+comes out ahead by this metric, negative means they lose the deal. The two teams' scores are not
+required to sum to zero — need and stakes are specific to each team, so the same trade can
+reasonably look different from each side.
+
+**Access.** The Trade Analyzer is gated to the commissioner. This is a UI access gate, not a
+security boundary — the roster data behind it (`data/rosters/*.json`) is already public. See
+`web/src/lib/editor.ts`'s `TRADE_ANALYZER_MIN_ROLE`.
+
+**Formula.** For a player valued to a specific team:
+
+```
+value(player, team) = value_base
+                     × reliability_factor
+                     × recent_form_factor
+                     × need_fit_factor(team)
+                     × leverage_factor(team)
+```
+
+A trade where team A sends players to team B and receives others back scores each side as
+`sum(value of players received, to that team) − sum(value of players given up, to that team)`.
+
+| Component | Definition | Computed |
+|---|---|---|
+| `value_base` | The player's average weekly ESPN *projection* this season, shrunk toward his own career average (4 games of prior weight) when the season sample is thin. | Build time |
+| `reliability_factor` | Career-long `sum(points) / sum(projected)`, normalized against the player's position baseline, shrunk toward 1.0 (8 games of prior weight) and clamped to [0.75, 1.25]. | Build time |
+| `recent_form_factor` | The same ratio over just the player's last 3 games this season, normalized and clamped to [0.90, 1.10]. Neutral (1.0) with fewer than 2 qualifying games. | Build time |
+| `need_fit_factor` | `league_avg / team_avg` of *started* points at the player's position this season, shrunk toward 1.0 (3 games of prior weight) and clamped to [0.85, 1.15]. | Build time |
+| `leverage_factor` | `(1 − 0.10) + 2 × 0.10 × stakes`, where `stakes = 4p(1−p)` and `p` is the team's current playoff percentage from the playoff-odds model. Peaks at the 50% bubble, minimum at 0% or 100%. | Build time, static snapshot |
+
+Everything above is precomputed once per refresh and published to `data/trade_values.json`
+(`pipeline/trade_value.py`), the same split used for the playoff explorer: expensive or reusable
+work happens in the pipeline, and the frontend (`web/src/lib/tradeAnalyzer.ts`) only does the
+trade-specific sum for whichever two teams and players are currently selected, live in the
+browser.
+
+**Why `reliability_factor` matters.** This league has published per-player `projected` and
+`points` across eight seasons — a signal almost no equivalent tool has. A player who reliably
+beats his own projection is worth more than the raw number suggests; a chronic underperformer is
+worth less. It is computed as a ratio of sums (not an average of weekly ratios), because one week
+with a tiny projection would otherwise distort a simple average by an enormous amount for one real
+point of production.
+
+**Limitation — schedule-vs-position was not derivable.** The brief asked for a defense-vs-position
+multiplier (a WR facing soft pass defenses weighted up). This pipeline has no NFL schedule or
+defensive-ranking data anywhere — only fantasy matchup and roster data — so that signal cannot be
+built cleanly without a new external data source. `recent_form_factor` is a deliberately labeled
+approximation standing in for it: the player's own recent trend, which folds in matchup difficulty
+along with role changes, injuries and everything else indistinguishably. It is a small, bounded
+nudge, not a schedule-aware forecast.
+
+**Other limitations.**
+* `value_base` is not a forecast for a specific upcoming week — ESPN does not expose a projection
+  for a future, unplayed week outside a live scoring period (the same gap documented for Game of
+  the Week above). It is the player's standing per-game rate.
+* `need_fit_factor` measures what a team has scored at a position, not what is realistically
+  available to acquire; a team with only bench-quality options at a thin position looks needier
+  than the trade market can actually fix.
+* `leverage_factor` is a frozen snapshot of the playoff-odds model at analysis time. The Trade
+  Analyzer does not re-run the simulation for the hypothetical world after the trade.
+* Every shrinkage-games constant and clamp range is a documented, chosen-not-fitted free
+  parameter — the same spirit as Rivalry Index's scale constants — designed so a thin sample
+  pulls toward "we don't know yet" rather than toward a loud, confident number.
+
+---
+
 ## Metrics that were considered and rejected
 
 **Draft value / draft grades.** Would require season-long points per drafted player attributed
