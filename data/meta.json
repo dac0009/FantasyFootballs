@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "pipeline_version": "1.0.0",
-  "generated_at": "2026-10-12T02:23:14+00:00",
+  "generated_at": "2026-10-14T13:20:39+00:00",
   "source": "espn",
   "league": {
     "league_id": 61253603,
@@ -21,18 +21,18 @@
     2026
   ],
   "current_season": 2026,
-  "current_week": 4,
-  "upcoming_week": 5,
+  "current_week": 5,
+  "upcoming_week": 6,
   "counts": {
     "seasons": 8,
     "owners": 23,
     "matchups": 809,
-    "completed_matchups": 737,
-    "team_weeks": 1474,
-    "roster_rows": 24067,
-    "players": 698,
+    "completed_matchups": 743,
+    "team_weeks": 1486,
+    "roster_rows": 24267,
+    "players": 700,
     "draft_picks": 1568,
-    "transactions": 169,
+    "transactions": 73,
     "head_to_head_pairs": 185
   },
   "limitations": [
@@ -47,7 +47,6 @@
   "warnings": [
     "season 2019: 14 teams, expected 12. League size has changed over time, so this may be correct.",
     "season 2020: 10 teams, expected 12. League size has changed over time, so this may be correct.",
-    "season 2021: 14 teams, expected 12. League size has changed over time, so this may be correct.",
-    "published dataset would shrink: owners goes from 24 to 23. This usually means the ESPN pull partly failed. Refusing to publish. (overridden by --allow-shrink)"
+    "season 2021: 14 teams, expected 12. League size has changed over time, so this may be correct."
   ]
 }
