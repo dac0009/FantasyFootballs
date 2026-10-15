@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-10-15T13:38:21+00:00",
+  "generated_at": "2026-10-15T14:31:47+00:00",
   "files": {
-    "current.json": 43428,
+    "current.json": 44352,
     "drafts/2019.json": 44419,
     "drafts/2020.json": 32164,
     "drafts/2021.json": 45028,
@@ -50,17 +50,17 @@
     "rosters/2025.json": 566559,
     "rosters/2026.json": 168793,
     "seasons.json": 4986,
-    "seasons/2019.json": 223955,
-    "seasons/2020.json": 177358,
-    "seasons/2021.json": 238550,
-    "seasons/2022.json": 215277,
-    "seasons/2023.json": 215078,
-    "seasons/2024.json": 215483,
-    "seasons/2025.json": 217265,
-    "seasons/2026.json": 100897,
+    "seasons/2019.json": 225073,
+    "seasons/2020.json": 178156,
+    "seasons/2021.json": 239666,
+    "seasons/2022.json": 216225,
+    "seasons/2023.json": 216034,
+    "seasons/2024.json": 216437,
+    "seasons/2025.json": 218217,
+    "seasons/2026.json": 101821,
     "team_weeks.json": 498990,
     "trade_values.json": 171904,
-    "transactions/2026.json": 26858
+    "transactions/2026.json": 27386
   },
-  "total_bytes": 8527113
+  "total_bytes": 8536331
 }
