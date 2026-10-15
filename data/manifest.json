@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-14T13:20:39+00:00",
+  "generated_at": "2026-10-15T13:38:21+00:00",
   "files": {
     "current.json": 43428,
     "drafts/2019.json": 44419,
@@ -13,7 +13,7 @@
     "game_of_week.json": 9269,
     "head_to_head.json": 587665,
     "matchups.json": 336324,
-    "meta.json": 1425,
+    "meta.json": 1426,
     "owners.json": 22551,
     "owners/abhik-patel.json": 41486,
     "owners/brandon-perez.json": 10704,
@@ -59,8 +59,8 @@
     "seasons/2025.json": 217265,
     "seasons/2026.json": 100897,
     "team_weeks.json": 498990,
-    "trade_values.json": 171905,
-    "transactions/2026.json": 19355
+    "trade_values.json": 171904,
+    "transactions/2026.json": 26858
   },
-  "total_bytes": 8519610
+  "total_bytes": 8527113
 }
