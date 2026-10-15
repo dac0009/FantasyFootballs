@@ -103,6 +103,10 @@ export interface StandingsRow {
   all_play_ties: number;
   all_play_record: string;
   all_play_win_pct: number | null;
+  vs_avg_wins: number;
+  vs_avg_losses: number;
+  vs_avg_record: string;
+  vs_avg_win_pct: number | null;
   expected_wins: number | null;
   actual_wins?: number | null;
   schedule_luck: number | null;

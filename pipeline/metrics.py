@@ -203,6 +203,67 @@ def all_play(
     return {"totals": out, "per_week": per_week}
 
 
+def vs_average(
+    team_weeks: Iterable[dict],
+    *,
+    key: str = "owner_id",
+    game_types: Sequence[str] | None = DEFAULT_GAME_TYPES,
+    season: int | None = None,
+) -> dict[str, dict]:
+    """Each team's record against the league average, week by week.
+
+    Definition
+    ----------
+    For each (season, week), compute the mean score of every participating
+    team. A team that scored at or above that weekly mean records a win, below
+    it a loss. The result is a won-lost record -- e.g. ``4-1`` -- answering
+    "how often did this team beat a typical team's week?"
+
+    This is the single-number form of the per-week "record versus the league"
+    strip. It is close kin to :func:`all_play` -- both reward weekly scoring
+    independent of the schedule -- but compares against the mean rather than
+    against every individual opponent, so the numbers are smaller and read
+    like an ordinary record.
+
+    A team scoring exactly the mean (rare with real scores) counts as a win,
+    matching the "at or above" convention used in the weekly strip.
+
+    Limitation
+    ----------
+    Like all-play, it is cleanest over the regular season, where every team
+    plays every week. In postseason weeks only a subset plays, so the mean is
+    taken over fewer teams.
+    """
+    rows = filter_weeks(team_weeks, game_types=game_types, season=season, key=key)
+    by_week: dict[tuple[int, int], list[dict]] = defaultdict(list)
+    for row in rows:
+        by_week[(row["season"], row["week"])].append(row)
+
+    totals: dict[str, dict] = defaultdict(lambda: {"wins": 0, "losses": 0, "weeks": 0})
+    for week_rows in by_week.values():
+        scores = [r["score"] for r in week_rows]
+        mean = statistics.fmean(scores) if scores else 0.0
+        for row in week_rows:
+            entity = row[key]
+            if row["score"] >= mean:
+                totals[entity]["wins"] += 1
+            else:
+                totals[entity]["losses"] += 1
+            totals[entity]["weeks"] += 1
+
+    out: dict[str, dict] = {}
+    for entity, agg in totals.items():
+        wins, losses = agg["wins"], agg["losses"]
+        out[entity] = {
+            "id": entity,
+            "vs_avg_wins": wins,
+            "vs_avg_losses": losses,
+            "vs_avg_record": format_record(wins, losses, 0),
+            "vs_avg_win_pct": r3(win_pct(wins, losses, 0)),
+        }
+    return out
+
+
 def expected_wins(summary: dict[str, dict], all_play_totals: dict[str, dict]) -> dict[str, dict]:
     """Expected wins and schedule luck.
 

@@ -18,6 +18,7 @@ export default function Glossary({ meta }: { meta: Meta }) {
     "win_probability",
     "playoff_swing",
     "all_play",
+    "vs_average",
     "expected_wins",
     "schedule_luck",
     "sos_z",

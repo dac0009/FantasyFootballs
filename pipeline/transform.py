@@ -37,6 +37,7 @@ def build_standings(
     """One row per owner for a season, with every season metric merged in."""
     summary = metrics.summarize(team_weeks, season=season, game_types=game_types)
     ap = metrics.all_play(team_weeks, season=season, game_types=game_types)
+    vs_avg = metrics.vs_average(team_weeks, season=season, game_types=game_types)
     exp = metrics.expected_wins(summary, ap["totals"])
     sos = metrics.strength_of_schedule(team_weeks, season=season, game_types=game_types)
     luck = metrics.luck_indices(team_weeks, season=season, game_types=game_types)
@@ -65,6 +66,7 @@ def build_standings(
                 "logo": team.get("logo"),
                 **{k: v for k, v in row.items() if k != "id"},
                 **{k: v for k, v in ap["totals"].get(owner_id, {}).items() if k != "id"},
+                **{k: v for k, v in vs_avg.get(owner_id, {}).items() if k != "id"},
                 **exp.get(owner_id, {}),
                 **sos.get(owner_id, {}),
                 **luck.get(owner_id, {}),

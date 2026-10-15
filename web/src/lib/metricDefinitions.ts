@@ -48,6 +48,15 @@ export const METRICS: Record<string, MetricDefinition> = {
     limitation:
       "In playoff weeks only part of the league plays, so the comparison pool shrinks. Regular season is the default view for this reason.",
   },
+  vs_average: {
+    label: "Record vs the league average",
+    short:
+      "A team's won-lost record against a typical week: did it score at or above the league average that week, or below it?",
+    formula:
+      "Each week, take the mean score of all teams. At or above it is a win, below it a loss. Reported as an ordinary W-L record.",
+    limitation:
+      "Like all-play, cleanest over the regular season when every team plays. A close cousin of all-play, but measured against the mean rather than every opponent, so the numbers are smaller and read like a record.",
+  },
   expected_wins: {
     label: "Expected wins",
     short: "The wins a team's scoring deserved, given an average schedule.",

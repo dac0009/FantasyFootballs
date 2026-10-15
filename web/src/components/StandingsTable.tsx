@@ -46,6 +46,13 @@ export function StandingsTable({
   const standard: Column<StandingsRow>[] = [
     team,
     { key: "record", header: "Record", sortValue: (r) => r.wins + 0.5 * r.ties, cell: (r) => r.record },
+    {
+      key: "vsavg",
+      header: <Metric name="vs_average">vs Avg</Metric>,
+      sortValue: (r) => r.vs_avg_win_pct,
+      bar: (r) => r.vs_avg_win_pct,
+      cell: (r) => r.vs_avg_record,
+    },
     { key: "pct", header: "Win %", sortValue: (r) => r.win_pct, cell: (r) => pct(r.win_pct) },
     {
       key: "pf",

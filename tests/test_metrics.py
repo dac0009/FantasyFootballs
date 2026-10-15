@@ -59,6 +59,45 @@ class TestSummarize:
         assert combined["owner-1"]["points_for"] == 300.0
 
 
+class TestVsAverage:
+    def test_beats_and_misses_the_weekly_mean(self, four_team_season):
+        """Week 1 scores 120/110/100/90 -> mean 105.
+
+        120 and 110 are at or above the mean (win); 100 and 90 below (loss).
+        """
+        week1 = [r for r in four_team_season if r["week"] == 1]
+        out = metrics.vs_average(week1)
+        assert (out["owner-1"]["vs_avg_wins"], out["owner-1"]["vs_avg_losses"]) == (1, 0)
+        assert (out["owner-3"]["vs_avg_wins"], out["owner-3"]["vs_avg_losses"]) == (1, 0)
+        assert (out["owner-2"]["vs_avg_wins"], out["owner-2"]["vs_avg_losses"]) == (0, 1)
+        assert (out["owner-4"]["vs_avg_wins"], out["owner-4"]["vs_avg_losses"]) == (0, 1)
+
+    def test_record_string_and_weeks_total(self, four_team_season):
+        out = metrics.vs_average(four_team_season)
+        for row in out.values():
+            w, losses = row["vs_avg_wins"], row["vs_avg_losses"]
+            assert row["vs_avg_record"] == f"{w}-{losses}"
+            # Every team plays all three weeks of the fixture.
+            assert w + losses == 3
+
+    def test_every_week_has_at_least_one_winner(self, four_team_season):
+        """At least one team is always at or above the mean (the top scorer),
+        so no week is all-losses. Totals need not split evenly, because the
+        "at or above" rule can put three of four teams above a low mean."""
+        out = metrics.vs_average(four_team_season)
+        total_wins = sum(r["vs_avg_wins"] for r in out.values())
+        total_games = sum(r["vs_avg_wins"] + r["vs_avg_losses"] for r in out.values())
+        assert 0 < total_wins < total_games  # some win, some lose, overall
+
+    def test_playoff_weeks_excluded_by_default(self):
+        rows = pair(2024, 1, 1, 120, 2, 80)
+        rows += pair(2024, 15, 1, 200, 2, 50, game_type=GAME_PLAYOFF)
+        out = metrics.vs_average(rows)
+        # Only the regular-season week counts: 120 vs mean 100 -> win, one game.
+        assert out["owner-1"]["vs_avg_record"] == "1-0"
+        assert out["owner-1"]["vs_avg_wins"] + out["owner-1"]["vs_avg_losses"] == 1
+
+
 class TestAllPlay:
     def test_all_play_in_one_week(self, four_team_season):
         """Week 1 scores: 120, 110, 100, 90.
