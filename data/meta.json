@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "pipeline_version": "1.0.0",
-  "generated_at": "2026-10-15T14:53:30+00:00",
+  "generated_at": "2026-10-20T19:55:07+00:00",
   "source": "espn",
   "league": {
     "league_id": 61253603,
@@ -21,18 +21,18 @@
     2026
   ],
   "current_season": 2026,
-  "current_week": 5,
-  "upcoming_week": 6,
+  "current_week": 6,
+  "upcoming_week": 7,
   "counts": {
     "seasons": 8,
     "owners": 23,
     "matchups": 809,
-    "completed_matchups": 743,
-    "team_weeks": 1486,
-    "roster_rows": 24267,
-    "players": 700,
+    "completed_matchups": 749,
+    "team_weeks": 1498,
+    "roster_rows": 24467,
+    "players": 704,
     "draft_picks": 1568,
-    "transactions": 103,
+    "transactions": 48,
     "head_to_head_pairs": 185
   },
   "limitations": [
