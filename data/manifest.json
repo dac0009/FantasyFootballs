@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-20T19:55:07+00:00",
+  "generated_at": "2026-10-20T20:32:34+00:00",
   "files": {
     "current.json": 43971,
     "drafts/2019.json": 44419,
@@ -38,7 +38,7 @@
     "owners/thomas-strange.json": 26021,
     "owners/tyler-kuiken.json": 22785,
     "owners/wyatt-mowrer.json": 14734,
-    "players.json": 54503,
+    "players.json": 54502,
     "playoffs.json": 9314,
     "records.json": 156563,
     "rosters/2019.json": 601979,
@@ -59,8 +59,8 @@
     "seasons/2025.json": 218217,
     "seasons/2026.json": 109596,
     "team_weeks.json": 502970,
-    "trade_values.json": 172889,
+    "trade_values.json": 172888,
     "transactions/2026.json": 12693
   },
-  "total_bytes": 8572426
+  "total_bytes": 8572424
 }
