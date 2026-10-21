@@ -20,6 +20,68 @@ export interface Issue {
   label?: string;
   /** Set when a .docx sits beside the PDF. */
   word?: boolean;
+  /**
+   * A PDF hosted somewhere else (a shared Google Drive link, say). Issues with
+   * a url open straight in a new tab instead of the in-browser reader, because
+   * Drive and most hosts refuse to be embedded in a frame.
+   */
+  url?: string;
+  /** Thumbnail for a url issue. Falls back to a plain cover when absent. */
+  cover?: string;
+  /** True for issues added through the site rather than committed to the repo. */
+  stored?: boolean;
+}
+
+/** Issues added from the site live in editor_documents under this key prefix. */
+export const RECAP_KEY_PREFIX = "recap.";
+
+export const recapKey = (season: number, slug: string) => `${RECAP_KEY_PREFIX}${season}.${slug}`;
+
+export const isExternal = (issue: Issue) => !!issue.url;
+
+/** Where "Read the issue" should point. */
+export const issueHref = (issue: Issue) =>
+  issue.url ?? `${import.meta.env.BASE_URL.replace(/\/$/, "")}/recaps/${issue.slug}.pdf`;
+
+export const coverSrc = (issue: Issue) =>
+  issue.cover ?? issueAsset(issue.slug, "cover.png");
+
+/**
+ * Read issues saved through the site. Each one is a single editor document
+ * whose text is the issue as JSON, so adding an issue needs no schema change
+ * and no deploy. Anything unparseable is skipped rather than breaking the page.
+ */
+export function storedIssues(documents: { kind: string; key: string; body: { text?: string } }[]): Issue[] {
+  const out: Issue[] = [];
+  for (const doc of documents) {
+    if (doc.kind !== "copy" || !doc.key.startsWith(RECAP_KEY_PREFIX) || !doc.body?.text) continue;
+    try {
+      const raw = JSON.parse(doc.body.text) as Partial<Issue>;
+      if (!raw.title || !raw.url) continue;
+      out.push({
+        slug: doc.key.slice(RECAP_KEY_PREFIX.length).replace(/^\d+\./, ""),
+        season: Number(raw.season) || new Date().getFullYear(),
+        weeks: Array.isArray(raw.weeks) ? raw.weeks.map(Number).filter(Number.isFinite) : [],
+        title: raw.title,
+        dek: raw.dek ?? "",
+        dateLabel: raw.dateLabel,
+        label: raw.label,
+        url: raw.url,
+        cover: raw.cover,
+        stored: true,
+      });
+    } catch {
+      /* A malformed issue should not take the archive down. */
+    }
+  }
+  return out;
+}
+
+/** Committed issues plus saved ones, with saved winning on a slug clash. */
+export function allIssues(documents: Parameters<typeof storedIssues>[0] = []): Issue[] {
+  const stored = storedIssues(documents);
+  const slugs = new Set(stored.map((i) => i.slug));
+  return [...stored, ...ISSUES.filter((i) => !slugs.has(i.slug))];
 }
 
 export const ISSUES: Issue[] = [
@@ -90,11 +152,11 @@ export function weekLabel(issue: Issue): string {
 }
 
 /** Issues grouped by season, newest season and newest issue first. */
-export function bySeason(): { season: number; issues: Issue[] }[] {
-  const seasons = [...new Set(ISSUES.map((i) => i.season))].sort((a, b) => b - a);
+export function bySeason(issues: Issue[] = ISSUES): { season: number; issues: Issue[] }[] {
+  const seasons = [...new Set(issues.map((i) => i.season))].sort((a, b) => b - a);
   const lastWeek = (i: Issue) => (i.weeks.length ? i.weeks[i.weeks.length - 1] : 0);
   return seasons.map((season) => ({
     season,
-    issues: ISSUES.filter((i) => i.season === season).sort((a, b) => lastWeek(b) - lastWeek(a)),
+    issues: issues.filter((i) => i.season === season).sort((a, b) => lastWeek(b) - lastWeek(a)),
   }));
 }

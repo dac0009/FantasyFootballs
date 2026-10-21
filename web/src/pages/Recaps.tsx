@@ -1,11 +1,15 @@
 import { Link } from "react-router-dom";
 import { EditableText } from "../components/Editorial";
 import { Band, Empty } from "../components/primitives";
-import { bySeason, issueAsset, weekLabel } from "../lib/recaps";
+import { useEditorial } from "../components/Editorial";
+import { AddIssueForm } from "../components/AddIssueForm";
+import { allIssues, bySeason, coverSrc, isExternal, issueAsset, issueHref, weekLabel } from "../lib/recaps";
 
 export default function Recaps() {
-  const seasons = bySeason();
-  const count = seasons.reduce((n, s) => n + s.issues.length, 0);
+  const { documents } = useEditorial();
+  const issues = allIssues(documents);
+  const seasons = bySeason(issues);
+  const count = issues.length;
 
   return (
     <div className="shell" style={{ paddingTop: "2.2rem" }}>
@@ -19,6 +23,8 @@ export default function Recaps() {
         />
       </p>
 
+      <AddIssueForm issues={issues} />
+
       {count === 0 ? <Empty>No issues have been published yet.</Empty> : null}
 
       {seasons.map(({ season, issues }) => (
@@ -30,25 +36,43 @@ export default function Recaps() {
           <ol className="issue-list">
             {issues.map((issue) => (
               <li key={issue.slug} className="issue-row">
+                {isExternal(issue) ? (
+                  <a href={issueHref(issue)} target="_blank" rel="noreferrer" className="issue-cover" aria-hidden="true" tabIndex={-1}>
+                    <img src={coverSrc(issue)} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                  </a>
+                ) : (
                 <Link to={`/recaps/${issue.slug}`} className="issue-cover" aria-hidden="true" tabIndex={-1}>
-                  <img src={issueAsset(issue.slug, "cover.png")} alt="" loading="lazy" />
+                  <img src={coverSrc(issue)} alt="" loading="lazy" />
                 </Link>
+                )}
                 <div>
                   <p className="issue-kicker">
                     {weekLabel(issue)}
                     {issue.dateLabel ? ` · ${issue.dateLabel}` : ""}
                   </p>
                   <h3 className="issue-title">
-                    <Link to={`/recaps/${issue.slug}`}>{issue.title}</Link>
+                    {isExternal(issue) ? (
+                      <a href={issueHref(issue)} target="_blank" rel="noreferrer">{issue.title}</a>
+                    ) : (
+                      <Link to={`/recaps/${issue.slug}`}>{issue.title}</Link>
+                    )}
                   </h3>
                   <p className="issue-dek">{issue.dek}</p>
                   <p className="pill-row" style={{ marginTop: "0.7rem" }}>
-                    <Link to={`/recaps/${issue.slug}`} className="pill">
-                      Read the issue
-                    </Link>
-                    <a className="pill" href={issueAsset(issue.slug, "pdf")} download>
-                      PDF
-                    </a>
+                    {isExternal(issue) ? (
+                      <a className="pill" href={issueHref(issue)} target="_blank" rel="noreferrer">
+                        Read the issue
+                      </a>
+                    ) : (
+                      <>
+                        <Link to={`/recaps/${issue.slug}`} className="pill">
+                          Read the issue
+                        </Link>
+                        <a className="pill" href={issueHref(issue)} download>
+                          PDF
+                        </a>
+                      </>
+                    )}
                     {issue.word ? (
                       <a className="pill" href={issueAsset(issue.slug, "docx")} download>
                         Word
