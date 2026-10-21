@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useEditorial } from "./Editorial";
 import { editorClient } from "../lib/editor";
 import { publishAndVerify } from "../lib/editorPersistence.mjs";
-import { encodeIssue, parseGoogleLink, recapKey } from "../lib/recapLinks.mjs";
+import { encodeIssue, encodeRemoval, parseGoogleLink, recapKey } from "../lib/recapLinks.mjs";
 import { weekLabel, type Issue } from "../lib/recaps";
 
 /**
@@ -76,19 +76,22 @@ export function RecapLinkForm({ issues }: { issues: Issue[] }) {
     }
   }
 
+  /**
+   * Remove works on every issue, built-in PDFs included: it saves a removal
+   * entry under that week's key. Pasting a link for the same week later
+   * replaces the removal, so the week comes straight back.
+   */
   async function remove(issue: Issue) {
     if (!editorClient) return;
-    const key = recapKey(issue.season, issue.slug);
+    if (!window.confirm(`Remove "${issue.title}" from the archive? Add a link for ${weekLabel(issue)} later to bring it back.`)) return;
+    const { key, text } = encodeRemoval({ season: issue.season, weeks: issue.weeks, label: issue.label, slug: issue.slug });
     const existing = documents.find((d) => d.kind === "copy" && d.key === key);
-    if (!existing) {
-      return setStatus({ ok: false, text: "This one is a built-in PDF — edit its details instead, or delete the PDF on GitHub." });
-    }
     setBusy(true);
     try {
-      const { document } = await publishAndVerify(editorClient, "copy", key, { text: "", display: "hidden" }, existing.version);
+      const { document } = await publishAndVerify(editorClient, "copy", key, { text, display: "custom" }, existing?.version ?? 0);
       replace(document);
       await refreshSaved().catch(() => undefined);
-      setStatus({ ok: true, text: `Removed ${issue.title} from the archive. The file itself is untouched.` });
+      setStatus({ ok: true, text: `Removed ${issue.title}. The file itself is untouched; add a link for that week to bring it back.` });
       if (editing?.slug === issue.slug) reset();
     } catch (error) {
       setStatus({ ok: false, text: (error as { message?: string }).message ?? "Could not remove it." });
@@ -167,9 +170,7 @@ export function RecapLinkForm({ issues }: { issues: Issue[] }) {
               <span className="pill-row" style={{ margin: 0 }}>
                 {issue.link?.edit ? <a className="pill" href={issue.link.edit} target="_blank" rel="noreferrer">Open Doc</a> : null}
                 <button className="pill" type="button" onClick={() => startEdit(issue)}>Edit</button>
-                {isSaved(issue) ? (
-                  <button className="pill" type="button" disabled={busy} onClick={() => void remove(issue)}>Remove</button>
-                ) : null}
+                <button className="pill" type="button" disabled={busy} onClick={() => void remove(issue)}>Remove</button>
               </span>
             </div>
           ))}

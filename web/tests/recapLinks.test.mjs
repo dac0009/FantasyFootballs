@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { decodeIssue, encodeIssue, linksFor, parseGoogleLink, parseWeeks, slugFor } from '../src/lib/recapLinks.mjs';
+import { decodeIssue, encodeIssue, encodeRemoval, linksFor, mergeIssues, parseGoogleLink, parseWeeks, slugFor } from '../src/lib/recapLinks.mjs';
 
 const DOC = 'https://docs.google.com/document/d/1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789/edit?usp=sharing';
 
@@ -74,6 +74,40 @@ test('a new recap needs a link, but editing an existing one can change details w
 test('editing pins the slug even when the week text changes, so it updates in place', () => {
   const { key } = encodeIssue({ url: DOC, season: 2026, weeks: '9', title: 'Oops', slug: 'ffbffl-2026-week-7' });
   assert.equal(key, 'recap.2026.ffbffl-2026-week-7');
+});
+
+const pdf = (slug, weeks, title) => ({ slug, season: 2026, weeks, title, dek: '', dateLabel: null, label: null, pdf: `${slug}.pdf`, cover: null, docx: null, pages: 2 });
+const stored = (key, text) => decodeIssue(key, text);
+
+test('removing a built-in PDF hides it; a new link for that week brings it back', () => {
+  const manifest = [pdf('ffbffl-2026-week-3', [3], 'Week 3 PDF'), pdf('ffbffl-2026-week-4', [4], 'Week 4 PDF')];
+  const removal = encodeRemoval({ season: 2026, weeks: [3], slug: 'ffbffl-2026-week-3' });
+  assert.equal(removal.key, 'recap.2026.ffbffl-2026-week-3');
+  const tomb = stored(removal.key, removal.text);
+  assert.equal(tomb.removed, true);
+
+  const after = mergeIssues(manifest, [tomb]);
+  assert.deepEqual(after.map((i) => i.slug), ['ffbffl-2026-week-4'], 'week 3 is gone, week 4 untouched');
+
+  const readd = encodeIssue({ url: DOC, season: 2026, weeks: '3', title: 'Week 3, new cut', slug: 'ffbffl-2026-week-3' });
+  assert.equal(readd.key, removal.key, 'same key, so the link simply replaces the removal');
+  const back = mergeIssues(manifest, [stored(readd.key, readd.text)]);
+  assert.deepEqual(back.map((i) => i.title).sort(), ['Week 3, new cut', 'Week 4 PDF']);
+  assert.equal(back.find((i) => i.slug === 'ffbffl-2026-week-3').link.kind, 'gdoc');
+});
+
+test('a link replaces the PDF of the same week, and an override edits a PDF in place', () => {
+  const manifest = [pdf('ffbffl-2026-week-4', [4], 'Old title')];
+  const link = encodeIssue({ url: DOC, season: 2026, weeks: '4', title: 'From Drive', slug: 'ffbffl-2026-week-4' });
+  const viaLink = mergeIssues(manifest, [stored(link.key, link.text)]);
+  assert.equal(viaLink.length, 1);
+  assert.equal(viaLink[0].title, 'From Drive');
+  assert.equal(viaLink[0].pdf, null, 'the committed PDF is no longer what shows');
+
+  const patch = encodeIssue({ url: '', season: 2026, weeks: '4', title: 'Fixed title', slug: 'ffbffl-2026-week-4' });
+  const viaPatch = mergeIssues(manifest, [stored(patch.key, patch.text)]);
+  assert.equal(viaPatch[0].title, 'Fixed title');
+  assert.equal(viaPatch[0].pdf, 'ffbffl-2026-week-4.pdf', 'the PDF stays; only the details changed');
 });
 
 test('decode ignores removed, malformed or foreign documents', () => {

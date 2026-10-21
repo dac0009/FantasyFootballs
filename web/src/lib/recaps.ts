@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Async } from "./data";
-import { decodeIssue, type LinkedIssue } from "./recapLinks.mjs";
+import { decodeIssue, mergeIssues, type LinkedIssue } from "./recapLinks.mjs";
 
 /**
  * The recap archive has two sources, merged for display:
@@ -64,51 +64,19 @@ export function useIssues(): Async<Issue[]> {
   return result;
 }
 
-type StoredEntry = Issue & { override?: boolean };
-
 /** Everything saved from the site, read from the editor documents everyone can see. */
-export function storedIssues(documents: { kind: string; key: string; body: { text?: string; display?: string } }[]): StoredEntry[] {
-  const out: StoredEntry[] = [];
+export function storedIssues(documents: { kind: string; key: string; body: { text?: string; display?: string } }[]): Issue[] {
+  const out: Issue[] = [];
   for (const doc of documents) {
     if (doc.kind !== "copy" || doc.body?.display === "hidden") continue;
-    const issue = decodeIssue(doc.key, doc.body?.text) as StoredEntry | null;
+    const issue = decodeIssue(doc.key, doc.body?.text);
     if (issue) out.push(issue);
   }
   return out;
 }
 
-const META: (keyof Issue)[] = ["title", "dek", "dateLabel", "label", "weeks", "season"];
-
-/** Apply only the non-empty fields of an override onto an issue. */
-function applyOverride(base: Issue, patch: StoredEntry): Issue {
-  const next = { ...base };
-  for (const key of META) {
-    const v = patch[key];
-    if (v === null || v === undefined) continue;
-    if (typeof v === "string" && v.trim() === "") continue;
-    if (Array.isArray(v) && v.length === 0) continue;
-    (next as Record<string, unknown>)[key] = v;
-  }
-  return next;
-}
-
-/**
- * The archive the site shows: committed PDFs, link issues (which replace a PDF
- * of the same week), and metadata overrides laid on top. A link issue wins over
- * a PDF by slug; an override edits whatever issue carries its slug in place.
- */
-export function mergeIssues(manifest: Issue[], stored: StoredEntry[]): Issue[] {
-  const links = stored.filter((s) => !s.override);
-  const overrides = stored.filter((s) => s.override);
-  const linkSlugs = new Set(links.map((i) => i.slug));
-
-  let list: Issue[] = [...links, ...manifest.filter((i) => !linkSlugs.has(i.slug))];
-  for (const patch of overrides) {
-    const i = list.findIndex((x) => x.slug === patch.slug);
-    if (i >= 0) list[i] = applyOverride(list[i], patch);
-  }
-  return list;
-}
+/** Merge rules (links replace PDFs, removals hide, overrides edit) live in recapLinks.mjs so they are tested. */
+export { mergeIssues };
 
 export const coverSrc = (issue: Issue): string | null =>
   issue.link?.thumb ?? (issue.cover ? recapFile(issue.cover) : null);

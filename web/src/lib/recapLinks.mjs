@@ -65,6 +65,39 @@ export function recapKey(season, slug) {
   return `${KEY_PREFIX}${season}.${slug}`;
 }
 
+const META = ['title', 'dek', 'dateLabel', 'label', 'weeks', 'season'];
+
+/**
+ * The archive as shown: committed PDFs plus everything saved from the site.
+ *  - a link entry replaces a PDF with the same slug;
+ *  - a removal hides whatever carries that slug (PDF or link);
+ *  - a metadata override edits the matching issue in place.
+ * Newest week first within a season is applied by the page.
+ */
+export function mergeIssues(manifest, stored) {
+  const links = stored.filter((s) => s.link);
+  const removed = new Set(stored.filter((s) => s.removed).map((s) => s.slug));
+  const overrides = stored.filter((s) => s.override && !s.removed);
+  const linkSlugs = new Set(links.map((i) => i.slug));
+
+  let list = [...links, ...manifest.filter((i) => !linkSlugs.has(i.slug))];
+  list = list.filter((i) => !removed.has(i.slug));
+  for (const patch of overrides) {
+    const at = list.findIndex((x) => x.slug === patch.slug);
+    if (at < 0) continue;
+    const next = { ...list[at] };
+    for (const k of META) {
+      const v = patch[k];
+      if (v === null || v === undefined) continue;
+      if (typeof v === 'string' && v.trim() === '') continue;
+      if (Array.isArray(v) && v.length === 0) continue;
+      next[k] = v;
+    }
+    list[at] = next;
+  }
+  return list;
+}
+
 /**
  * The JSON stored for an issue. Throws a readable message when it cannot be.
  *
@@ -98,9 +131,22 @@ export function encodeIssue({ url, season, weeks, title, dek, dateLabel, label, 
 }
 
 /**
+ * The entry that removes an issue from the archive — any issue, including a
+ * built-in PDF. It lives under the same key a link for that week would use, so
+ * pasting a new link later simply replaces it and the week comes back.
+ */
+export function encodeRemoval({ season, weeks, label, slug }) {
+  const year = Number(season);
+  if (!Number.isInteger(year) || !slug) throw new Error('Cannot remove: unknown issue.');
+  const payload = { season: year, weeks: Array.isArray(weeks) ? weeks : [], removed: true };
+  if (label) payload.label = String(label);
+  return { key: recapKey(year, slug), text: JSON.stringify(payload) };
+}
+
+/**
  * Rebuild a stored entry, or null if unusable. A link entry is a full issue; a
- * link-less entry is a metadata override (`override: true`) that mergeIssues
- * lays over the matching archive issue.
+ * link-less entry is either a removal (`removed: true`) or a metadata override
+ * (`override: true`) that mergeIssues lays over the matching archive issue.
  */
 export function decodeIssue(key, text) {
   if (!key.startsWith(KEY_PREFIX) || !text) return null;
@@ -115,6 +161,9 @@ export function decodeIssue(key, text) {
   const dateLabel = raw.dateLabel ? String(raw.dateLabel) : null;
   const label = raw.label ? String(raw.label) : null;
 
+  if (raw.removed === true) {
+    return { slug, season, weeks, title, dek, dateLabel, label, removed: true, override: true, stored: true };
+  }
   const ref = parseGoogleLink(raw?.url);
   if (!ref) {
     // Metadata override of an issue already in the archive.

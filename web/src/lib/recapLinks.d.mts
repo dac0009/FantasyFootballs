@@ -29,7 +29,12 @@ export interface LinkedIssue {
   stored?: boolean;
   /** A link-less metadata override of an issue already in the archive. */
   override?: boolean;
+  /** A removal entry: hides whatever issue carries this slug. */
+  removed?: boolean;
 }
+
+export function encodeRemoval(fields: { season: number | string; weeks?: number[]; label?: string | null; slug: string }): { key: string; text: string };
+export function mergeIssues(manifest: LinkedIssue[], stored: LinkedIssue[]): LinkedIssue[];
 
 export function parseGoogleLink(url: string | null | undefined): GoogleRef | null;
 export function linksFor(ref: GoogleRef): GoogleLinks;
