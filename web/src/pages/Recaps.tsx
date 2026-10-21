@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { EditableText } from "../components/Editorial";
 import { Band, Empty } from "../components/primitives";
-import { bySeason, issueAsset, issueDate, weekLabel } from "../lib/recaps";
+import { bySeason, issueAsset, weekLabel } from "../lib/recaps";
 
 export default function Recaps() {
   const seasons = bySeason();
@@ -35,7 +35,8 @@ export default function Recaps() {
                 </Link>
                 <div>
                   <p className="issue-kicker">
-                    {weekLabel(issue.weeks)} · {issueDate(issue.published)}
+                    {weekLabel(issue)}
+                    {issue.dateLabel ? ` · ${issue.dateLabel}` : ""}
                   </p>
                   <h3 className="issue-title">
                     <Link to={`/recaps/${issue.slug}`}>{issue.title}</Link>

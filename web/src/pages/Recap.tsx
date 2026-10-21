@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router-dom";
-import { ISSUES, findIssue, issueAsset, issueDate, weekLabel } from "../lib/recaps";
+import { ISSUES, findIssue, issueAsset, weekLabel } from "../lib/recaps";
 
 export default function Recap() {
   const { slug } = useParams();
@@ -29,12 +29,13 @@ export default function Recap() {
         <Link to="/recaps" className="link-quiet">
           The Record
         </Link>{" "}
-        · {issue.season} · {weekLabel(issue.weeks)}
+        · {issue.season} · {weekLabel(issue)}
       </p>
       <h1 className="issue-head">{issue.title}</h1>
       <p className="issue-dek">{issue.dek}</p>
       <p className="issue-byline">
-        By Dominick Cifelli, Commissioner · {issueDate(issue.published)}
+        By Dominick Cifelli, Commissioner
+        {issue.dateLabel ? ` · ${issue.dateLabel}` : ""}
       </p>
 
       <p className="pill-row">
@@ -52,7 +53,7 @@ export default function Recap() {
       </p>
 
       <div className="issue-reader">
-        <iframe className="issue-frame" src={pdf} title={`${issue.title}, ${weekLabel(issue.weeks)}`} />
+        <iframe className="issue-frame" src={pdf} title={`${issue.title}, ${weekLabel(issue)}`} />
         <a className="issue-mobile" href={pdf} target="_blank" rel="noreferrer">
           <img src={issueAsset(issue.slug, "cover.png")} alt={`${issue.title}, page one`} />
           <span className="pill">Read the issue</span>
@@ -63,14 +64,14 @@ export default function Recap() {
       <nav className="issue-nav" aria-label="Other issues">
         {older ? (
           <Link to={`/recaps/${older.slug}`} className="link-quiet">
-            ← {weekLabel(older.weeks)}, {older.season}
+            ← {weekLabel(older)}, {older.season}
           </Link>
         ) : (
           <span />
         )}
         {newer ? (
           <Link to={`/recaps/${newer.slug}`} className="link-quiet">
-            {weekLabel(newer.weeks)}, {newer.season} →
+            {weekLabel(newer)}, {newer.season} →
           </Link>
         ) : (
           <span />
