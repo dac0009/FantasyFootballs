@@ -45,7 +45,10 @@ export async function savePlay(
   const { error } = await editorClient.from("wheel_plays").insert(play);
   if (!error) return { ok: true };
   if (error.code === "23505") return { ok: false, reason: "duplicate", message: "You already played today." };
-  if (error.code === "42P01") return { ok: false, reason: "unavailable", message: "The scoreboard table has not been created yet." };
+  // PostgREST answers a missing table with PGRST205; Postgres itself would say 42P01.
+  if (error.code === "42P01" || error.code === "PGRST205") {
+    return { ok: false, reason: "unavailable", message: "The board isn't open yet. Your spin still counts for you; it just can't be posted today." };
+  }
   if (error.code === "42501") return { ok: false, reason: "closed", message: "Today's board is closed, or this account cannot post scores." };
   return { ok: false, reason: "error", message: error.message };
 }
