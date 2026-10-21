@@ -57,7 +57,7 @@ export default function Recaps() {
                     <p className="issue-kicker">
                       {weekLabel(issue)}
                       {issue.dateLabel ? ` · ${issue.dateLabel}` : ""}
-                      {issue.link ? " · Google Docs" : ""}
+                      {issue.link ? (issue.link.kind === "drive" ? " · Google Drive" : " · Google Docs") : ""}
                     </p>
                     <h3 className="issue-title">
                       <Link to={`/recaps/${issue.slug}`}>{issue.title}</Link>

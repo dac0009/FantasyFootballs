@@ -10,7 +10,7 @@ import { weekLabel, type Issue } from "../lib/recaps";
  * The Doc stays the source of truth; editing it edits the site.
  */
 export function RecapLinkForm({ issues }: { issues: Issue[] }) {
-  const { member, documents, replace } = useEditorial();
+  const { member, documents, replace, refreshSaved } = useEditorial();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Issue | null>(null);
   const [form, setForm] = useState(blank());
@@ -64,7 +64,9 @@ export function RecapLinkForm({ issues }: { issues: Issue[] }) {
     try {
       const { document } = await publishAndVerify(editorClient, "copy", key, { text: encoded.text, display: "custom" }, existing?.version ?? 0);
       replace(document);
-      setStatus({ ok: true, text: editing ? "Updated. The archive shows the change now." : "Added. It is in the archive now." });
+      // Re-read from the database so what is on screen is exactly what was saved.
+      await refreshSaved().catch(() => undefined);
+      setStatus({ ok: true, text: editing ? "Updated. The archive below shows the change." : "Added. It is in the archive below." });
       setForm(blank());
       setEditing(null);
     } catch (error) {
@@ -85,7 +87,8 @@ export function RecapLinkForm({ issues }: { issues: Issue[] }) {
     try {
       const { document } = await publishAndVerify(editorClient, "copy", key, { text: "", display: "hidden" }, existing.version);
       replace(document);
-      setStatus({ ok: true, text: `Removed ${issue.title} from the archive. The Doc itself is untouched.` });
+      await refreshSaved().catch(() => undefined);
+      setStatus({ ok: true, text: `Removed ${issue.title} from the archive. The file itself is untouched.` });
       if (editing?.slug === issue.slug) reset();
     } catch (error) {
       setStatus({ ok: false, text: (error as { message?: string }).message ?? "Could not remove it." });
@@ -158,7 +161,7 @@ export function RecapLinkForm({ issues }: { issues: Issue[] }) {
               <span>
                 {issue.title}
                 <small>
-                  {issue.season} · {weekLabel(issue)} · {issue.link ? "Google Doc" : isSaved(issue) ? "edited" : "PDF"}
+                  {issue.season} · {weekLabel(issue)} · {issue.link ? (issue.link.kind === "drive" ? "Google Drive file" : "Google Doc") : isSaved(issue) ? "edited" : "PDF"}
                 </small>
               </span>
               <span className="pill-row" style={{ margin: 0 }}>
