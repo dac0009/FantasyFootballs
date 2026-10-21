@@ -2,7 +2,7 @@
 // This fixed roster, never caller-supplied IDs or roles, determines membership.
 export const roster = Object.freeze({
   fidler: 'mikey-fidler', ripple: 'justin-ripple', williams: 'dylan-williams',
-  campese: 'dom-campese', cameron: 'russell-cameron', frank: 'jakob-frank-2',
+  campese: 'dom-campese', cameron: 'russell-cameron', frank: 'jakob-frank',
   patel: 'abhik-patel', turner: 'dylan-turner', hill: 'preston-hill',
   kuiken: 'tyler-kuiken', johnson: 'jack-johnson',
 });

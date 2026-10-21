@@ -31,7 +31,7 @@ test('surname login creates a scoped owner, normalizes case, reuses account, and
   const f=fixture();
   const first=await f.login({mode:'owner',surname:'  FrAnK ',role:'commissioner',owner_id:'dominick-cifelli'});
   assert.equal(first.status,200);assert.equal(first.headers.get('cache-control'),'no-store');
-  assert.deepEqual(f.members.get('jakob-frank-2'),{user_id:'1',owner_id:'jakob-frank-2',role:'owner'});
+  assert.deepEqual(f.members.get('jakob-frank'),{user_id:'1',owner_id:'jakob-frank',role:'owner'});
   assert.deepEqual(Object.keys(first.body).sort(),['access_token','refresh_token']);
   assert.equal((await f.login({mode:'owner',surname:'frank'})).status,200);
   assert.equal(f.users.size,1);
