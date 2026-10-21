@@ -1,5 +1,13 @@
 // Stable IDs for editorial content; changes apply wherever this template is used.
 export const editorialCatalog: Record<string, {label:string; fallback:string}> = {
+  "site.recaps.title": {
+    "label": "recaps · Recap archive",
+    "fallback": "Recap archive"
+  },
+  "site.recaps.intro": {
+    "label": "recaps · Archive introduction",
+    "fallback": "Every issue of The Record, the league magazine, written by the commissioner. Read an issue in the browser or download it for later."
+  },
   "site.owners.4eaec4bc0f": {
     "label": "owners · Owners",
     "fallback": "Owners"

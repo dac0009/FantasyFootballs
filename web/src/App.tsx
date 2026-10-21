@@ -13,6 +13,8 @@ import CurrentSeason from "./pages/CurrentSeason";
 import SeasonIndex from "./pages/SeasonIndex";
 import Season from "./pages/Season";
 import Week from "./pages/Week";
+import Recaps from "./pages/Recaps";
+import Recap from "./pages/Recap";
 import Records from "./pages/Records";
 import Owners from "./pages/Owners";
 import Owner from "./pages/Owner";
@@ -59,6 +61,8 @@ export default function App() {
         <Route path="/seasons" element={<SeasonIndex />} />
         <Route path="/seasons/:year" element={<Season />} />
         <Route path="/seasons/:year/weeks/:week" element={<Week />} />
+        <Route path="/recaps" element={<Recaps />} />
+        <Route path="/recaps/:slug" element={<Recap />} />
         <Route path="/records" element={<Records />} />
         <Route path="/owners" element={<Owners />} />
         <Route path="/owners/:ownerId" element={<Owner />} />

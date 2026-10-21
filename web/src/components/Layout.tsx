@@ -15,6 +15,7 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { to: "/home", label: "This week", end: true },
+  { to: "/recaps", label: "Recaps" },
   { to: "/season", label: "Standings" },
   { to: "/playoffs", label: "Playoff explorer" },
   { to: "/records", label: "Records" },
