@@ -15,6 +15,7 @@ import Season from "./pages/Season";
 import Week from "./pages/Week";
 import Recaps from "./pages/Recaps";
 import Recap from "./pages/Recap";
+import Wheel from "./pages/Wheel";
 import Records from "./pages/Records";
 import Owners from "./pages/Owners";
 import Owner from "./pages/Owner";
@@ -63,6 +64,7 @@ export default function App() {
         <Route path="/seasons/:year/weeks/:week" element={<Week />} />
         <Route path="/recaps" element={<Recaps />} />
         <Route path="/recaps/:slug" element={<Recap />} />
+        <Route path="/wheel" element={<Wheel />} />
         <Route path="/records" element={<Records />} />
         <Route path="/owners" element={<Owners />} />
         <Route path="/owners/:ownerId" element={<Owner />} />

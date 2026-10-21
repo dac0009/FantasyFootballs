@@ -15,8 +15,12 @@ function leagueData(): import("vite").Plugin {
   return {
     name: "league-data",
     configureServer(server) {
+      // The app requests <base>/data/*, and Vite hands custom middleware the
+      // URL with the base still on it, so strip it before matching.
+      const prefix = base.replace(/\/$/, "");
       server.middlewares.use((req, res, next) => {
-        const url = (req.url || "").split("?")[0];
+        let url = (req.url || "").split("?")[0];
+        if (prefix && url.startsWith(prefix + "/")) url = url.slice(prefix.length);
         const match = url.match(/^\/data\/(.+)$/);
         if (!match) return next();
         const file = path.join(source, decodeURIComponent(match[1]));

@@ -1,5 +1,13 @@
 // Stable IDs for editorial content; changes apply wherever this template is used.
 export const editorialCatalog: Record<string, {label:string; fallback:string}> = {
+  "site.wheel.title": {
+    "label": "wheel · The Wheel",
+    "fallback": "The Wheel"
+  },
+  "site.wheel.intro": {
+    "label": "wheel · Introduction",
+    "fallback": "A real week from league history, a real roster, and the points those players actually scored. Set the lineup better than the man who owned it."
+  },
   "site.recaps.title": {
     "label": "recaps · Recap archive",
     "fallback": "Recap archive"
