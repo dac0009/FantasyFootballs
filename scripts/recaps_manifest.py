@@ -19,6 +19,7 @@ import datetime as dt
 import json
 import re
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -174,7 +175,7 @@ def main() -> int:
         print("  PyMuPDF not installed: skipping covers and headlines (pip install pymupdf)")
     issues = build()
     OUT.write_text(json.dumps({
-        "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S+00:00", time.gmtime()),
         "issues": issues,
     }, indent=2, ensure_ascii=False) + "\n")
     print(f"Wrote {len(issues)} issues to {OUT.relative_to(ROOT)}")
