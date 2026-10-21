@@ -1,28 +1,20 @@
 import { useEffect, useState } from "react";
 import type { Async } from "./data";
+import { decodeIssue, type LinkedIssue } from "./recapLinks.mjs";
 
 /**
- * The recap archive is built from the PDFs in web/public/recaps by
- * scripts/recaps_manifest.py, which writes index.json. Publishing an issue is
- * dropping a PDF in that folder; see the README there.
+ * The recap archive has two sources, merged for display:
+ *
+ *  - Issues written in Google Docs. The commissioner pastes a share link on
+ *    the Recaps page; it is stored as one editor document and read live from
+ *    Google, so editing the Doc updates the site by itself.
+ *  - PDFs in web/public/recaps, listed in archive.json by
+ *    scripts/recaps_manifest.py at build time.
+ *
+ * A Doc and a PDF for the same week share a slug, and the Doc wins, so moving
+ * an old issue into Docs is just pasting its link.
  */
-export interface Issue {
-  slug: string;
-  season: number;
-  /** Weeks this issue covers. A combined issue lists each one; a preview has none. */
-  weeks: number[];
-  title: string;
-  dek: string;
-  /** As printed on the issue, when it carries one. */
-  dateLabel: string | null;
-  /** Replaces the "Week N" kicker for issues that are not a weekly recap. */
-  label: string | null;
-  /** File names inside web/public/recaps. */
-  pdf: string;
-  cover: string | null;
-  docx: string | null;
-  pages: number;
-}
+export type Issue = LinkedIssue;
 
 interface Manifest {
   generated_at: string;
@@ -42,8 +34,8 @@ function load(): Promise<Issue[]> {
         if (!response.ok) {
           throw new Error(
             response.status === 404
-              ? "The recap archive has not been built yet. Run `npm run recaps` in web/."
-              : `Could not load the recap archive (HTTP ${response.status}).`,
+              ? "The PDF archive has not been built yet. Run `npm run recaps` in web/."
+              : `Could not load the PDF archive (HTTP ${response.status}).`,
           );
         }
         return response.json() as Promise<Manifest>;
@@ -57,6 +49,7 @@ function load(): Promise<Issue[]> {
   return cached;
 }
 
+/** Issues from the PDF manifest only. */
 export function useIssues(): Async<Issue[]> {
   const [result, setResult] = useState<Async<Issue[]>>({ state: "loading" });
   useEffect(() => {
@@ -70,6 +63,33 @@ export function useIssues(): Async<Issue[]> {
   }, []);
   return result;
 }
+
+/** Issues saved from the site (Google Docs links), from the editor documents everyone can read. */
+export function storedIssues(documents: { kind: string; key: string; body: { text?: string; display?: string } }[]): Issue[] {
+  const out: Issue[] = [];
+  for (const doc of documents) {
+    if (doc.kind !== "copy" || doc.body?.display === "hidden") continue;
+    const issue = decodeIssue(doc.key, doc.body?.text);
+    if (issue) out.push(issue);
+  }
+  return out;
+}
+
+/** Saved issues first; a PDF issue is hidden when a saved one has its slug. */
+export function mergeIssues(manifest: Issue[], stored: Issue[]): Issue[] {
+  const taken = new Set(stored.map((i) => i.slug));
+  return [...stored, ...manifest.filter((i) => !taken.has(i.slug))];
+}
+
+export const coverSrc = (issue: Issue): string | null =>
+  issue.link?.thumb ?? (issue.cover ? recapFile(issue.cover) : null);
+
+/** The PDF to download, if the issue has one. */
+export const pdfHref = (issue: Issue): string | null =>
+  issue.link ? issue.link.download : issue.pdf ? recapFile(issue.pdf) : null;
+
+/** Where "open" goes: Google for linked issues, the PDF for committed ones. */
+export const openHref = (issue: Issue): string | null => issue.link?.open ?? pdfHref(issue);
 
 /** "Weeks 5 & 6" / "Week 7" / whatever `label` says. */
 export function weekLabel(issue: Issue): string {

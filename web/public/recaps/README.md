@@ -1,27 +1,36 @@
 # Publishing a recap
 
-Put the PDF in this folder. That is the whole job.
+## The normal way: Google Docs
 
-On GitHub: open this folder, **Add file → Upload files**, drop the PDF,
-**Commit changes**. The site rebuilds and the issue appears in the Recaps tab
-a couple of minutes later, with a cover thumbnail made from its first page.
+Write the recap in Google Docs. When it is ready:
 
-Name the file with the season and week so it sorts itself:
+1. In the Doc: **Share → General access → Anyone with the link** (Viewer).
+   Copy the link.
+2. On the site, signed in as commissioner, open **Recaps** and click
+   **Add a recap from Google Docs**. Paste the link, type the week, save.
+
+That is all. The issue appears in the archive at once, readers get it in the
+browser with a **Download PDF** button that always exports the current Doc,
+and **editing the Doc edits the site** — no upload, no commit, no deploy.
+
+Next week: *File → Make a copy* of the last issue, write, share, paste.
+
+To change the headline or summary shown in the archive, open the same form and
+use **Details** on the issue. **Remove** takes it out of the archive without
+touching the Doc.
+
+## The other way: drop a PDF here
+
+Put a PDF in this folder (on GitHub: **Add file → Upload files**, commit). The
+next deploy reads season and week from the filename, pulls the headline and
+date off the first page, renders a cover thumbnail, and adds it to the archive.
 
     FFBFFL_2026_Week_7_Recap.pdf
     FFBFFL_2026_Weeks_8_and_9_Recap.pdf
-    FFBFFL_2026_Preseason_Preview.pdf
 
-The headline is read off the first page. If it guesses wrong, or you want a
-one-line summary under the title, add an entry to `issues.json` using the
-slug shown in the site's URL, for example:
+Corrections to a PDF's title, summary or date go in `issues.json`, keyed by the
+slug shown in the site's URL. A `.docx` with the same name adds a Word download.
 
-    "ffbffl-2026-week-7": {
-      "title": "The Title You Actually Want",
-      "dek": "One line that appears under it.",
-      "dateLabel": "October 28, 2026"
-    }
-
-Drop a `.docx` with the same name next to the PDF and a Word download appears too.
+If a Google Doc and a PDF cover the same week, the Doc is shown.
 
 `archive.json` is generated. Do not edit it.

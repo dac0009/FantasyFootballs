@@ -1,14 +1,19 @@
 import { Link } from "react-router-dom";
-import { EditableText } from "../components/Editorial";
+import { EditableText, useEditorial } from "../components/Editorial";
+import { RecapLinkForm } from "../components/RecapLinkForm";
 import { Band, Empty, ErrorState, Loading } from "../components/primitives";
-import { bySeason, recapFile, useIssues, weekLabel } from "../lib/recaps";
+import { bySeason, coverSrc, mergeIssues, pdfHref, recapFile, storedIssues, useIssues, weekLabel } from "../lib/recaps";
 
 export default function Recaps() {
-  const issues = useIssues();
-  if (issues.state === "loading") return <Loading what="the recap archive" />;
-  if (issues.state === "error") return <ErrorState error={issues.error} what="The recap archive" />;
+  const manifest = useIssues();
+  const { documents } = useEditorial();
+  const stored = storedIssues(documents);
 
-  const seasons = bySeason(issues.data);
+  if (manifest.state === "loading") return <Loading what="the recap archive" />;
+  if (manifest.state === "error" && stored.length === 0) return <ErrorState error={manifest.error} what="The recap archive" />;
+
+  const issues = mergeIssues(manifest.state === "ready" ? manifest.data : [], stored);
+  const seasons = bySeason(issues);
 
   return (
     <div className="shell" style={{ paddingTop: "2.2rem" }}>
@@ -22,46 +27,55 @@ export default function Recaps() {
         />
       </p>
 
-      {issues.data.length === 0 ? <Empty>No issues have been published yet.</Empty> : null}
+      <RecapLinkForm issues={issues} />
+
+      {issues.length === 0 ? <Empty>No issues have been published yet.</Empty> : null}
 
       {seasons.map(({ season, issues: list }) => (
         <section key={season}>
           <Band title={`${season} season`} note={`${list.length} ${list.length === 1 ? "issue" : "issues"}`} />
           <ol className="issue-list">
-            {list.map((issue) => (
-              <li key={issue.slug} className="issue-row">
-                <Link to={`/recaps/${issue.slug}`} className="issue-cover" aria-hidden="true" tabIndex={-1}>
-                  {issue.cover ? (
-                    <img src={recapFile(issue.cover)} alt="" loading="lazy" />
-                  ) : (
-                    <span className="issue-cover-blank">{weekLabel(issue)}</span>
-                  )}
-                </Link>
-                <div>
-                  <p className="issue-kicker">
-                    {weekLabel(issue)}
-                    {issue.dateLabel ? ` · ${issue.dateLabel}` : ""}
-                  </p>
-                  <h3 className="issue-title">
-                    <Link to={`/recaps/${issue.slug}`}>{issue.title}</Link>
-                  </h3>
-                  {issue.dek ? <p className="issue-dek">{issue.dek}</p> : null}
-                  <p className="pill-row" style={{ marginTop: "0.7rem" }}>
-                    <Link to={`/recaps/${issue.slug}`} className="pill">
-                      Read the issue
-                    </Link>
-                    <a className="pill" href={recapFile(issue.pdf)} download>
-                      PDF
-                    </a>
-                    {issue.docx ? (
-                      <a className="pill" href={recapFile(issue.docx)} download>
-                        Word
-                      </a>
-                    ) : null}
-                  </p>
-                </div>
-              </li>
-            ))}
+            {list.map((issue) => {
+              const cover = coverSrc(issue);
+              const pdf = pdfHref(issue);
+              return (
+                <li key={issue.slug} className="issue-row">
+                  <Link to={`/recaps/${issue.slug}`} className="issue-cover" aria-hidden="true" tabIndex={-1}>
+                    {cover ? (
+                      <img
+                        src={cover}
+                        alt=""
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => { e.currentTarget.replaceWith(blank(weekLabel(issue))); }}
+                      />
+                    ) : (
+                      <span className="issue-cover-blank">{weekLabel(issue)}</span>
+                    )}
+                  </Link>
+                  <div>
+                    <p className="issue-kicker">
+                      {weekLabel(issue)}
+                      {issue.dateLabel ? ` · ${issue.dateLabel}` : ""}
+                      {issue.link ? " · Google Docs" : ""}
+                    </p>
+                    <h3 className="issue-title">
+                      <Link to={`/recaps/${issue.slug}`}>{issue.title}</Link>
+                    </h3>
+                    {issue.dek ? <p className="issue-dek">{issue.dek}</p> : null}
+                    <p className="pill-row" style={{ marginTop: "0.7rem" }}>
+                      <Link to={`/recaps/${issue.slug}`} className="pill">Read the issue</Link>
+                      {pdf ? (
+                        issue.link
+                          ? <a className="pill" href={pdf} target="_blank" rel="noreferrer">PDF</a>
+                          : <a className="pill" href={pdf} download>PDF</a>
+                      ) : null}
+                      {issue.docx ? <a className="pill" href={recapFile(issue.docx)} download>Word</a> : null}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
           </ol>
         </section>
       ))}
@@ -104,4 +118,11 @@ export default function Recaps() {
       `}</style>
     </div>
   );
+}
+
+function blank(label: string) {
+  const span = document.createElement("span");
+  span.className = "issue-cover-blank";
+  span.textContent = label;
+  return span;
 }
