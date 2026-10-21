@@ -38,6 +38,14 @@ jobs:
         working-directory: web
         run: npm ci
 
+      # Every PDF in web/public/recaps becomes an issue in the Recaps tab.
+      # Publishing one is dropping the file in that folder; this builds the
+      # index and cover thumbnails the site reads.
+      - name: Build the recap archive
+        run: |
+          python3 -m pip install --quiet pymupdf
+          python3 scripts/recaps_manifest.py
+
       - name: Check that datasets exist
         run: |
           if [ ! -f data/meta.json ]; then

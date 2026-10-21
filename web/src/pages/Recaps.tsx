@@ -1,11 +1,14 @@
 import { Link } from "react-router-dom";
 import { EditableText } from "../components/Editorial";
-import { Band, Empty } from "../components/primitives";
-import { bySeason, issueAsset, weekLabel } from "../lib/recaps";
+import { Band, Empty, ErrorState, Loading } from "../components/primitives";
+import { bySeason, recapFile, useIssues, weekLabel } from "../lib/recaps";
 
 export default function Recaps() {
-  const seasons = bySeason();
-  const count = seasons.reduce((n, s) => n + s.issues.length, 0);
+  const issues = useIssues();
+  if (issues.state === "loading") return <Loading what="the recap archive" />;
+  if (issues.state === "error") return <ErrorState error={issues.error} what="The recap archive" />;
+
+  const seasons = bySeason(issues.data);
 
   return (
     <div className="shell" style={{ paddingTop: "2.2rem" }}>
@@ -19,19 +22,20 @@ export default function Recaps() {
         />
       </p>
 
-      {count === 0 ? <Empty>No issues have been published yet.</Empty> : null}
+      {issues.data.length === 0 ? <Empty>No issues have been published yet.</Empty> : null}
 
-      {seasons.map(({ season, issues }) => (
+      {seasons.map(({ season, issues: list }) => (
         <section key={season}>
-          <Band
-            title={`${season} season`}
-            note={`${issues.length} ${issues.length === 1 ? "issue" : "issues"}`}
-          />
+          <Band title={`${season} season`} note={`${list.length} ${list.length === 1 ? "issue" : "issues"}`} />
           <ol className="issue-list">
-            {issues.map((issue) => (
+            {list.map((issue) => (
               <li key={issue.slug} className="issue-row">
                 <Link to={`/recaps/${issue.slug}`} className="issue-cover" aria-hidden="true" tabIndex={-1}>
-                  <img src={issueAsset(issue.slug, "cover.png")} alt="" loading="lazy" />
+                  {issue.cover ? (
+                    <img src={recapFile(issue.cover)} alt="" loading="lazy" />
+                  ) : (
+                    <span className="issue-cover-blank">{weekLabel(issue)}</span>
+                  )}
                 </Link>
                 <div>
                   <p className="issue-kicker">
@@ -41,16 +45,16 @@ export default function Recaps() {
                   <h3 className="issue-title">
                     <Link to={`/recaps/${issue.slug}`}>{issue.title}</Link>
                   </h3>
-                  <p className="issue-dek">{issue.dek}</p>
+                  {issue.dek ? <p className="issue-dek">{issue.dek}</p> : null}
                   <p className="pill-row" style={{ marginTop: "0.7rem" }}>
                     <Link to={`/recaps/${issue.slug}`} className="pill">
                       Read the issue
                     </Link>
-                    <a className="pill" href={issueAsset(issue.slug, "pdf")} download>
+                    <a className="pill" href={recapFile(issue.pdf)} download>
                       PDF
                     </a>
-                    {issue.word ? (
-                      <a className="pill" href={issueAsset(issue.slug, "docx")} download>
+                    {issue.docx ? (
+                      <a className="pill" href={recapFile(issue.docx)} download>
                         Word
                       </a>
                     ) : null}
@@ -69,11 +73,17 @@ export default function Recaps() {
           padding: 1.4rem 0; border-bottom: 1px solid var(--color-line-soft);
           align-items: start;
         }
-        .issue-cover { display: block; line-height: 0; }
+        .issue-cover { display: block; line-height: 0; text-decoration: none; }
         .issue-cover img {
           width: 100%; height: auto; display: block;
           border: 1px solid var(--color-line);
           box-shadow: 0 1px 0 rgba(32, 32, 32, 0.08);
+        }
+        .issue-cover-blank {
+          display: flex; align-items: center; justify-content: center; text-align: center;
+          aspect-ratio: 8.5 / 11; border: 1px solid var(--color-line); background: var(--paper-deep);
+          font: 600 0.7rem var(--font-body); letter-spacing: 0.08em; text-transform: uppercase;
+          color: var(--color-low); line-height: 1.3; padding: 0.5rem;
         }
         .issue-kicker {
           margin: 0; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.11em;

@@ -4,7 +4,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "predev": "python3 ../scripts/recaps_manifest.py || true",
     "dev": "vite",
+    "recaps": "python3 ../scripts/recaps_manifest.py",
     "build": "tsc -b --noEmit && vite build",
     "preview": "vite preview",
     "lint": "tsc -b --noEmit",

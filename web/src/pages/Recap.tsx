@@ -1,9 +1,16 @@
 import { Link, useParams } from "react-router-dom";
-import { ISSUES, findIssue, issueAsset, weekLabel } from "../lib/recaps";
+import { ErrorState, Loading } from "../components/primitives";
+import { bySeason, recapFile, useIssues, weekLabel } from "../lib/recaps";
 
 export default function Recap() {
   const { slug } = useParams();
-  const issue = findIssue(slug);
+  const issues = useIssues();
+  if (issues.state === "loading") return <Loading what="that issue" />;
+  if (issues.state === "error") return <ErrorState error={issues.error} what="The recap archive" />;
+
+  const ordered = bySeason(issues.data).flatMap((s) => s.issues);
+  const index = ordered.findIndex((i) => i.slug === slug);
+  const issue = index >= 0 ? ordered[index] : null;
 
   if (!issue) {
     return (
@@ -18,10 +25,9 @@ export default function Recap() {
     );
   }
 
-  const index = ISSUES.indexOf(issue);
-  const newer = index > 0 ? ISSUES[index - 1] : null;
-  const older = index < ISSUES.length - 1 ? ISSUES[index + 1] : null;
-  const pdf = issueAsset(issue.slug, "pdf");
+  const newer = index > 0 ? ordered[index - 1] : null;
+  const older = index < ordered.length - 1 ? ordered[index + 1] : null;
+  const pdf = recapFile(issue.pdf);
 
   return (
     <div className="shell" style={{ paddingTop: "2.2rem" }}>
@@ -32,10 +38,11 @@ export default function Recap() {
         · {issue.season} · {weekLabel(issue)}
       </p>
       <h1 className="issue-head">{issue.title}</h1>
-      <p className="issue-dek">{issue.dek}</p>
+      {issue.dek ? <p className="issue-dek">{issue.dek}</p> : null}
       <p className="issue-byline">
         By Dominick Cifelli, Commissioner
         {issue.dateLabel ? ` · ${issue.dateLabel}` : ""}
+        {issue.pages ? ` · ${issue.pages} ${issue.pages === 1 ? "page" : "pages"}` : ""}
       </p>
 
       <p className="pill-row">
@@ -45,8 +52,8 @@ export default function Recap() {
         <a className="pill" href={pdf} download>
           Download PDF
         </a>
-        {issue.word ? (
-          <a className="pill" href={issueAsset(issue.slug, "docx")} download>
+        {issue.docx ? (
+          <a className="pill" href={recapFile(issue.docx)} download>
             Download Word
           </a>
         ) : null}
@@ -55,28 +62,28 @@ export default function Recap() {
       <div className="issue-reader">
         <iframe className="issue-frame" src={pdf} title={`${issue.title}, ${weekLabel(issue)}`} />
         <a className="issue-mobile" href={pdf} target="_blank" rel="noreferrer">
-          <img src={issueAsset(issue.slug, "cover.png")} alt={`${issue.title}, page one`} />
+          {issue.cover ? <img src={recapFile(issue.cover)} alt={`${issue.title}, page one`} /> : null}
           <span className="pill">Read the issue</span>
         </a>
       </div>
 
       {older || newer ? (
-      <nav className="issue-nav" aria-label="Other issues">
-        {older ? (
-          <Link to={`/recaps/${older.slug}`} className="link-quiet">
-            ← {weekLabel(older)}, {older.season}
-          </Link>
-        ) : (
-          <span />
-        )}
-        {newer ? (
-          <Link to={`/recaps/${newer.slug}`} className="link-quiet">
-            {weekLabel(newer)}, {newer.season} →
-          </Link>
-        ) : (
-          <span />
-        )}
-      </nav>
+        <nav className="issue-nav" aria-label="Other issues">
+          {older ? (
+            <Link to={`/recaps/${older.slug}`} className="link-quiet">
+              ← {weekLabel(older)}, {older.season}
+            </Link>
+          ) : (
+            <span />
+          )}
+          {newer ? (
+            <Link to={`/recaps/${newer.slug}`} className="link-quiet">
+              {weekLabel(newer)}, {newer.season} →
+            </Link>
+          ) : (
+            <span />
+          )}
+        </nav>
       ) : null}
 
       <p className="prose-narrow" style={{ marginTop: "1.6rem", fontSize: "0.86rem" }}>
