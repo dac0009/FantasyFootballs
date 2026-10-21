@@ -24,7 +24,7 @@ export function RecapLinkForm({ issues }: { issues: Issue[] }) {
     setStatus(null);
   };
   const ref = parseGoogleLink(form.url);
-  const saved = issues.filter((i) => i.stored);
+  const canSave = editing ? true : !!ref; // editing can be a metadata-only change
 
   function startEdit(issue: Issue) {
     setForm({
@@ -39,6 +39,7 @@ export function RecapLinkForm({ issues }: { issues: Issue[] }) {
     setEditing(issue);
     setOpen(true);
     setStatus(null);
+    queueMicrotask(() => document.getElementById("recap-admin-form")?.scrollIntoView({ block: "center" }));
   }
 
   function reset() {
@@ -51,12 +52,12 @@ export function RecapLinkForm({ issues }: { issues: Issue[] }) {
     if (!editorClient) return setStatus({ ok: false, text: "Saving is not configured on this build." });
     let encoded: { key: string; text: string };
     try {
-      encoded = encodeIssue(form);
+      // Editing pins the existing slug, so the entry updates in place (and a
+      // PDF issue can be edited with no link — a metadata override).
+      encoded = encodeIssue(editing ? { ...form, slug: editing.slug } : form);
     } catch (error) {
       return setStatus({ ok: false, text: (error as Error).message });
     }
-    // Editing keeps the original key even if the week changed, so the old entry
-    // is replaced rather than duplicated.
     const key = editing ? recapKey(editing.season, editing.slug) : encoded.key;
     const existing = documents.find((d) => d.kind === "copy" && d.key === key);
     setBusy(true);
@@ -77,7 +78,9 @@ export function RecapLinkForm({ issues }: { issues: Issue[] }) {
     if (!editorClient) return;
     const key = recapKey(issue.season, issue.slug);
     const existing = documents.find((d) => d.kind === "copy" && d.key === key);
-    if (!existing) return setStatus({ ok: false, text: "That issue is not one saved here." });
+    if (!existing) {
+      return setStatus({ ok: false, text: "This one is a built-in PDF — edit its details instead, or delete the PDF on GitHub." });
+    }
     setBusy(true);
     try {
       const { document } = await publishAndVerify(editorClient, "copy", key, { text: "", display: "hidden" }, existing.version);
@@ -91,23 +94,32 @@ export function RecapLinkForm({ issues }: { issues: Issue[] }) {
     }
   }
 
+  /** Does a saved editor document back this issue (vs. a built-in PDF)? */
+  const isSaved = (issue: Issue) =>
+    documents.some((d) => d.kind === "copy" && d.key === recapKey(issue.season, issue.slug) && d.body?.display !== "hidden");
+
   return (
     <section className="recap-admin" aria-label="Commissioner tools">
       <div className="recap-admin-head">
         <span className="section-kicker" style={{ margin: 0 }}>Commissioner</span>
         <button type="button" className="pill" onClick={() => (open ? (setOpen(false), reset()) : setOpen(true))}>
-          {open ? "Close" : "Add a recap from Google Docs"}
+          {open ? "Close" : "Add or edit recaps"}
         </button>
       </div>
 
       {open ? (
-        <form className="recap-admin-form" onSubmit={(e) => { e.preventDefault(); void save(); }}>
+        <form id="recap-admin-form" className="recap-admin-form" onSubmit={(e) => { e.preventDefault(); void save(); }}>
           <p className="recap-admin-help">
-            In Google Docs: <b>Share → General access → Anyone with the link</b>, copy the link, paste it here.
-            From then on, editing the Doc edits the site. A Drive link to a PDF works too.
+            {editing ? (
+              <>Editing <b>{editing.title}</b>. Change anything below and save. To point it at a different
+              Google Doc, paste the new link; leave the link as-is to just fix the details.</>
+            ) : (
+              <>In Google Docs: <b>Share → General access → Anyone with the link</b>, copy the link, paste it
+              here. From then on, editing the Doc edits the site. A Drive link to a PDF works too.</>
+            )}
           </p>
           <label>
-            Google Docs link
+            Google Docs link{editing ? " (leave blank to keep the current file)" : ""}
             <input value={form.url} onChange={(e) => set("url")(e.target.value)} placeholder="https://docs.google.com/document/d/…" inputMode="url" autoComplete="off" />
             <small>
               {form.url.trim()
@@ -116,7 +128,9 @@ export function RecapLinkForm({ issues }: { issues: Issue[] }) {
                     ? ref.published ? "A published link. It will show, but the normal share link also gives a PDF download." : "Google Doc recognised."
                     : "Drive file recognised."
                   : "That doesn't look like a Google Docs or Drive link yet."
-                : "Required."}
+                : editing
+                  ? "Blank keeps the current version; you're just editing the details below."
+                  : "Required."}
             </small>
           </label>
           <div className="recap-admin-grid">
@@ -128,7 +142,7 @@ export function RecapLinkForm({ issues }: { issues: Issue[] }) {
           <label>One-line summary (optional)<textarea value={form.dek} onChange={(e) => set("dek")(e.target.value)} rows={2} /></label>
           <label>Kicker instead of a week (optional)<input value={form.label} onChange={(e) => set("label")(e.target.value)} placeholder="Preseason preview" /></label>
           <div className="editor-actions">
-            <button className="pill publish-primary" type="submit" disabled={busy || !ref}>
+            <button className="pill publish-primary" type="submit" disabled={busy || !canSave}>
               {busy ? "Saving…" : editing ? "Save changes" : "Add to the archive"}
             </button>
             {editing ? <button className="pill" type="button" onClick={reset}>Cancel</button> : null}
@@ -136,19 +150,23 @@ export function RecapLinkForm({ issues }: { issues: Issue[] }) {
         </form>
       ) : null}
 
-      {open && saved.length ? (
+      {open ? (
         <div className="recap-admin-list">
-          <span className="section-kicker" style={{ margin: "0 0 .35rem" }}>From Google Docs</span>
-          {saved.map((issue) => (
-            <div key={issue.slug} className="recap-admin-row">
+          <span className="section-kicker" style={{ margin: "0 0 .35rem" }}>Every posted recap · click Edit to change one</span>
+          {issues.map((issue) => (
+            <div key={issue.slug} className={`recap-admin-row${editing?.slug === issue.slug ? " recap-admin-row-active" : ""}`}>
               <span>
                 {issue.title}
-                <small>{issue.season} · {weekLabel(issue)}</small>
+                <small>
+                  {issue.season} · {weekLabel(issue)} · {issue.link ? "Google Doc" : isSaved(issue) ? "edited" : "PDF"}
+                </small>
               </span>
               <span className="pill-row" style={{ margin: 0 }}>
-                {issue.link?.edit ? <a className="pill" href={issue.link.edit} target="_blank" rel="noreferrer">Edit the Doc</a> : null}
-                <button className="pill" type="button" onClick={() => startEdit(issue)}>Details</button>
-                <button className="pill" type="button" disabled={busy} onClick={() => void remove(issue)}>Remove</button>
+                {issue.link?.edit ? <a className="pill" href={issue.link.edit} target="_blank" rel="noreferrer">Open Doc</a> : null}
+                <button className="pill" type="button" onClick={() => startEdit(issue)}>Edit</button>
+                {isSaved(issue) ? (
+                  <button className="pill" type="button" disabled={busy} onClick={() => void remove(issue)}>Remove</button>
+                ) : null}
               </span>
             </div>
           ))}
@@ -173,6 +191,7 @@ export function RecapLinkForm({ issues }: { issues: Issue[] }) {
         .recap-admin-list { margin-top: 0.8rem; max-width: 44rem; }
         .recap-admin-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.5rem 0; border-bottom: 1px solid var(--color-line-soft); font-size: 0.9rem; }
         .recap-admin-row small { display: block; font-size: 0.74rem; color: var(--color-low); }
+        .recap-admin-row-active { background: var(--paper-deep); }
         .recap-admin-status { margin: 0.7rem 0 0; font-size: 0.86rem; }
       `}</style>
     </section>

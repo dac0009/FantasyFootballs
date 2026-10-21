@@ -65,42 +65,66 @@ export function recapKey(season, slug) {
   return `${KEY_PREFIX}${season}.${slug}`;
 }
 
-/** The JSON stored for an issue. Throws a readable message when it cannot be. */
-export function encodeIssue({ url, season, weeks, title, dek, dateLabel, label }) {
-  const ref = parseGoogleLink(url);
-  if (!ref) throw new Error('That is not a Google Docs or Drive link.');
+/**
+ * The JSON stored for an issue. Throws a readable message when it cannot be.
+ *
+ * A link (Google Doc / Drive) makes the issue read from there. With no link it
+ * is a metadata override: pass `slug` to edit an issue already in the archive
+ * (a committed PDF, say) — its title, summary, date or week — without replacing
+ * the file. `slug` also pins the key when editing so the entry updates in place
+ * rather than forking a new one.
+ */
+export function encodeIssue({ url, season, weeks, title, dek, dateLabel, label, slug }) {
   const year = Number(season);
   if (!Number.isInteger(year) || year < 2000 || year > 2100) throw new Error('Enter the season as a year, like 2026.');
   const wk = Array.isArray(weeks) ? weeks : parseWeeks(weeks);
   if (!wk.length && !String(label ?? '').trim()) throw new Error('Give it a week number, or a label like "Preseason preview".');
-  const payload = { url: String(url).trim(), season: year, weeks: wk };
+
+  const link = String(url ?? '').trim();
+  const ref = link ? parseGoogleLink(link) : null;
+  if (link && !ref) throw new Error('That is not a Google Docs or Drive link.');
+  if (!link && !slug) throw new Error('Paste a Google Docs link, or edit an existing recap to change its details.');
+
+  const payload = { season: year, weeks: wk };
+  if (ref) payload.url = link;
   for (const [key, value] of Object.entries({ title, dek, dateLabel, label })) {
     const clean = String(value ?? '').trim();
     if (clean) payload[key] = clean;
   }
   const text = JSON.stringify(payload);
   if (text.length > MAX_TEXT) throw new Error('That is too long. Shorten the summary.');
-  return { key: recapKey(year, slugFor(year, wk, title)), text };
+  const finalSlug = slug || slugFor(year, wk, title);
+  return { key: recapKey(year, finalSlug), text };
 }
 
-/** Rebuild an issue from a stored document, or null if it is not a usable one. */
+/**
+ * Rebuild a stored entry, or null if unusable. A link entry is a full issue; a
+ * link-less entry is a metadata override (`override: true`) that mergeIssues
+ * lays over the matching archive issue.
+ */
 export function decodeIssue(key, text) {
   if (!key.startsWith(KEY_PREFIX) || !text) return null;
   let raw;
   try { raw = JSON.parse(text); } catch { return null; }
-  const ref = parseGoogleLink(raw?.url);
-  if (!ref) return null;
   const season = Number(raw.season);
   if (!Number.isInteger(season)) return null;
   const weeks = Array.isArray(raw.weeks) ? raw.weeks.map(Number).filter(Number.isInteger) : [];
   const slug = key.slice(KEY_PREFIX.length).replace(/^\d{4}\./, '');
-  const title = String(raw.title ?? '').trim() || (weeks.length ? `Week ${weeks.join(' & ')} recap` : 'Recap');
+  const title = String(raw.title ?? '').trim();
+  const dek = String(raw.dek ?? '');
+  const dateLabel = raw.dateLabel ? String(raw.dateLabel) : null;
+  const label = raw.label ? String(raw.label) : null;
+
+  const ref = parseGoogleLink(raw?.url);
+  if (!ref) {
+    // Metadata override of an issue already in the archive.
+    return { slug, season, weeks, title, dek, dateLabel, label, override: true, stored: true };
+  }
   const links = linksFor(ref);
   return {
-    slug, season, weeks, title,
-    dek: String(raw.dek ?? ''),
-    dateLabel: raw.dateLabel ? String(raw.dateLabel) : null,
-    label: raw.label ? String(raw.label) : null,
+    slug, season, weeks,
+    title: title || (weeks.length ? `Week ${weeks.join(' & ')} recap` : 'Recap'),
+    dek, dateLabel, label,
     pdf: null, cover: links.thumb, docx: null, pages: 0,
     link: { kind: ref.kind, id: ref.id, url: String(raw.url), ...links },
     stored: true,

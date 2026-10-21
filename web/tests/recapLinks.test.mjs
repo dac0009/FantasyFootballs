@@ -61,9 +61,26 @@ test('encode refuses what the site could not use, with a sentence a person can a
   assert.ok(encodeIssue({ url: DOC, season: 2026, weeks: '', label: 'Preseason preview' }).key.endsWith('ffbffl-2026-issue'));
 });
 
+test('a new recap needs a link, but editing an existing one can change details with no link', () => {
+  assert.throws(() => encodeIssue({ url: '', season: 2026, weeks: '5, 6', title: 'New' }), /Paste a Google Docs link/);
+  const { key, text } = encodeIssue({ url: '', season: 2026, weeks: '5, 6', title: 'The Real Final Cut', slug: 'ffbffl-2026-weeks-5-6' });
+  assert.equal(key, 'recap.2026.ffbffl-2026-weeks-5-6');
+  const patch = decodeIssue(key, text);
+  assert.equal(patch.override, true);
+  assert.equal(patch.title, 'The Real Final Cut');
+  assert.equal(patch.link, undefined);
+});
+
+test('editing pins the slug even when the week text changes, so it updates in place', () => {
+  const { key } = encodeIssue({ url: DOC, season: 2026, weeks: '9', title: 'Oops', slug: 'ffbffl-2026-week-7' });
+  assert.equal(key, 'recap.2026.ffbffl-2026-week-7');
+});
+
 test('decode ignores removed, malformed or foreign documents', () => {
   assert.equal(decodeIssue('recap.2026.ffbffl-2026-week-3', ''), null);
   assert.equal(decodeIssue('recap.2026.ffbffl-2026-week-3', '{not json'), null);
-  assert.equal(decodeIssue('recap.2026.ffbffl-2026-week-3', JSON.stringify({ url: 'https://example.com', season: 2026, weeks: [3] })), null);
   assert.equal(decodeIssue('home.headline', JSON.stringify({ url: DOC, season: 2026, weeks: [3] })), null);
+  // No link + no season is unusable; no link + season is a metadata override.
+  assert.equal(decodeIssue('recap.2026.x', JSON.stringify({ weeks: [3] })), null);
+  assert.equal(decodeIssue('recap.2026.ffbffl-2026-week-3', JSON.stringify({ season: 2026, weeks: [3], title: 'T' })).override, true);
 });

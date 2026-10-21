@@ -27,6 +27,8 @@ export interface LinkedIssue {
   pages: number;
   link?: GoogleLinks & { kind: GoogleRef['kind']; id: string; url: string };
   stored?: boolean;
+  /** A link-less metadata override of an issue already in the archive. */
+  override?: boolean;
 }
 
 export function parseGoogleLink(url: string | null | undefined): GoogleRef | null;
@@ -35,7 +37,7 @@ export function parseWeeks(text: string | null | undefined): number[];
 export function slugFor(season: number, weeks: number[], title?: string | null): string;
 export function recapKey(season: number, slug: string): string;
 export function encodeIssue(fields: {
-  url: string; season: number | string; weeks: number[] | string;
-  title?: string; dek?: string; dateLabel?: string; label?: string;
+  url?: string; season: number | string; weeks: number[] | string;
+  title?: string; dek?: string; dateLabel?: string; label?: string; slug?: string;
 }): { key: string; text: string };
 export function decodeIssue(key: string, text: string | undefined | null): LinkedIssue | null;

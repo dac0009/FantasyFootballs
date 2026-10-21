@@ -64,21 +64,50 @@ export function useIssues(): Async<Issue[]> {
   return result;
 }
 
-/** Issues saved from the site (Google Docs links), from the editor documents everyone can read. */
-export function storedIssues(documents: { kind: string; key: string; body: { text?: string; display?: string } }[]): Issue[] {
-  const out: Issue[] = [];
+type StoredEntry = Issue & { override?: boolean };
+
+/** Everything saved from the site, read from the editor documents everyone can see. */
+export function storedIssues(documents: { kind: string; key: string; body: { text?: string; display?: string } }[]): StoredEntry[] {
+  const out: StoredEntry[] = [];
   for (const doc of documents) {
     if (doc.kind !== "copy" || doc.body?.display === "hidden") continue;
-    const issue = decodeIssue(doc.key, doc.body?.text);
+    const issue = decodeIssue(doc.key, doc.body?.text) as StoredEntry | null;
     if (issue) out.push(issue);
   }
   return out;
 }
 
-/** Saved issues first; a PDF issue is hidden when a saved one has its slug. */
-export function mergeIssues(manifest: Issue[], stored: Issue[]): Issue[] {
-  const taken = new Set(stored.map((i) => i.slug));
-  return [...stored, ...manifest.filter((i) => !taken.has(i.slug))];
+const META: (keyof Issue)[] = ["title", "dek", "dateLabel", "label", "weeks", "season"];
+
+/** Apply only the non-empty fields of an override onto an issue. */
+function applyOverride(base: Issue, patch: StoredEntry): Issue {
+  const next = { ...base };
+  for (const key of META) {
+    const v = patch[key];
+    if (v === null || v === undefined) continue;
+    if (typeof v === "string" && v.trim() === "") continue;
+    if (Array.isArray(v) && v.length === 0) continue;
+    (next as Record<string, unknown>)[key] = v;
+  }
+  return next;
+}
+
+/**
+ * The archive the site shows: committed PDFs, link issues (which replace a PDF
+ * of the same week), and metadata overrides laid on top. A link issue wins over
+ * a PDF by slug; an override edits whatever issue carries its slug in place.
+ */
+export function mergeIssues(manifest: Issue[], stored: StoredEntry[]): Issue[] {
+  const links = stored.filter((s) => !s.override);
+  const overrides = stored.filter((s) => s.override);
+  const linkSlugs = new Set(links.map((i) => i.slug));
+
+  let list: Issue[] = [...links, ...manifest.filter((i) => !linkSlugs.has(i.slug))];
+  for (const patch of overrides) {
+    const i = list.findIndex((x) => x.slug === patch.slug);
+    if (i >= 0) list[i] = applyOverride(list[i], patch);
+  }
+  return list;
 }
 
 export const coverSrc = (issue: Issue): string | null =>
