@@ -37,7 +37,7 @@ let cached: Promise<Issue[]> | null = null;
 
 function load(): Promise<Issue[]> {
   if (!cached) {
-    cached = fetch(`${BASE}/recaps/index.json`)
+    cached = fetch(`${BASE}/recaps/archive.json`)
       .then((response) => {
         if (!response.ok) {
           throw new Error(

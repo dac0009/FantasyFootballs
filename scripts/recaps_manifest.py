@@ -24,7 +24,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RECAPS = ROOT / "web" / "public" / "recaps"
 OVERRIDES = RECAPS / "issues.json"
-OUT = RECAPS / "index.json"
+# Not index.json: GitHub Pages would serve that as the directory index for
+# /recaps/, hijacking the archive route before the app could load.
+OUT = RECAPS / "archive.json"
 
 try:
     import fitz  # PyMuPDF

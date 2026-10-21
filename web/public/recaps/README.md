@@ -24,4 +24,4 @@ slug shown in the site's URL, for example:
 
 Drop a `.docx` with the same name next to the PDF and a Word download appears too.
 
-`index.json` is generated. Do not edit it.
+`archive.json` is generated. Do not edit it.
