@@ -46,6 +46,13 @@ export function OwnerAlmanac({ owner }: { owner: OwnerPayload }) {
     chooseGame(Math.round(Math.max(0,Math.min(1,fraction))*(visible.length-1)));
   }
   function chooseGame(index: number) { const game=visible[index]; if(game)setSelected(game.matchup_id); }
+  // A photo is shown clean, in full color; the scoring line sits in its own strip under it.
+  const signature = <svg className="card-signature" viewBox="0 0 360 180" preserveAspectRatio="none"
+                role="slider" tabIndex={visible.length ? 0 : -1} aria-label="Scoring signature game" aria-valuemin={1} aria-valuemax={Math.max(1,visible.length)} aria-valuenow={position+1}
+                aria-valuetext={active ? `${active.season}, week ${active.week}: ${points(active.score,2)} points` : 'No games'}
+                onPointerDown={e=>{e.stopPropagation();e.currentTarget.setPointerCapture(e.pointerId);scrub(e);}}
+                onPointerMove={e=>{if(e.currentTarget.hasPointerCapture(e.pointerId)){e.stopPropagation();scrub(e);}}}
+                onKeyDown={e=>{if(['ArrowLeft','ArrowDown','ArrowRight','ArrowUp','Home','End'].includes(e.key)){e.preventDefault();chooseGame(e.key==='Home'?0:e.key==='End'?visible.length-1:Math.max(0,Math.min(visible.length-1,position+(['ArrowLeft','ArrowDown'].includes(e.key)?-1:1))));}}}><polyline points={trace} fill="none" stroke="currentColor" strokeWidth="1.5"/>{active && <circle cx={12+position/Math.max(visible.length-1,1)*336} cy={162-active.score/traceMax*132} r="4" fill="currentColor"/>}</svg>;
   return <section style={{"--card-ink":profile?.ink || ownerInk(owner.owner_id)} as CSSProperties} className="owner-almanac" aria-label={`${owner.name} owner card`}>
     <div className="almanac-folio"><span><EditableText id="owner.collection" fallback="Owners"/></span><span>FFBFFL / Est. 2019</span></div>
     <div className="almanac-opening">
@@ -54,18 +61,18 @@ export function OwnerAlmanac({ owner }: { owner: OwnerPayload }) {
         <div className={`owner-card${back?' owner-card-back':''}`}>
           <div className="card-face card-front" ref={node=>{if(node)node.inert=back;}} aria-hidden={back}>
           <div className="card-topline"><span>FFBFFL / Owners</span><span>{year==='all'?'Career edition':`${year} edition`}</span></div>
-            <div className="card-art">
-              {profile?.photo && <img className="card-portrait" src={profile.photo} alt=""/>}
-              <span className="card-art-label">THE LEAGUE / PLAYER ARCHIVE</span>
-              <div className="card-monogram">{initials}</div>
-              <svg className="card-signature" viewBox="0 0 360 180" preserveAspectRatio="none"
-                role="slider" tabIndex={visible.length ? 0 : -1} aria-label="Scoring signature game" aria-valuemin={1} aria-valuemax={Math.max(1,visible.length)} aria-valuenow={position+1}
-                aria-valuetext={active ? `${active.season}, week ${active.week}: ${points(active.score,2)} points` : 'No games'}
-                onPointerDown={e=>{e.stopPropagation();e.currentTarget.setPointerCapture(e.pointerId);scrub(e);}}
-                onPointerMove={e=>{if(e.currentTarget.hasPointerCapture(e.pointerId)){e.stopPropagation();scrub(e);}}}
-                onKeyDown={e=>{if(['ArrowLeft','ArrowDown','ArrowRight','ArrowUp','Home','End'].includes(e.key)){e.preventDefault();chooseGame(e.key==='Home'?0:e.key==='End'?visible.length-1:Math.max(0,Math.min(visible.length-1,position+(['ArrowLeft','ArrowDown'].includes(e.key)?-1:1))));}}}><polyline points={trace} fill="none" stroke="currentColor" strokeWidth="1.5"/>{active && <circle cx={12+position/Math.max(visible.length-1,1)*336} cy={162-active.score/traceMax*132} r="4" fill="currentColor"/>}</svg>
+            {profile?.photo ? <>
+            <div className="card-art card-art-photo">
+              <img className="card-photo" src={profile.photo} alt=""/>
               <span className="card-tenure">EST. {owner.first_season ?? '—'}</span><span className="card-seal">{owner.championships}<small>TITLES</small></span>
             </div>
+            <div className="card-signature-strip">{signature}</div>
+            </> : <div className="card-art">
+              <span className="card-art-label">THE LEAGUE / PLAYER ARCHIVE</span>
+              <div className="card-monogram">{initials}</div>
+              {signature}
+              <span className="card-tenure">EST. {owner.first_season ?? '—'}</span><span className="card-seal">{owner.championships}<small>TITLES</small></span>
+            </div>}
             <div className="card-identity"><span>OWNER / {year==='all'?`${owner.seasons_played} SEASONS`:year}</span><h1>{displayName}</h1><p>{season?.team_name ?? owner.current_team_name ?? 'League archive'}</p></div>
             <div className="card-stats"><div><b>{summary.record}</b><span>Record</span></div><div><b>{pct(summary.win_pct)}</b><span>Win rate</span></div><div><b>{points(summary.avg_score,1)}</b><span>Pts / game</span></div></div>
             <div className="card-honors">{year==='all' ? (titleYears.length?`Champion · ${titleYears.join(' / ')}`:'The career collection') : season?.is_champion?'League champion':season?.final_rank?`${ordinal(season.final_rank)} finish`:'Season in progress'}<span>Regular-season statistics</span></div>

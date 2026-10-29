@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { useEditorial } from "../components/Editorial";
+import { EditableText, useEditorial } from "../components/Editorial";
 import { Band, ErrorState, Loading, OwnerLink } from "../components/primitives";
 import { useDraft, useOwnerIndex, usePlayers, useRoster, useSeasonIndex, useTeamWeeks } from "../lib/data";
 import { points as fmt } from "../lib/format";
@@ -11,8 +11,8 @@ import {
 import type { Board, DraftablePlayer, Picks, SeasonResult } from "../lib/gauntletEngine.mjs";
 import { loadChampPlays, saveChampPlay, summarizeChamp, type ChampPlaysResult } from "../lib/champPlays";
 
-// "Beat the Champ": the test version of the new Wheel. Lives at /wheel-beta
-// alongside the original /wheel, which is untouched.
+// "Fourteen and Fantasy": the daily beat-the-champ game. Lives at /fourteen
+// (old /wheel-beta links redirect there), alongside the original /wheel.
 
 type Stage = "idle" | "season" | "draft" | "playing" | "done";
 type Mode = "daily" | "practice";
@@ -210,12 +210,15 @@ export default function WheelBeta() {
 
   return (
     <div className="shell champ" style={{ paddingTop: "2.2rem" }}>
-      <p className="section-kicker" style={{ marginBottom: "0.4rem" }}>The Wheel, test version</p>
-      <h1 style={{ fontSize: "clamp(1.8rem, 5vw, 2.6rem)" }}>Beat the Champ</h1>
+      <p className="section-kicker" style={{ marginBottom: "0.4rem" }}>Daily game</p>
+      <h1 style={{ fontSize: "clamp(1.8rem, 5vw, 2.6rem)" }}>
+        <EditableText id="site.fourteen.title" fallback="Fourteen and Fantasy" />
+      </h1>
       <p className="prose-narrow" style={{ marginTop: "0.6rem" }}>
-        The wheel picks a season. That year's champion is your opponent, and his whole roster is off limits.
-        Spin for a team from that year, take one of its players for any open spot, and fill a lineup of nine.
-        Then your players' real weekly points go head to head with the champ, week by week.
+        <EditableText
+          id="site.fourteen.intro"
+          fallback="The wheel picks a season. That year's champion is your opponent, and his whole roster is off limits. Spin for a team from that year, take one of its players for any open spot, and fill a lineup of nine. Then your players' real weekly points go head to head with the champ, week by week."
+        />
       </p>
 
       {stage === "idle" ? (

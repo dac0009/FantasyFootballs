@@ -69,3 +69,15 @@
 @media(max-width:800px){.owner-card-wrap{max-width:23rem;width:100%}.almanac-opening{gap:2.5rem}.almanac-story-heading h2{font-size:2.7rem}.card-identity h1{font-size:2.6rem}}
 @media(max-width:700px){.collection-monogram{font-size:4rem}.collection-card h2{font-size:1.3rem}}
 .card-signature{cursor:ew-resize;touch-action:none}.card-signature:focus-visible{outline:2px solid #f0e6ce;outline-offset:-5px;background:#ffffff0a}
+
+/* Owner photos: shown as-is, with nothing drawn over the face. */
+.card-art.card-art-photo{background:#1b2226}
+.card-art.card-art-photo:before,.card-art.card-art-photo:after{display:none}
+.card-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.card-art-photo .card-tenure{background:#000a;padding:.25rem .45rem;bottom:14px;left:14px}
+.card-art-photo .card-seal{background:#000a;bottom:14px;right:14px}
+.card-signature-strip{height:64px;background:var(--card-ink);color:#d8b975;position:relative}
+.card-signature-strip .card-signature{position:absolute;inset:4px 0;width:100%;height:56px;filter:none}
+.collection-monogram.has-photo{height:calc(5.5rem * 1.4 + 1.6rem);padding:0}
+.collection-monogram.has-photo:after{display:none}
+@media(max-width:700px){.collection-monogram.has-photo{height:calc(4rem * 1.4 + 1.6rem)}}

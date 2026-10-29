@@ -1,4 +1,4 @@
-// Game logic for "Beat the Champ", the new version of The Wheel.
+// Game logic for "Fourteen and Fantasy", the daily beat-the-champ game.
 //
 // The wheel lands on a past season. That year's champion is your opponent,
 // and nobody who was ever on the champion's roster that regular season can
@@ -258,7 +258,7 @@ export function shareText(board, result, label) {
   const squares = result.weeks.map((w) => (w.result === 'W' ? '🟩' : w.result === 'L' ? '🟥' : '⬜')).join('');
   const record = `${result.wins}-${result.losses}${result.ties ? `-${result.ties}` : ''}`;
   return [
-    `FFBFFL Wheel ${label}: Beat the Champ, ${board.season}`,
+    `Fourteen and Fantasy ${label}: vs the ${board.season} champ`,
     `${record} vs ${board.champion.name}`,
     squares,
     `${Math.round(result.points_for)} pts, #${result.rank} of ${result.team_count} in points`,

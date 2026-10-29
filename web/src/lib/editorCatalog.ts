@@ -1,5 +1,13 @@
 // Stable IDs for editorial content; changes apply wherever this template is used.
 export const editorialCatalog: Record<string, {label:string; fallback:string}> = {
+  "site.fourteen.title": {
+    "label": "fourteen · Game name",
+    "fallback": "Fourteen and Fantasy"
+  },
+  "site.fourteen.intro": {
+    "label": "fourteen · How to play",
+    "fallback": "The wheel picks a season. That year's champion is your opponent, and his whole roster is off limits. Spin for a team from that year, take one of its players for any open spot, and fill a lineup of nine. Then your players' real weekly points go head to head with the champ, week by week."
+  },
   "site.wheel.title": {
     "label": "wheel · The Wheel",
     "fallback": "The Wheel"

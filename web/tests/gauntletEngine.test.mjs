@@ -101,6 +101,7 @@ test('the season plays week by week against the champion and the league', () => 
   assert.equal(r.missing_weeks, 1);
   assert.equal(r.best_week.week, 1);
   const text = shareText(b, r, 'Oct 29');
+  assert.match(text, /^Fourteen and Fantasy Oct 29: vs the 2030 champ/);
   assert.match(text, /1-1 vs Champs/);
   assert.match(text, /🟥🟩/);
 });

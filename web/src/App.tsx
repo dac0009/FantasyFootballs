@@ -66,7 +66,8 @@ export default function App() {
         <Route path="/recaps" element={<Recaps />} />
         <Route path="/recaps/:slug" element={<Recap />} />
         <Route path="/wheel" element={<Wheel />} />
-        <Route path="/wheel-beta" element={<WheelBeta />} />
+        <Route path="/fourteen" element={<WheelBeta />} />
+        <Route path="/wheel-beta" element={<Navigate replace to="/fourteen" />} />
         <Route path="/records" element={<Records />} />
         <Route path="/owners" element={<Owners />} />
         <Route path="/owners/:ownerId" element={<Owner />} />

@@ -278,6 +278,9 @@ body{background-image:linear-gradient(90deg,#c9bea720,transparent 15%,transparen
 .masthead-motto{font-family:var(--font-display);font-style:italic;font-size:1.05rem;line-height:1.35;color:#c4bcab;border-left:1px solid #ffffff35;padding-left:1.5rem}
 .site-header .main-nav{grid-column:1/-1;justify-content:center;margin:0;border-top:1px solid #ffffff50;padding:.45rem 0;gap:1.7rem}
 .site-header .nav-item{font-size:.75rem}.site-header .nav-item-quiet{font-size:.7rem}
+.site-header .main-nav{flex-wrap:wrap;row-gap:.35rem}
+.site-header .main-nav{column-gap:1.2rem}
+@media(max-width:1080px){.site-header .main-nav{column-gap:.75rem}}
 .site-header .yardline{height:4px;opacity:1!important;background:linear-gradient(#b49865 0 0) top/100% 1px no-repeat,linear-gradient(#202c30 0 0) bottom/100% 1px no-repeat}
 .band{border-top:3px double var(--ink);padding-top:.75rem}.sheet{background:transparent;border:0;padding:0}.sheet th{font-size:.65rem;letter-spacing:.045em}.sheet tbody tr:nth-child(even){background:#d9cfbd40}
 footer{background:#e2d9c6}

@@ -101,7 +101,7 @@ export default function Owners() {
       </div>
       {view === 'cards' ? <div className="owner-collection">{active.map(owner=><Link to={`/owners/${owner.owner_id}`} className="collection-card" style={{"--card-ink":profileFor(owner.owner_id)?.ink || ownerInk(owner.owner_id)} as CSSProperties} key={owner.owner_id}>
         <div className="collection-card-top"><span>FFBFFL</span><span>Since {owner.first_season}</span></div>
-        <div className="collection-monogram" aria-hidden="true">{profileFor(owner.owner_id)?.photo && <img src={profileFor(owner.owner_id)?.photo} alt=""/>}{owner.name.split(/\s+/).filter(Boolean).map(s=>s[0]).slice(0,2).join('').toUpperCase()}</div>
+        <div className={`collection-monogram${profileFor(owner.owner_id)?.photo ? " has-photo" : ""}`} aria-hidden="true">{profileFor(owner.owner_id)?.photo ? <img src={profileFor(owner.owner_id)?.photo} alt=""/> : owner.name.split(/\s+/).filter(Boolean).map(s=>s[0]).slice(0,2).join('').toUpperCase()}</div>
         <h2>{profileFor(owner.owner_id)?.display_name || owner.name}</h2><p>{owner.current_team_name}</p>
         <div className="collection-record"><strong>{owner.record}</strong><span>{owner.championships?`${owner.championships} ${owner.championships===1?'title':'titles'}`:`${owner.seasons_played} seasons`}</span></div>
         <span className="collection-open">Open owner card →</span>
