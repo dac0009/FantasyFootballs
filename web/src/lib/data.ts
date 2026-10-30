@@ -171,3 +171,25 @@ export const useTeamWeeks = () => useData<TeamWeek[]>(paths.teamWeeks);
 export function pairKey(a: string, b: string): string {
   return [a, b].sort().join("__");
 }
+
+/**
+ * Complete weekly lines for one past season (data/player_weeks/<season>.json),
+ * written by the pipeline for Fourteen and Fantasy. Ready with null when the
+ * file doesn't exist yet, so the game can fall back to roster rows.
+ */
+export function usePlayerWeeks<T = unknown>(season: number | null): Async<T | null> {
+  const [result, setResult] = useState<Async<T | null>>({ state: "loading" });
+  useEffect(() => {
+    if (season == null) return;
+    let live = true;
+    setResult({ state: "loading" });
+    load<T>(`player_weeks/${season}.json`)
+      .then((data) => live && setResult({ state: "ready", data }))
+      // Missing (not generated yet) or unreadable: the game falls back to roster rows.
+      .catch(() => live && setResult({ state: "ready", data: null }));
+    return () => {
+      live = false;
+    };
+  }, [season]);
+  return result;
+}

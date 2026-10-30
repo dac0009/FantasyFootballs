@@ -69,6 +69,8 @@ def cmd_refresh(args: argparse.Namespace) -> int:
     report = result["report"]
     print(report.render())
     print(f"\nWrote {len(result['files'])} files to data/")
+    for season, status in sorted((result.get("player_weeks") or {}).items()):
+        print(f"player_weeks {season}: {status}")
     return 0
 
 

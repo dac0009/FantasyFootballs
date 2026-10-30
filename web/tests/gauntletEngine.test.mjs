@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import {
-  autoplay, bestLineup, buildSeason, checkLineup, dailySeason, dayNumber, nextUsableSpin, optimalPoints, outlook,
+  autoplay, bestLineup, buildSeason, checkLineup, claimProblem, defenseTeam, rosterProblem, dailySeason, dayNumber, nextUsableSpin, optimalPoints, outlook,
   playWeek, shareText, slotsFor, spinOptions, spinOrder, summarize, waiverOptions,
 } from '../src/lib/gauntletEngine.mjs';
 
@@ -59,15 +59,32 @@ test('player lists never leak results: ordered by position, then draft round', (
   assert.deepEqual(names, ['QB Ten', 'RB Eleven', 'RB Twelve', 'WR Thirteen', 'Def Sixteen']);
 });
 
-test('draft spots: his position first, then FLEX, then the bench', () => {
+test('draft spots: his position, then FLEX, then the bench spot for his position only', () => {
   const b = board();
-  assert.deepEqual(b.draftKeys.map((k) => k.key).slice(-3), ['BE-1', 'BE-2', 'BE-3']);
+  assert.deepEqual(b.draftKeys.map((k) => k.key).slice(-5), ['BN-QB', 'BN-RB', 'BN-WR', 'BN-TE', 'BN-D/ST']);
+  assert.equal(b.draftKeys.length, 14);
   const rb = b.pools.get(2).find((p) => p.player_id === 11);
-  assert.deepEqual(slotsFor(rb, b.draftKeys, {}).map((k) => k.key), ['RB-1', 'RB-2', 'FLEX-1', 'BE-1', 'BE-2', 'BE-3']);
+  assert.deepEqual(slotsFor(rb, b.draftKeys, {}).map((k) => k.key), ['RB-1', 'RB-2', 'FLEX-1', 'BN-RB']);
   const picks = { 'RB-1': rb, 'RB-2': b.pools.get(2).find((p) => p.player_id === 12) };
   assert.deepEqual(slotsFor({ position: 'RB' }, b.keys, picks).map((k) => k.key), ['FLEX-1']);
-  assert.deepEqual(slotsFor({ position: 'K' }, b.keys, { 'K-1': rb }).map((k) => k.key), []);
-  assert.deepEqual(slotsFor({ position: 'K' }, b.draftKeys, { 'K-1': rb }).map((k) => k.key), ['BE-1', 'BE-2', 'BE-3']);
+  assert.deepEqual(slotsFor({ position: 'K' }, b.draftKeys, { 'K-1': rb }).map((k) => k.key), []);
+  assert.deepEqual(slotsFor({ position: 'D/ST' }, b.draftKeys, {}).map((k) => k.key), ['D/ST-1', 'BN-D/ST']);
+});
+
+test('roster rule: always a backup at QB, RB, WR, TE and D/ST', () => {
+  const mk = (id, position) => ({ player_id: id, position });
+  const full = [
+    mk(1, 'QB'), mk(2, 'QB'), mk(3, 'RB'), mk(4, 'RB'), mk(5, 'RB'), mk(6, 'WR'), mk(7, 'WR'), mk(8, 'WR'),
+    mk(9, 'TE'), mk(10, 'TE'), mk(11, 'RB'), mk(12, 'D/ST'), mk(13, 'D/ST'), mk(14, 'K'),
+  ];
+  assert.equal(rosterProblem(full), null);
+  assert.match(claimProblem(full, mk(20, 'RB'), full[1]), /2 QBs/);
+  assert.equal(claimProblem(full, mk(20, 'QB'), full[1]), null);
+  assert.match(claimProblem(full, mk(20, 'K'), full[12]), /2 defenses/);
+  assert.equal(claimProblem(full, mk(20, 'WR'), full[10]), null); // RB 4 -> 3 still fine
+  assert.match(claimProblem(full, mk(20, 'QB'), full[13]), /1 kicker/);
+  assert.equal(defenseTeam(-16017), 'NE');
+  assert.equal(defenseTeam(15847), null);
 });
 
 test('spins skip teams with nobody usable, and drafted players disappear', () => {
@@ -102,6 +119,38 @@ test('a week with missing ESPN projections uses each player\'s season average, f
   const rb = all(b).get(11);
   assert.deepEqual(outlook(rb, 1), { projected: 14, status: 'active', estimated: true });
   assert.deepEqual(outlook(rb, 2), { projected: 14, status: 'active', estimated: false });
+});
+
+test('complete weekly data: fills roster gaps, marks byes out (never "no data"), real free agents on waivers', () => {
+  // Pipeline file: WR13 scored 6 in week 2 while off every roster; RB12 had a bye in week 2.
+  const playerWeeks = {
+    season: 2030,
+    weeks: [1, 2],
+    players: {
+      13: [[11, 6], [10, 9], ['NE', 'NE']],
+      12: [[9, null], [10, null], ['KC', null]],
+      11: [[12, 12], [10, 10], ['KC', 'KC']],
+    },
+  };
+  // RB12 was cut before week 2 (no roster row), so only the pipeline knows he had a bye.
+  const cut = rows.filter((r) => !(r.player_id === 12 && r.week === 2));
+  const b = buildSeason({ season: 2030, regularSeasonWeeks: 2, rows: cut, players, teamWeeks, championOwnerId: 'champ', playerWeeks });
+  const get = (id) => all(b).get(id);
+  assert.equal(b.hasCompleteData, true);
+  assert.deepEqual(outlook(get(13), 2), { projected: 9, status: 'active', estimated: false });
+  assert.deepEqual(outlook(get(12), 2), { projected: 0, status: 'out', estimated: false });
+  assert.equal(get(13).team, 'NE');
+  assert.equal(get(16).team, null);
+  const w2 = playWeek(b, 2, { 'WR-1': get(13), 'RB-1': get(12) });
+  assert.equal(w2.you, 6);
+  assert.ok(!w2.rows.some((r) => r.status === 'nodata'));
+  // WR13 was off every league roster in week 2: he's a real free agent then (RB12 was on a bye).
+  assert.deepEqual(b.waiverPool[2], [13]);
+  // Where the pipeline has no line but a roster row does, the roster row still counts.
+  const merged = buildSeason({ season: 2030, regularSeasonWeeks: 2, rows, players, teamWeeks, championOwnerId: 'champ', playerWeeks });
+  assert.equal(all(merged).get(12).weekly[2], 9);
+  assert.deepEqual(waiverOptions(b, 'x', 2).map((p) => p.player_id), [13]);
+  assert.deepEqual(waiverOptions(b, 'x', 2, [13]), []);
 });
 
 test('a locked week scores real points against the champion and the league', () => {
@@ -141,7 +190,7 @@ test('best lineup by projection or by real points, and lineup checks', () => {
 
 test('waiver wire: benched players who will play, seeded, never the champ or your own', () => {
   const b = board();
-  // Week 1 benches: champ's 22 (excluded). Week 2: TE20 started as FLEX, 22 is champ-tainted.
+  // Without complete data the wire is league bench players. Week 1 benches: champ's 22 (excluded).
   const benchRows = rows.map((r) => (r.player_id === 20 ? { ...r, lineup_slot: 'BE', started: false } : r));
   const b2 = buildSeason({ season: 2030, regularSeasonWeeks: 2, rows: benchRows, players, teamWeeks, championOwnerId: 'champ' });
   assert.deepEqual(b.waiverPool[1] ?? [], []);
@@ -205,7 +254,7 @@ test('every completed season in the league data is playable', { skip: !existsSyn
       championOwnerId: s.champion.owner_id,
     });
     assert.equal(b.keys.length, 9, `${s.season} lineup`);
-    assert.equal(b.draftKeys.length, 12, `${s.season} roster`);
+    assert.equal(b.draftKeys.length, 14, `${s.season} roster`);
     assert.ok(b.spinTeams.length >= 5, `${s.season} teams`);
     // Draft greedily (best season total) through the seeded spins; it must fill every spot.
     const order = spinOrder(`test-${s.season}`, b.spinTeams);
@@ -219,6 +268,7 @@ test('every completed season in the league data is playable', { skip: !existsSyn
       i += 1;
     }
     const roster = Object.values(picks);
+    assert.equal(rosterProblem(roster), null, `${s.season} drafted roster breaks the backup rule`);
     const played = autoplay(b, roster);
     const r = summarize(b, played);
     assert.equal(r.weeks.length, b.weeks.length);

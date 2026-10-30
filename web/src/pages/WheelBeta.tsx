@@ -2,19 +2,20 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { EditableText, useEditorial } from "../components/Editorial";
 import { Band, ErrorState, Loading, OwnerLink } from "../components/primitives";
-import { useDraft, useOwnerIndex, usePlayers, useRoster, useSeasonIndex, useTeamWeeks } from "../lib/data";
+import { useDraft, useOwnerIndex, usePlayerWeeks, usePlayers, useRoster, useSeasonIndex, useTeamWeeks } from "../lib/data";
 import { points as fmt } from "../lib/format";
 import { dailyKey, hashSeed, mulberry32 } from "../lib/wheelEngine.mjs";
 import {
-  autoplay, bestLineup, buildSeason, checkLineup, dailySeason, fits, nextUsableSpin, optimalPoints, playWeek, shareText,
+  autoplay, bestLineup, buildSeason, checkLineup, claimProblem, dailySeason, fits, nextUsableSpin, optimalPoints, playWeek, shareText,
   slotsFor, spinOptions, spinOrder, summarize, waiverOptions,
 } from "../lib/gauntletEngine.mjs";
-import type { Board, DraftablePlayer, Lineup, Picks, SeasonResult, WeekResult } from "../lib/gauntletEngine.mjs";
+import type { Board, DraftablePlayer, Lineup, Picks, PlayerWeeksFile, SeasonResult, WeekResult } from "../lib/gauntletEngine.mjs";
 import {
   lineupIq, loadChampPlays, loadMyStart, recordStart, saveChampPlay, summarizeChamp, type ChampPlaysResult,
 } from "../lib/champPlays";
 import { Confetti, SeasonWheel, SlotReel, VerdictStamp, WeekBars, buzz, visualsCss } from "../components/FourteenVisuals";
-import { Gameday, Reveal, SLOT_LABEL, SeasonStrip, gamedayCss } from "../components/FourteenGameday";
+import { Gameday, Reveal, SeasonStrip, gamedayCss, label } from "../components/FourteenGameday";
+import { PlayerFace, TeamLogo, faceCss } from "../components/PlayerFace";
 
 // "Fourteen and Fantasy": the daily beat-the-champ game. Lives at /fourteen
 // (old /wheel-beta links redirect there), alongside the original /wheel.
@@ -30,7 +31,7 @@ interface Claim { week: number; add: number; drop: number }
 
 /** What a daily run keeps in this browser so a reload resumes it. */
 interface Saved {
-  v: 1;
+  v: 2;
   key: string;
   season: number;
   stage: Stage;
@@ -46,7 +47,6 @@ interface Saved {
 
 const REROLLS = 1;
 const STORE = (key: string) => `ffbffl:fourteen:${key}`;
-const label = (slot: string) => SLOT_LABEL[slot] ?? slot;
 
 function useReducedMotion() {
   return useMemo(
@@ -59,7 +59,7 @@ function readSaved(key: string): Saved | null {
   try {
     const raw = localStorage.getItem(STORE(key));
     const s = raw ? (JSON.parse(raw) as Saved) : null;
-    return s && s.v === 1 && s.key === key ? s : null;
+    return s && s.v === 2 && s.key === key ? s : null;
   } catch {
     return null;
   }
@@ -106,6 +106,7 @@ export default function WheelBeta() {
 
   const rosterData = useRoster(run?.season ?? null);
   const draft = useDraft(run?.season ?? null);
+  const playerWeeks = usePlayerWeeks<PlayerWeeksFile>(run?.season ?? null);
   const today = dailyKey();
   const todayKey = `champ:${today}`;
 
@@ -125,7 +126,7 @@ export default function WheelBeta() {
 
   const board: Board | null = useMemo(() => {
     if (!run || !seasonRow || rosterData.state !== "ready" || players.state !== "ready" || teamWeeks.state !== "ready") return null;
-    if (draft.state === "loading") return null;
+    if (draft.state === "loading" || playerWeeks.state !== "ready") return null;
     return buildSeason({
       season: run.season,
       regularSeasonWeeks: seasonRow.regular_season_weeks,
@@ -134,8 +135,9 @@ export default function WheelBeta() {
       teamWeeks: teamWeeks.data,
       draft: draft.state === "ready" ? draft.data : [],
       championOwnerId: seasonRow.champion!.owner_id,
+      playerWeeks: playerWeeks.data,
     });
-  }, [run, seasonRow, rosterData, draft, players, teamWeeks]);
+  }, [run, seasonRow, rosterData, draft, players, teamWeeks, playerWeeks]);
 
   const order = useMemo(() => (board && run ? spinOrder(`${run.key}:spins`, board.spinTeams) : []), [board, run]);
   const draftKeys = board?.draftKeys ?? [];
@@ -180,7 +182,7 @@ export default function WheelBeta() {
   useEffect(() => {
     if (!run || run.mode !== "daily" || stage === "idle" || pendingResume) return;
     const snap: Saved = {
-      v: 1, key: run.key, season: run.season, stage,
+      v: 2, key: run.key, season: run.season, stage,
       picks: Object.fromEntries(Object.entries(picks).filter(([, p]) => p).map(([k, p]) => [k, p!.player_id])),
       spin, rerolls, history,
       roster: roster.map((p) => p.player_id),
@@ -360,6 +362,8 @@ export default function WheelBeta() {
 
   function claim(add: DraftablePlayer, drop: DraftablePlayer) {
     if (!board || week == null || claimUsed) return;
+    const problem = claimProblem(roster, add, drop);
+    if (problem) { setGameError(problem); return; }
     const slot = board.keys.find((k) => lineup[k.key]?.player_id === drop.player_id);
     const next: Lineup = { ...lineup };
     // He takes the dropped starter's spot if he can play it; otherwise that spot opens up.
@@ -400,7 +404,7 @@ export default function WheelBeta() {
       <p className="prose-narrow" style={{ marginTop: "0.6rem" }}>
         <EditableText
           id="site.fourteen.intro"
-          fallback="The wheel picks a season. That year's champion is your opponent, and his whole roster is off limits. Spin for teams from that year to draft nine starters and a bench. Then run the season week by week: set your lineup from ESPN's projections, work the waiver wire, and kick off against the champ's real scores."
+          fallback="The wheel picks a season. That year's champion is your opponent, and his whole roster is off limits. Spin for teams from that year to draft nine starters and a bench with a backup at every position. Then run the season week by week: set your lineup from ESPN's projections, work the waiver wire, and kick off against the champ's real scores."
         />
       </p>
 
@@ -456,8 +460,8 @@ export default function WheelBeta() {
             {draftKeys.map((k) => {
               const p = picks[k.key];
               return (
-                <li key={k.key} className={`${p ? "lineup-full" : ""}${k.slot === "BE" ? " lineup-bench" : ""}`}>
-                  <span className="lineup-slot">{label(k.slot)}</span>
+                <li key={k.key} className={`${p ? "lineup-full" : ""}${k.slot.startsWith("BN-") ? " lineup-bench" : ""}`}>
+                  <span className="lineup-slot">{k.slot.startsWith("BN-") ? `BENCH ${label(k.slot.slice(3))}` : label(k.slot)}</span>
                   <span className="lineup-name">{p ? p.name : "Open"}</span>
                 </li>
               );
@@ -488,7 +492,8 @@ export default function WheelBeta() {
                       <li key={p.player_id}>
                         <button type="button" className="option" onClick={() => choose(p)} aria-expanded={choosing === p.player_id}>
                           <span className={`gd-slot slot-${p.position.replace("/", "")}`}>{label(p.position)}</span>
-                          <span className="option-name">{p.name}</span>
+                          <PlayerFace player={p} showTeam={false} />
+                          <span className="option-name">{p.name}{p.team && !p.position.includes("D/ST") ? <small><TeamLogo team={p.team} size={14} /> {p.team}</small> : null}</span>
                           <span className="option-meta">{p.draft_round ? `Round ${p.draft_round}` : "Undrafted"}</span>
                         </button>
                         {choosing === p.player_id ? (
@@ -512,7 +517,7 @@ export default function WheelBeta() {
               </div>
               <p className="champ-fine">
                 "Round" is where that player went in our draft that year. Teams with nobody for your open spots are skipped.
-                Your last {board.benchKeys.length} picks fill the bench, and anyone can go there.
+                Your bench holds one backup each at QB, RB, WR, TE and DEF, for byes and injuries.
               </p>
             </section>
           )}
@@ -629,6 +634,7 @@ export default function WheelBeta() {
 
       <style>{visualsCss}</style>
       <style>{gamedayCss}</style>
+      <style>{faceCss}</style>
       <style>{`
         .champ-start { margin-top: 1.2rem; }
         .champ-start .kickoff:disabled { opacity: 0.45; cursor: not-allowed; }
@@ -648,13 +654,14 @@ export default function WheelBeta() {
         .options { list-style: none; padding: 0; margin: 0.8rem 0 0; border-top: 2px solid var(--ink); }
         .options li { border-bottom: 1px solid var(--rule-soft); animation: rise 0.25s ease-out both; }
         .options li:nth-child(2) { animation-delay: 0.03s; } .options li:nth-child(3) { animation-delay: 0.06s; } .options li:nth-child(n+4) { animation-delay: 0.09s; }
-        .option { display: grid; grid-template-columns: 2.7rem 1fr auto; gap: 0.7rem; align-items: center; width: 100%; min-height: 2.9rem;
+        .option { display: grid; grid-template-columns: 2.7rem 36px 1fr auto; gap: 0.7rem; align-items: center; width: 100%; min-height: 2.9rem;
           padding: 0.45rem 0.2rem; background: none; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
         .option:hover, .option[aria-expanded="true"] { background: var(--paper-deep); }
         .option:focus-visible { outline: 2px solid var(--ember); outline-offset: -2px; }
-        .option-name { font-size: 0.98rem; }
+        .option-name { font-size: 0.98rem; line-height: 1.2; }
+        .option-name small { display: flex; align-items: center; gap: 0.3rem; font-size: 0.7rem; color: var(--ink-faint); margin-top: 0.1rem; }
         .option-meta { color: var(--ink-faint); font-size: 0.76rem; }
-        .option-slots { display: flex; gap: 0.45rem; align-items: center; flex-wrap: wrap; padding: 0.2rem 0.2rem 0.7rem 3.4rem; background: var(--paper-deep); font-size: 0.82rem; color: var(--ink-soft); }
+        .option-slots { display: flex; gap: 0.45rem; align-items: center; flex-wrap: wrap; padding: 0.2rem 0.2rem 0.7rem 6rem; background: var(--paper-deep); font-size: 0.82rem; color: var(--ink-soft); }
         .champ-ready { margin-top: 1.4rem; }
         .lede-line { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; margin: 0; }
         .game { margin-top: 0.4rem; scroll-margin-top: 5rem; }
@@ -674,6 +681,7 @@ export default function WheelBeta() {
         .mini td { padding: 0.32rem 0.2rem; border-bottom: 1px solid var(--rule-soft); }
         .mini td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
         .mini tr.you td { font-weight: 700; background: var(--paper-deep); }
+        .mini .who { display: flex; align-items: center; gap: 0.55rem; }
         .mini .games { display: block; font-size: 0.7rem; color: var(--ink-faint); }
         .mini-title { font-family: var(--font-display); font-size: 1.1rem; margin: 1.3rem 0 0.2rem; }
         @media (max-width: 640px) { .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -736,7 +744,7 @@ function Summary({ board, result, champLabel, ownerName, first, claims }: {
         <tbody>
           {result.by_player.map((p, i) => (
             <tr key={p.player_id}>
-              <td>{p.name}{i === 0 ? " (MVP)" : ""}<span className="games">{p.starts} {p.starts === 1 ? "start" : "starts"}</span></td>
+              <td><span className="who"><PlayerFace player={p} size={30} showTeam={false} /><span>{p.name}{i === 0 ? " (MVP)" : ""}<span className="games">{p.starts} {p.starts === 1 ? "start" : "starts"}</span></span></span></td>
               <td>{label(p.position)}</td>
               <td>{fmt(p.total, 1)}</td>
             </tr>

@@ -260,6 +260,41 @@ class EspnClient:
             },
         ).payload
 
+    def fetch_player_cards(self, season: int, player_ids: Sequence[int], *, chunk: int = 50) -> list[dict]:
+        """Full weekly stat lines (actual and projected) for these players in one season.
+
+        Uses the player-card view with ``filterStatsForTopScoringPeriodIds``,
+        which returns every scoring period's stat line, scored with this
+        league's settings for that season (``appliedTotal``).
+        """
+        ids = sorted({int(p) for p in player_ids if p})
+        out: list[dict] = []
+        for start in range(0, len(ids), chunk):
+            batch = ids[start : start + chunk]
+            payload = self.fetch_league(
+                season,
+                ["kona_playercard"],
+                cache_key=f"{season}/playercards_{start // chunk}",
+                filter_header={
+                    "players": {
+                        "filterIds": {"value": batch},
+                        "filterStatsForTopScoringPeriodIds": {
+                            "value": 18,
+                            "additionalValue": [f"00{season}", f"10{season}"],
+                        },
+                    }
+                },
+                allow_history=False,
+            ).payload
+            for entry in payload.get("players") or []:
+                player = dict(entry.get("player") or {})
+                pid = entry.get("id") or player.get("id")
+                if pid is None:
+                    continue
+                player["id"] = int(pid)
+                out.append(player)
+        return out
+
     def fetch_player_names(self, season: int, player_ids: Sequence[int]) -> dict[int, dict]:
         """Resolve player ids that never appeared on a roster (e.g. drafted then dropped)."""
         ids = [int(p) for p in player_ids if p]

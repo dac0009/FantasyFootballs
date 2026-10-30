@@ -1,8 +1,16 @@
 import type { DraftPick, Player, RosterRow, TeamWeek } from './types';
 import type { SlotKey, SlotTemplate } from './wheelEngine.mjs';
 
-export const BENCH_SIZE: number;
-export const WAIVER_CHOICES: number;
+export const BENCH_POSITIONS: string[];
+export const ROSTER_MINIMUMS: Record<string, number>;
+export const SKILL_MINIMUM: number;
+export const WAIVER_POSITIONS: string[];
+export function defenseTeam(playerId: number): string | null;
+export interface PlayerWeeksFile {
+  season: number;
+  weeks: number[];
+  players: Record<string, [(number | null)[], (number | null)[], (string | null)[]?]>;
+}
 
 export interface ChampTeam {
   team_id: number;
@@ -17,6 +25,9 @@ export interface DraftablePlayer {
   weekly: Record<number, number>;
   projected: Record<number, number>;
   estimated: Record<number, boolean>;
+  complete: boolean;
+  teams: Record<number, string>;
+  team: string | null;
   season_points: number;
 }
 export type Picks = Record<string, DraftablePlayer | null>;
@@ -36,6 +47,7 @@ export interface Board {
   games: TeamWeek[];
   waiverPool: Record<number, number[]>;
   estimatedWeeks: number[];
+  hasCompleteData: boolean;
   describe: (id: number) => DraftablePlayer;
 }
 export type Status = 'active' | 'out' | 'nodata' | 'empty';
@@ -101,6 +113,7 @@ export function buildSeason(args: {
   teamWeeks: TeamWeek[];
   draft?: DraftPick[];
   championOwnerId: string;
+  playerWeeks?: PlayerWeeksFile | null;
 }): Board;
 export function fits(position: string, slot: string): boolean;
 export function slotsFor(player: DraftablePlayer, keys: SlotKey[], picks: Picks): SlotKey[];
@@ -111,6 +124,8 @@ export function actualPoints(player: DraftablePlayer, week: number): number;
 export function bestLineup(board: Board, roster: DraftablePlayer[], week: number, by?: 'projected' | 'actual'): Lineup;
 export function checkLineup(board: Board, roster: DraftablePlayer[], lineup: Lineup): string | null;
 export function waiverOptions(board: Board, seed: string, week: number, rosterIds?: number[]): DraftablePlayer[];
+export function rosterProblem(roster: DraftablePlayer[]): string | null;
+export function claimProblem(roster: DraftablePlayer[], add: DraftablePlayer, drop: DraftablePlayer): string | null;
 export function playWeek(board: Board, week: number, lineup: Lineup): WeekResult;
 export function optimalPoints(board: Board, roster: DraftablePlayer[], week: number): number;
 export function summarize(board: Board, played: WeekResult[]): SeasonResult;

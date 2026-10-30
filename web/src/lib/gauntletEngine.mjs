@@ -3,13 +3,20 @@
 // The wheel lands on a past season. That year's champion is your opponent,
 // and nobody who was ever on the champion's roster that regular season can
 // be drafted. Each spin lands on one of the other teams from that year; you
-// take one of its players for any open spot: nine starters, then a bench.
+// take one of its players for any open spot: nine starters, then a bench
+// with one backup at QB, RB, WR, TE and D/ST (fourteen players in all).
 //
 // Then you manage the season like a real owner, one week at a time: set the
 // lineup from your roster using that week's ESPN projections, pick up one
 // player a week off the waiver wire, and kick off. Real points are revealed
-// only after the lineup locks. A player on a bye or out is projected 0 and
-// scores 0 if you start him. Your weekly score goes head to head with the
+// only after the lineup locks. A player on a bye or out has no projection and
+// scores 0 if you start him.
+//
+// Data: data/player_weeks/<season>.json (from the pipeline) has every week's
+// real points, projection and NFL team for anyone who was on a league roster
+// that season. When it's there it is used for everything; without it the
+// game falls back to the league's own roster rows, which miss weeks a player
+// spent off every league roster. Your weekly score goes head to head with the
 // champion's real score that week, and against the whole league.
 //
 // Plain JavaScript so web/tests can run it with node:test. Nothing here
@@ -18,8 +25,26 @@
 import { eligible, hashSeed, mulberry32, slotKeys, slotTemplate } from './wheelEngine.mjs';
 
 const round2 = (n) => Math.round(n * 100) / 100;
-export const BENCH_SIZE = 3;
-export const WAIVER_CHOICES = 3;
+/** Bench spots: one backup at each of these positions. */
+export const BENCH_POSITIONS = ['QB', 'RB', 'WR', 'TE', 'D/ST'];
+/** A roster must always keep at least this many at each position. */
+export const ROSTER_MINIMUMS = { QB: 2, RB: 3, WR: 3, TE: 2, 'D/ST': 2, K: 1 };
+/** RB + WR + TE together: two RBs, two WRs, a TE, the FLEX and three backups. */
+export const SKILL_MINIMUM = 9;
+/** Waiver wire: one free agent at each of these positions each week. */
+export const WAIVER_POSITIONS = ['QB', 'RB', 'WR', 'TE', 'D/ST', 'K'];
+
+/** ESPN's id for each NFL team, as used for team defenses (-16000 - id). */
+const PRO_TEAMS = {
+  1: 'ATL', 2: 'BUF', 3: 'CHI', 4: 'CIN', 5: 'CLE', 6: 'DAL', 7: 'DEN', 8: 'DET', 9: 'GB', 10: 'TEN', 11: 'IND',
+  12: 'KC', 13: 'LV', 14: 'LAR', 15: 'MIA', 16: 'MIN', 17: 'NE', 18: 'NO', 19: 'NYG', 20: 'NYJ', 21: 'PHI',
+  22: 'ARI', 23: 'PIT', 24: 'LAC', 25: 'SF', 26: 'SEA', 27: 'TB', 28: 'WSH', 29: 'CAR', 30: 'JAX', 33: 'BAL', 34: 'HOU',
+};
+
+/** The NFL team a team defense belongs to, from its ESPN id. */
+export function defenseTeam(playerId) {
+  return playerId < 0 ? PRO_TEAMS[-16000 - playerId] ?? null : null;
+}
 const POSITION_ORDER = ['QB', 'RB', 'WR', 'TE', 'D/ST', 'K'];
 
 /** Days since 1970-01-01 for a YYYY-MM-DD key. Same answer in every time zone. */
@@ -84,7 +109,7 @@ export function regularWeeks(teamWeeks, season, regularSeasonWeeks) {
  * @param draft       drafts/<season>.json, or [] if missing
  * @param championOwnerId owner_id of that year's champion
  */
-export function buildSeason({ season, regularSeasonWeeks, rows, players, teamWeeks, draft = [], championOwnerId }) {
+export function buildSeason({ season, regularSeasonWeeks, rows, players, teamWeeks, draft = [], championOwnerId, playerWeeks = null }) {
   const playerById = players instanceof Map ? players : new Map(players.map((p) => [p.player_id, p]));
   const games = regularWeeks(teamWeeks, season, regularSeasonWeeks);
   const weeks = [...new Set(games.map((g) => g.week))].sort((a, b) => a - b);
@@ -113,16 +138,45 @@ export function buildSeason({ season, regularSeasonWeeks, rows, players, teamWee
     projected.set(r.player_id, proj);
   }
 
+  // Complete weekly lines from the pipeline fill in the roster-derived ones.
+  const complete = new Set();
+  const nflTeam = new Map();
+  if (playerWeeks && playerWeeks.season === season && playerWeeks.players) {
+    const index = (playerWeeks.weeks ?? []).map(Number);
+    for (const [key, entry] of Object.entries(playerWeeks.players)) {
+      const id = Number(key);
+      const [pts = [], proj = [], team = []] = entry ?? [];
+      // Union with the roster rows: the pipeline's line wins where it has one,
+      // and a roster row still counts where ESPN's card has a gap.
+      const ptsOut = { ...(weekly.get(id) ?? {}) };
+      const projOut = { ...(projected.get(id) ?? {}) };
+      const teamOut = {};
+      index.forEach((w, i) => {
+        if (w < 1 || w > lastWeek) return;
+        if (pts[i] != null) ptsOut[w] = pts[i];
+        if (proj[i] != null) projOut[w] = proj[i];
+        if (team[i]) teamOut[w] = team[i];
+      });
+      weekly.set(id, ptsOut);
+      projected.set(id, projOut);
+      nflTeam.set(id, teamOut);
+      complete.add(id);
+    }
+  }
+
   // ESPN occasionally lost a whole week of projections (2023 week 1 is all
   // zeros). If most players who scored that week were projected 0, the week's
   // projections are missing, not a league-wide bye: stand in each player's
   // average projection from the rest of the season, and flag it as estimated.
   const scoredRows = new Map();
   const zeroRows = new Map();
-  for (const r of inSeason) {
-    if (!((r.points ?? 0) > 0)) continue;
-    scoredRows.set(r.week, (scoredRows.get(r.week) ?? 0) + 1);
-    if (!((r.projected ?? 0) > 0)) zeroRows.set(r.week, (zeroRows.get(r.week) ?? 0) + 1);
+  for (const [id, pts] of weekly) {
+    for (const [w, v] of Object.entries(pts)) {
+      if (!(v > 0)) continue;
+      const week = Number(w);
+      scoredRows.set(week, (scoredRows.get(week) ?? 0) + 1);
+      if (!((projected.get(id)?.[week] ?? 0) > 0)) zeroRows.set(week, (zeroRows.get(week) ?? 0) + 1);
+    }
   }
   const estimatedWeeks = weeks.filter((w) => (scoredRows.get(w) ?? 0) > 0 && (zeroRows.get(w) ?? 0) / scoredRows.get(w) > 0.5);
   const estimated = new Map();
@@ -131,7 +185,7 @@ export function buildSeason({ season, regularSeasonWeeks, rows, players, teamWee
       const real = Object.entries(proj).filter(([w, v]) => !estimatedWeeks.includes(Number(w)) && v > 0).map(([, v]) => v);
       const avg = real.length ? round2(real.reduce((t, v) => t + v, 0) / real.length) : 0;
       for (const w of estimatedWeeks) {
-        if (proj[w] == null) continue;
+        if (proj[w] == null && weekly.get(id)?.[w] == null) continue;
         proj[w] = avg;
         (estimated.get(id) ?? estimated.set(id, {}).get(id))[w] = true;
       }
@@ -154,6 +208,9 @@ export function buildSeason({ season, regularSeasonWeeks, rows, players, teamWee
       weekly: byWeek,
       projected: projected.get(id) ?? {},
       estimated: estimated.get(id) ?? {},
+      complete: complete.has(id),
+      teams: nflTeam.get(id) ?? {},
+      team: defenseTeam(id) ?? mostCommon(Object.values(nflTeam.get(id) ?? {})),
       season_points: round2(weeks.reduce((t, w) => t + (byWeek[w] ?? 0), 0)),
     };
     cache.set(id, out);
@@ -177,22 +234,30 @@ export function buildSeason({ season, regularSeasonWeeks, rows, players, teamWee
   const pools = new Map();
   for (const [teamId, ids] of rosterOf) pools.set(teamId, [...ids].map(describe).sort(order));
 
-  // The waiver wire each week: players sitting on a league bench that week
-  // (not started by anyone), expected to play, and never on the champion.
+  // The waiver wire each week. With complete data: anyone who was on a league
+  // roster at some point that season but on nobody's roster that week (a real
+  // free agent), expected to play. Without it: players sitting on a league
+  // bench that week. Never anyone from the champion's roster.
+  const rosteredInWeek = new Map();
+  for (const r of inSeason) (rosteredInWeek.get(r.week) ?? rosteredInWeek.set(r.week, new Set()).get(r.week)).add(r.player_id);
+  const everRostered = [...new Set(inSeason.map((r) => r.player_id))].sort((a, b) => a - b);
   const waiverPool = {};
-  for (const r of inSeason) {
-    if (r.started || r.lineup_slot !== 'BE' || championPlayers.has(r.player_id)) continue;
-    if (!((projected.get(r.player_id)?.[r.week] ?? 0) > 0)) continue;
-    (waiverPool[r.week] ??= []).push(r.player_id);
+  for (const w of weeks) {
+    const onRoster = rosteredInWeek.get(w) ?? new Set();
+    const candidates = complete.size
+      ? everRostered.filter((id) => complete.has(id) && !onRoster.has(id))
+      : [...new Set(inSeason.filter((r) => r.week === w && !r.started && r.lineup_slot === 'BE').map((r) => r.player_id))];
+    waiverPool[w] = candidates
+      .filter((id) => !championPlayers.has(id) && (projected.get(id)?.[w] ?? 0) > 0)
+      .sort((a, b) => a - b);
   }
-  for (const w of Object.keys(waiverPool)) waiverPool[w] = [...new Set(waiverPool[w])].sort((a, b) => a - b);
 
   const championRoster = [...championPlayers].map(describe).sort((a, b) => b.season_points - a.season_points);
 
   // slotTemplate reads one week; key by team and week so a season isn't summed.
   const template = slotTemplate(inSeason.map((r) => ({ ...r, team_id: `${r.team_id}:${r.week}` })));
   const keys = slotKeys(template);
-  const benchKeys = Array.from({ length: BENCH_SIZE }, (_, i) => ({ key: `BE-${i + 1}`, slot: 'BE' }));
+  const benchKeys = BENCH_POSITIONS.map((pos) => ({ key: `BN-${pos}`, slot: `BN-${pos}` }));
 
   return {
     season,
@@ -209,18 +274,20 @@ export function buildSeason({ season, regularSeasonWeeks, rows, players, teamWee
     games,
     waiverPool,
     estimatedWeeks,
+    hasCompleteData: complete.size > 0,
     describe,
   };
 }
 
-/** Can this position go in this slot? The bench takes anyone. */
+/** Can this position go in this slot? Bench spots ("BN-RB") take only that position. */
 export function fits(position, slot) {
-  return slot === 'BE' || eligible(position, slot);
+  if (slot.startsWith('BN-')) return position === slot.slice(3);
+  return eligible(position, slot);
 }
 
 /** Open draft spots a player could fill: his position, then FLEX, then the bench. */
 export function slotsFor(player, keys, picks) {
-  const rank = (slot) => (slot === 'BE' ? 2 : slot === 'FLEX' ? 1 : 0);
+  const rank = (slot) => (slot.startsWith('BN-') ? 2 : slot === 'FLEX' ? 1 : 0);
   return keys
     .filter((k) => picks[k.key] == null && fits(player.position, k.slot))
     .sort((a, b) => rank(a.slot) - rank(b.slot));
@@ -250,6 +317,13 @@ export function nextUsableSpin(board, order, from, keys, picks) {
  */
 export function outlook(player, week) {
   const proj = player.projected?.[week];
+  const scored = player.weekly?.[week];
+  if (player.complete) {
+    // Complete data: no projection and no stat line means he didn't play.
+    if (proj == null && scored == null) return { projected: 0, status: 'out', estimated: false };
+    if (!(proj > 0)) return scored == null ? { projected: 0, status: 'out', estimated: false } : { projected: 0, status: 'active', estimated: false };
+    return { projected: round2(proj), status: 'active', estimated: !!player.estimated?.[week] };
+  }
   if (proj == null) return { projected: null, status: 'nodata' };
   if (proj <= 0) return { projected: 0, status: 'out' };
   return { projected: round2(proj), status: 'active', estimated: !!player.estimated?.[week] };
@@ -296,25 +370,31 @@ export function checkLineup(board, roster, lineup) {
 }
 
 /**
- * The three waiver-wire players offered in a week. The same three for
- * everyone playing the same run (seeded), never someone already on your
- * roster, and spread across positions where possible.
+ * The waiver wire for a week: one free agent at each position (QB, RB, WR,
+ * TE, D/ST, K) when one is available. The same players for everyone playing
+ * the same run (seeded), never someone already on your roster.
  */
 export function waiverOptions(board, seed, week, rosterIds = []) {
   const taken = new Set(rosterIds);
   const ids = (board.waiverPool[week] ?? []).filter((id) => !taken.has(id));
   const order = shuffle(mulberry32(hashSeed(`${seed}:waivers:${week}`)), ids).map(board.describe);
-  const out = [];
-  const positions = new Set();
-  for (const p of order) {
-    if (out.length >= WAIVER_CHOICES) break;
-    if (!positions.has(p.position)) { out.push(p); positions.add(p.position); }
+  return WAIVER_POSITIONS.map((pos) => order.find((p) => p.position === pos)).filter(Boolean);
+}
+
+/** Why this roster breaks the backup rule, or null if it's fine. */
+export function rosterProblem(roster) {
+  const count = (pos) => roster.filter((p) => p.position === pos).length;
+  for (const [pos, min] of Object.entries(ROSTER_MINIMUMS)) {
+    if (count(pos) < min) return `You need at least ${min} ${pos === 'D/ST' ? 'defenses' : pos === 'K' ? 'kicker' : `${pos}s`} on your roster.`;
   }
-  for (const p of order) {
-    if (out.length >= WAIVER_CHOICES) break;
-    if (!out.includes(p)) out.push(p);
-  }
-  return out;
+  const skill = count('RB') + count('WR') + count('TE');
+  if (skill < SKILL_MINIMUM) return `You need at least ${SKILL_MINIMUM} running backs, receivers and tight ends combined.`;
+  return null;
+}
+
+/** Can you drop `drop` to add `add` and still keep a legal roster? */
+export function claimProblem(roster, add, drop) {
+  return rosterProblem([...roster.filter((p) => p.player_id !== drop.player_id), add]);
 }
 
 /** Score one locked week against the champion and the league. */
@@ -417,6 +497,14 @@ export function autoplay(board, roster, fromWeekIndex = 0) {
     const lineup = bestLineup(board, roster, week, 'projected');
     return { ...playWeek(board, week, lineup), optimal: optimalPoints(board, roster, week) };
   });
+}
+
+function mostCommon(list) {
+  const counts = new Map();
+  for (const v of list) if (v) counts.set(v, (counts.get(v) ?? 0) + 1);
+  let best = null;
+  for (const [v, n] of counts) if (best == null || n > counts.get(best)) best = v;
+  return best;
 }
 
 /** One line for the group chat. */

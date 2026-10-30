@@ -12,7 +12,17 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 
-from . import extract, gotw, head_to_head, metrics, playoffs, records, trade_value, transform
+from . import (
+    extract,
+    gotw,
+    head_to_head,
+    metrics,
+    player_weeks,
+    playoffs,
+    records,
+    trade_value,
+    transform,
+)
 from .config import (
     DATA_DIR,
     PIPELINE_VERSION,
@@ -601,12 +611,19 @@ def run(
             "environment (locally: a .env file; in CI: repository secrets). "
             "See docs/SECURITY.md."
         )
+    client = EspnClient(league.league_id, credentials, use_cache=use_cache, write_cache=True)
     dataset = collect(
         league,
         credentials,
         seasons=seasons,
         use_cache=use_cache,
         with_rosters=with_rosters,
+        client=client,
     )
     assembled = assemble(dataset)
-    return publish(assembled, data_dir, allow_shrink=allow_shrink)
+    result = publish(assembled, data_dir, allow_shrink=allow_shrink)
+    # Extra, optional step for Fourteen and Fantasy. Runs after publishing and
+    # never raises, so it can't break a refresh.
+    if with_rosters:
+        result["player_weeks"] = player_weeks.refresh(client, assembled, data_dir or DATA_DIR)
+    return result

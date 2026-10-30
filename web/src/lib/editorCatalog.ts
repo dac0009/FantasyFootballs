@@ -6,7 +6,7 @@ export const editorialCatalog: Record<string, {label:string; fallback:string}> =
   },
   "site.fourteen.intro": {
     "label": "fourteen · How to play",
-    "fallback": "The wheel picks a season. That year's champion is your opponent, and his whole roster is off limits. Spin for teams from that year to draft nine starters and a bench. Then run the season week by week: set your lineup from ESPN's projections, work the waiver wire, and kick off against the champ's real scores."
+    "fallback": "The wheel picks a season. That year's champion is your opponent, and his whole roster is off limits. Spin for teams from that year to draft nine starters and a bench with a backup at every position. Then run the season week by week: set your lineup from ESPN's projections, work the waiver wire, and kick off against the champ's real scores."
   },
   "site.wheel.title": {
     "label": "wheel · The Wheel",

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { points as fmt } from "../lib/format";
-import { fits, outlook } from "../lib/gauntletEngine.mjs";
+import { claimProblem, fits, outlook } from "../lib/gauntletEngine.mjs";
 import type { Board, DraftablePlayer, Lineup, Status, WeekResult } from "../lib/gauntletEngine.mjs";
 import { buzz, useCountUp } from "./FourteenVisuals";
+import { PlayerFace } from "./PlayerFace";
 
 // The weekly part of Fourteen and Fantasy: set the lineup from your roster
 // with that week's ESPN projections, work the waiver wire, kick off, and
@@ -10,15 +11,16 @@ import { buzz, useCountUp } from "./FourteenVisuals";
 // only draws it and reports taps.
 
 export const SLOT_LABEL: Record<string, string> = { "D/ST": "DEF", BE: "BN" };
-const label = (slot: string) => SLOT_LABEL[slot] ?? slot;
+/** Short label for a slot or position. Bench spots ("BN-RB") read "BN". */
+export const label = (slot: string) => (slot.startsWith("BN-") ? "BN" : SLOT_LABEL[slot] ?? slot);
 
 type Pick = { kind: "slot"; key: string } | { kind: "bench"; id: number } | null;
 
-const STATUS_TEXT: Record<Status, string> = { active: "", out: "OUT", nodata: "NO DATA", empty: "" };
+const STATUS_TEXT: Record<Status, string> = { active: "", out: "OUT", nodata: "OUT", empty: "" };
 const STATUS_HELP: Record<Status, string> = {
   active: "",
-  out: "Bye or injured this week: projected 0.",
-  nodata: "Not on any league roster this week, so there's no projection and he'd score 0.",
+  out: "Not playing this week (bye or injury). He scores 0 if you start him.",
+  nodata: "No game line for him this week. He scores 0 if you start him.",
   empty: "",
 };
 
@@ -91,13 +93,18 @@ export function Gameday({
     buzz(25);
   }
 
+  /** Drop `p` for the player being claimed, if the roster stays legal. */
+  function dropFor(p: DraftablePlayer | undefined) {
+    if (!claiming || !p) return;
+    const problem = claimProblem(roster, claiming, p);
+    if (problem) { flash(`Can't drop ${p.name}: ${problem.charAt(0).toLowerCase()}${problem.slice(1)}`); return; }
+    onClaim(claiming, p);
+    setClaiming(null);
+    setNudge(null);
+  }
+
   function tapSlot(key: string) {
-    if (claiming) {
-      const p = lineup[key];
-      if (p) onClaim(claiming, p);
-      setClaiming(null);
-      return;
-    }
+    if (claiming) { dropFor(lineup[key]); return; }
     const slot = board.keys.find((k) => k.key === key)!;
     if (!pick) { setPick({ kind: "slot", key }); setNudge(null); return; }
     if (pick.kind === "slot") {
@@ -121,12 +128,7 @@ export function Gameday({
   }
 
   function tapBench(id: number) {
-    if (claiming) {
-      const p = roster.find((x) => x.player_id === id);
-      if (p) onClaim(claiming, p);
-      setClaiming(null);
-      return;
-    }
+    if (claiming) { dropFor(roster.find((x) => x.player_id === id)); return; }
     if (!pick) { setPick({ kind: "bench", id }); setNudge(null); return; }
     if (pick.kind === "bench") { setPick(pick.id === id ? null : { kind: "bench", id }); return; }
     benchIntoPicked(id);
@@ -143,7 +145,7 @@ export function Gameday({
   }
 
   const canTarget = (slotName: string, p: DraftablePlayer | undefined) => {
-    if (claiming) return !!p;
+    if (claiming) return !!p && !claimProblem(roster, claiming, p);
     if (!pick) return false;
     if (pick.kind === "bench") {
       const incoming = roster.find((x) => x.player_id === pick.id);
@@ -155,7 +157,7 @@ export function Gameday({
   };
 
   const benchTarget = (p: DraftablePlayer) => {
-    if (claiming) return true;
+    if (claiming) return !claimProblem(roster, claiming, p);
     if (!pick || pick.kind !== "slot") return false;
     const slot = board.keys.find((k) => k.key === pick.key)!;
     return fits(p.position, slot.slot);
@@ -172,10 +174,10 @@ export function Gameday({
           aria-pressed={selected}
         >
           <span className={`gd-slot slot-${slotName.replace("/", "")}`}>{label(slotName)}</span>
+          {p ? <PlayerFace player={p} /> : <span className="face face-empty" />}
           <span className="gd-name">
             {p ? p.name : <em>Empty</em>}
-            {p && slotName !== p.position && slotName !== "BE" ? <small>{label(p.position)}</small> : null}
-            {p && slotName === "BE" ? <small>{label(p.position)}</small> : null}
+            {p ? <small>{label(p.position)}{p.teams?.[week] ?? p.team ? ` · ${p.teams?.[week] ?? p.team}` : ""}</small> : null}
           </span>
           {look ? <StatusChip status={look.status} /> : <span />}
           <span className="gd-proj">{look?.projected != null && look.status === "active" ? fmt(look.projected, 1) : "—"}</span>
@@ -199,7 +201,7 @@ export function Gameday({
       ) : null}
       <p className="gd-help">
         {claiming
-          ? <>Tap a player to drop for <b>{claiming.name}</b>. <button type="button" className="linkish" onClick={() => setClaiming(null)}>Cancel</button></>
+          ? <>Tap a player to drop for <b>{claiming.name}</b>. You always keep a backup at QB, RB, WR, TE and DEF. <button type="button" className="linkish" onClick={() => { setClaiming(null); setNudge(null); }}>Cancel</button></>
           : pick
             ? "Now tap where he goes. Highlighted spots are legal."
             : "Tap a player, then tap where he should go. Real points stay hidden until kickoff."}
@@ -238,7 +240,8 @@ export function Gameday({
             return (
               <li key={p.player_id} className={claiming?.player_id === p.player_id ? "is-claiming" : ""}>
                 <span className={`gd-slot slot-${p.position.replace("/", "")}`}>{label(p.position)}</span>
-                <span className="gd-name">{p.name}<small>{look.projected != null ? `proj ${fmt(look.projected, 1)}` : ""}</small></span>
+                <PlayerFace player={p} />
+                <span className="gd-name">{p.name}<small>{p.teams?.[week] ?? p.team ? `${p.teams?.[week] ?? p.team} · ` : ""}{look.projected != null ? `proj ${fmt(look.projected, 1)}` : ""}</small></span>
                 <button type="button" className="pill" disabled={claimUsed || !!claiming} onClick={() => { setPick(null); setClaiming(p); }}>Claim</button>
               </li>
             );
@@ -317,6 +320,7 @@ export function Reveal({ board, result, champLabel, onNext, onDone, last, reduce
           return (
             <li key={r.key} className={on ? "on" : ""}>
               <span className={`gd-slot slot-${r.slot.replace("/", "")}`}>{label(r.slot)}</span>
+              {r.player ? <PlayerFace player={r.player} size={30} showTeam={false} /> : <span className="face face-empty" />}
               <span className="gd-name">{r.player?.name ?? <em>Empty</em>}</span>
               <span className={`rv-diff ${diff == null ? "" : diff >= 0 ? "up" : "down"}`}>
                 {on && diff != null && r.status === "active" ? `${diff >= 0 ? "+" : ""}${fmt(diff, 1)}` : ""}
@@ -363,7 +367,7 @@ export const gamedayCss = `
   .gd-projected span { font-size: 0.7rem; color: var(--ink-faint); }
   .gd-help { font-size: 0.82rem; color: var(--ink-soft); margin: 0.6rem 0 0.4rem; min-height: 1.2em; }
   .gd-list { list-style: none; padding: 0; margin: 0; border-top: 2px solid var(--ink); }
-  .gd-row { display: grid; grid-template-columns: 2.7rem 1fr auto 3.1rem; gap: 0.6rem; align-items: center; width: 100%; min-height: 2.8rem; padding: 0.3rem 0.25rem;
+  .gd-row { display: grid; grid-template-columns: 2.7rem 36px 1fr auto 3.1rem; gap: 0.6rem; align-items: center; width: 100%; min-height: 2.8rem; padding: 0.3rem 0.25rem;
     background: none; border: 0; border-bottom: 1px solid var(--rule-soft); font: inherit; color: inherit; text-align: left; cursor: pointer;
     transition: background 0.15s, transform 0.15s; }
   .gd-row:hover { background: var(--paper-deep); }
@@ -371,7 +375,8 @@ export const gamedayCss = `
   .gd-row.is-picked { background: var(--ink); color: var(--paper); transform: scale(1.015); box-shadow: 0 4px 14px #0003; }
   .gd-row.is-picked .gd-proj, .gd-row.is-picked small { color: var(--paper); }
   .gd-row.is-target { background: #c5a76a33; box-shadow: inset 3px 0 0 #c5a76a; }
-  .gd-row.is-drop { box-shadow: inset 3px 0 0 var(--neg); }
+  .gd-row.is-drop { opacity: 0.45; }
+  .gd-row.is-drop.is-target { opacity: 1; box-shadow: inset 3px 0 0 var(--neg); background: #a8453a12; }
   .gd-row.is-out .gd-name { color: var(--ink-faint); text-decoration: line-through; text-decoration-color: #a8453a88; }
   .gd-slot { font: 700 0.62rem var(--font-body); letter-spacing: 0.05em; color: #eee9dd; background: #45545a; padding: 0.24rem 0; text-align: center; }
   .slot-QB { background: #603d46; } .slot-RB { background: #324c42; } .slot-WR { background: #193b48; } .slot-TE { background: #624830; }
@@ -380,14 +385,17 @@ export const gamedayCss = `
   .gd-name small { display: block; font-size: 0.68rem; color: var(--ink-faint); }
   .gd-proj { text-align: right; font-variant-numeric: tabular-nums; font-size: 0.9rem; color: var(--ink-soft); }
   .chip { font: 700 0.6rem var(--font-body); letter-spacing: 0.05em; padding: 0.15rem 0.35rem; color: #fff; }
-  .chip-out { background: var(--neg); } .chip-nodata { background: #8a8170; }
+  .chip-out, .chip-nodata { background: var(--neg); }
+  .face-empty { width: 36px; height: 36px; border: 1px dashed var(--rule); background: transparent; }
+  .rv-rows .face-empty { width: 30px; height: 30px; border-color: #ffffff33; }
+  .gd-row.is-picked .face > img { box-shadow: 0 0 0 2px var(--paper); }
   .gd-sub { font: 600 0.74rem var(--font-body); text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-faint); margin: 1rem 0 0.3rem; display: flex; justify-content: space-between; gap: 1rem; }
   .gd-sub span { text-transform: none; letter-spacing: 0; font-weight: 400; }
   .gd-empty { padding: 0.6rem 0.25rem; color: var(--ink-faint); font-size: 0.85rem; }
   .gd-nudge { color: var(--neg); font-size: 0.85rem; margin: 0.5rem 0 0; animation: shake 0.3s; }
   @keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
   .gd-waivers ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.4rem; }
-  .gd-waivers li { display: grid; grid-template-columns: 2.7rem 1fr auto; gap: 0.6rem; align-items: center; padding: 0.4rem 0.4rem; border: 1px dashed var(--rule); }
+  .gd-waivers li { display: grid; grid-template-columns: 2.7rem 36px 1fr auto; gap: 0.6rem; align-items: center; padding: 0.4rem 0.4rem; border: 1px dashed var(--rule); }
   .gd-waivers li.is-claiming { border-style: solid; border-color: var(--ink); background: var(--paper-deep); }
   .gd-warn { margin: 0.9rem 0 0; padding: 0.5rem 0.6rem; background: #a8453a14; border-left: 3px solid var(--neg); font-size: 0.85rem; }
   .gd-actions { display: flex; gap: 0.6rem; align-items: center; justify-content: space-between; margin-top: 0.9rem; flex-wrap: wrap; }
@@ -411,7 +419,7 @@ export const gamedayCss = `
     animation: stamp-in 0.45s cubic-bezier(.3,1.4,.5,1) both; }
   .rv-W { color: #6fc596; } .rv-L { color: #e06a5a; } .rv-T { color: #c4bcab; }
   .rv-rows { list-style: none; padding: 0; margin: 0.4rem 0 0; }
-  .rv-rows li { display: grid; grid-template-columns: 2.7rem 1fr auto 3.2rem; gap: 0.6rem; align-items: center; padding: 0.28rem 0; border-bottom: 1px solid #ffffff12; opacity: 0.35; transition: opacity 0.2s; }
+  .rv-rows li { display: grid; grid-template-columns: 2.7rem 30px 1fr auto 3.2rem; gap: 0.6rem; align-items: center; padding: 0.28rem 0; border-bottom: 1px solid #ffffff12; opacity: 0.35; transition: opacity 0.2s; }
   .rv-rows li.on { opacity: 1; }
   .rv-rows li.on .rv-pts { animation: pts-pop 0.35s cubic-bezier(.3,1.6,.5,1); }
   @keyframes pts-pop { from { transform: scale(1.7); color: #c5a76a; } }
