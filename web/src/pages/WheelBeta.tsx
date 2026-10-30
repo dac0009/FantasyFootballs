@@ -17,6 +17,7 @@ import { Confetti, SeasonWheel, SlotReel, VerdictStamp, WeekBars, buzz, visualsC
 import { Gameday, Reveal, SeasonStrip, gamedayCss, label } from "../components/FourteenGameday";
 import { PlayerFace, TeamLogo, faceCss } from "../components/PlayerFace";
 import { BroadcastView, broadcastCss } from "../components/FourteenBroadcast";
+import { playFieldCss } from "../components/PlayField";
 import { buildBroadcast } from "../lib/broadcast.mjs";
 import type { PlaysFile } from "../lib/broadcast.mjs";
 
@@ -671,6 +672,7 @@ export default function WheelBeta() {
       <style>{gamedayCss}</style>
       <style>{faceCss}</style>
       <style>{broadcastCss}</style>
+      <style>{playFieldCss}</style>
       <style>{`
         .champ-start { margin-top: 1.2rem; }
         .champ-start .kickoff:disabled { opacity: 0.45; cursor: not-allowed; }

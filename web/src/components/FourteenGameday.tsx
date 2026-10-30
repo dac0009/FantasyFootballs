@@ -184,7 +184,7 @@ export function Gameday({
           ? <>Tap a player to drop for <b>{claiming.name}</b>. You always keep a backup at QB, RB, WR, TE and DEF. <button type="button" className="linkish" onClick={() => { setClaiming(null); setNudge(null); }}>Cancel</button></>
           : pick
             ? "Now tap where he goes. Highlighted spots are legal."
-            : "Tap a player, then tap where he should go. Real points stay hidden until kickoff."}
+            : "Tap a player, then tap where he should go. Real points stay hidden until kickoff. ~ marks an estimated projection."}
       </p>
 
       <div className={`field${pick || claiming ? " is-choosing" : ""}`} role="group" aria-label="Your starters">
@@ -216,7 +216,7 @@ export function Gameday({
                 {look && look.status !== "active" ? <span className="token-out">OUT</span> : null}
               </span>
               <span className="token-name">{p ? shortName(p.name) : "Empty"}</span>
-              <span className="token-proj">{look?.status === "active" && look.projected != null ? fmt(look.projected, 1) : "—"}</span>
+              <span className="token-proj">{look?.status === "active" && look.projected != null ? `${look.estimated ? "~" : ""}${fmt(look.projected, 1)}` : "—"}</span>
             </button>
           );
         })}
@@ -242,7 +242,7 @@ export function Gameday({
                 {look.status !== "active" ? <span className="token-out">OUT</span> : null}
               </span>
               <span className="token-name">{shortName(p.name)}</span>
-              <span className="token-proj">{look.status === "active" && look.projected != null ? fmt(look.projected, 1) : "—"}</span>
+              <span className="token-proj">{look.status === "active" && look.projected != null ? `${look.estimated ? "~" : ""}${fmt(look.projected, 1)}` : "—"}</span>
             </button>
           );
         }) : <p className="gd-empty">Nobody on the bench.</p>}
@@ -260,7 +260,7 @@ export function Gameday({
               <li key={p.player_id} className={claiming?.player_id === p.player_id ? "is-claiming" : ""}>
                 <span className={`gd-slot slot-${p.position.replace("/", "")}`}>{label(p.position)}</span>
                 <PlayerFace player={p} />
-                <span className="gd-name">{p.name}<small>{p.teams?.[week] ?? p.team ? `${p.teams?.[week] ?? p.team} · ` : ""}{look.projected != null ? `proj ${fmt(look.projected, 1)}` : ""}</small></span>
+                <span className="gd-name">{p.name}<small>{p.teams?.[week] ?? p.team ? `${p.teams?.[week] ?? p.team} · ` : ""}{look.projected != null ? `proj ${look.estimated ? "~" : ""}${fmt(look.projected, 1)}` : ""}</small></span>
                 {roster.some((r) => r.player_id === p.player_id) ? (
                   <span className="gd-added">Added ✓</span>
                 ) : (

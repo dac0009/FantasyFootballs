@@ -192,6 +192,44 @@ export function buildSeason({ season, regularSeasonWeeks, rows, players, teamWee
     }
   }
 
+  // ESPN keeps old real points but not old projections, so a week a player
+  // spent off every league roster has a score and no projection. Stand in a
+  // projection made only from what was known before kickoff: his average
+  // ESPN projection that season, else his average real score in earlier
+  // weeks, else what a typical player at his position was projected that week.
+  if (complete.size) {
+    const positionWeek = new Map();
+    for (const [id, proj] of projected) {
+      const pos = playerById.get(id)?.position;
+      for (const [w, v] of Object.entries(proj)) {
+        if (!(v > 0)) continue;
+        const k = `${pos}:${w}`;
+        (positionWeek.get(k) ?? positionWeek.set(k, []).get(k)).push(v);
+      }
+    }
+    for (const id of complete) {
+      const pts = weekly.get(id) ?? {};
+      const proj = projected.get(id) ?? {};
+      const real = Object.values(proj).filter((v) => v > 0);
+      const seasonAvg = real.length ? real.reduce((t, v) => t + v, 0) / real.length : null;
+      for (const w of weeks) {
+        if (proj[w] != null || pts[w] == null) continue;
+        let est = seasonAvg;
+        if (est == null) {
+          const before = weeks.filter((x) => x < w && pts[x] != null).map((x) => pts[x]);
+          est = before.length ? before.reduce((t, v) => t + v, 0) / before.length : null;
+        }
+        if (est == null) {
+          const list = (positionWeek.get(`${playerById.get(id)?.position}:${w}`) ?? []).sort((a, b) => a - b);
+          est = list.length ? list[Math.floor(list.length / 2)] : 0;
+        }
+        proj[w] = round2(Math.max(est, 0.1));
+        (estimated.get(id) ?? estimated.set(id, {}).get(id))[w] = true;
+      }
+      projected.set(id, proj);
+    }
+  }
+
   const championPlayers = new Set(inSeason.filter((r) => r.team_id === champion.team_id).map((r) => r.player_id));
   const draftRound = new Map(draft.filter((d) => d.season === season).map((d) => [d.player_id, d.round]));
 

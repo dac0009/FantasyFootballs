@@ -152,6 +152,17 @@ test('complete weekly data: fills roster gaps, marks byes out (never "no data"),
   assert.equal(waiverOptions(b, 'x', 2).find((p) => p.position === 'WR').player_id, 13);
 });
 
+test('weeks ESPN kept points but not a projection get a pre-kickoff estimate, flagged', () => {
+  // WR13: off every roster in week 2, ESPN card has his 6 points but no projection.
+  const playerWeeks = { season: 2030, weeks: [1, 2], players: { 13: [[11, 6], [null, null], ['NE', 'NE']] } };
+  const b = buildSeason({ season: 2030, regularSeasonWeeks: 2, rows, players, teamWeeks, championOwnerId: 'champ', playerWeeks });
+  const wr = all(b).get(13);
+  // His week-1 roster projection (10) is the only projection we have: that's the estimate.
+  assert.deepEqual(outlook(wr, 2), { projected: 10, status: 'active', estimated: true });
+  assert.deepEqual(outlook(wr, 1), { projected: 10, status: 'active', estimated: false });
+  assert.equal(playWeek(b, 2, { 'WR-1': wr }).you, 6);
+});
+
 test('a locked week scores real points against the champion and the league', () => {
   const b = board();
   const get = (id) => all(b).get(id);

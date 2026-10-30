@@ -5,14 +5,16 @@ import type { Broadcast } from "../lib/broadcast.mjs";
 import type { WeekResult } from "../lib/gauntletEngine.mjs";
 import { buzz, useCountUp } from "./FourteenVisuals";
 import { PlayerFace } from "./PlayerFace";
-import { shortName } from "./FourteenGameday";
+import { PlayFieldView, playDuration } from "./PlayField";
 
 // Kickoff, broadcast style: the real NFL plays that scored for your starters
-// and the champion's, in game-clock order across every game, with a scorebug,
-// a field where the ball swings toward whoever's ahead, touchdown calls, a
-// line score by quarter and a play-by-play feed. Tap "Skip to final" anytime.
+// and the champion's, in game-clock order across every game. The week's
+// biggest plays are replayed on the field from their real spot; the rest
+// scroll through the play-by-play. A lead meter shows who's ahead.
 
 const QUARTERS = ["Q1", "Q2", "Q3", "Q4", "OT"];
+/** Base pace: a typical week plays out in about 15 seconds. */
+const TEMPO = 1.35;
 
 export function BroadcastView({ week, result, broadcast, champLabel, onNext, onDone, last, nextLabel, reduced }: {
   week: number;
@@ -28,15 +30,19 @@ export function BroadcastView({ week, result, broadcast, champLabel, onNext, onD
   const events = broadcast.events;
   const [shown, setShown] = useState(reduced ? events.length : 0);
   const [speed, setSpeed] = useState(1);
-  const [flash, setFlash] = useState<{ text: string; side: "you" | "champ"; key: number } | null>(null);
+  const [landedKey, setLandedKey] = useState<string | null>(null);
   const finished = shown >= events.length;
-  const current = shown > 0 ? events[shown - 1] : null;
+  // A replayed play only counts on the scoreboard and in the feed once the
+  // ball lands, so the score never gives the play away.
+  const latest = shown > 0 ? events[shown - 1] : null;
+  const pending = !finished && latest?.highlight && latest.field && landedKey !== `${latest.side}:${latest.play}` && !reduced;
+  const counted = pending ? shown - 1 : shown;
+  const current = counted > 0 ? events[counted - 1] : null;
   const score = finished ? broadcast.final : current?.score ?? { you: 0, champ: 0 };
   const you = useCountUp(score.you, reduced ? 0 : 380, reduced);
   const champ = useCountUp(score.champ, reduced ? 0 : 380, reduced);
   const doneOnce = useRef(false);
 
-  const base = useMemo(() => Math.max(110, Math.min(420, 9000 / Math.max(events.length, 1))), [events.length]);
 
   useEffect(() => {
     if (finished) {
@@ -47,31 +53,26 @@ export function BroadcastView({ week, result, broadcast, champLabel, onNext, onD
       }
       return;
     }
-    const next = events[shown];
+    // Highlights get the time their replay takes; folded lines tick past.
     const prev = events[shown - 1];
-    const pause = prev?.touchdown ? 900 : prev?.big ? 380 : 0;
-    const quarterBreak = prev && next && next.qtr !== prev.qtr ? 450 : 0;
+    const wait = shown === 0 ? 500
+      : prev?.highlight && prev.field ? playDuration(prev.field) + (prev.touchdown ? 900 : 550)
+        : prev && prev.qtr >= 6 ? 220 : 80;
+    const next = events[shown];
+    const quarterBreak = prev && next && next.qtr !== prev.qtr && next.qtr <= 5 ? 350 : 0;
     const id = window.setTimeout(() => {
       setShown((n) => n + 1);
-      if (next?.touchdown && !reduced) {
-        setFlash({ text: next.players.length ? shortName(next.players[next.players.length - 1].name) : "", side: next.side, key: shown });
-        buzz(next.side === "you" ? [15, 30, 15] : 25);
-      }
-    }, (shown === 0 ? 500 : base + pause + quarterBreak) / speed);
+      if (next?.touchdown && !reduced) buzz(next.side === "you" ? [15, 30, 15] : 25);
+    }, (wait + quarterBreak) / (speed * TEMPO));
     return () => window.clearTimeout(id);
-  }, [shown, finished, events, base, speed, reduced, result.result, onDone]);
+  }, [shown, finished, events, speed, reduced, result.result, onDone]);
 
-  useEffect(() => {
-    if (!flash) return;
-    const id = window.setTimeout(() => setFlash(null), 1300 / speed);
-    return () => window.clearTimeout(id);
-  }, [flash, speed]);
-
-  // Ball position: 50 = midfield. Your lead pushes it toward the right end zone.
+  // Lead meter: fills from the middle toward whoever's ahead (full at 40 points).
   const diff = score.you - score.champ;
-  const ball = Math.max(6, Math.min(94, 50 + diff * 1.2));
-  const qNow = finished ? "Final" : current ? clockLabel(current.qtr, current.clock) : "Kickoff";
-  const feed = events.slice(0, shown).slice(-7).reverse();
+  const lead = Math.max(-1, Math.min(1, diff / 40));
+  const replay = [...events.slice(0, shown)].reverse().find((e) => e.highlight && e.field) ?? null;
+  const qNow = finished ? "Final" : latest ? clockLabel(latest.qtr, latest.clock) : "Kickoff";
+  const feed = events.slice(0, counted).slice(-7).reverse();
   const lineQ = (side: "you" | "champ") => broadcast.quarters[side];
   const reachedQ = (q: number) => finished || (current != null && current.qtr > q);
   const playedOT = events.some((e) => e.qtr === 5);
@@ -97,18 +98,18 @@ export function BroadcastView({ week, result, broadcast, champLabel, onNext, onD
         </div>
       </div>
 
-      <div className="bc-field" aria-hidden="true">
-        <span className="ez ez-champ">{champLabel.split(" ")[0].replace(/'s$/, "")}</span>
-        <span className="ez ez-you">You</span>
-        {[10, 20, 30, 40, 50, 60, 70, 80, 90].map((x) => <span key={x} className="bc-yard" style={{ left: `${x}%` }}><i>{x <= 50 ? x : 100 - x}</i></span>)}
-        <span className="bc-ball" style={{ left: `${ball}%` }} />
-        {flash ? (
-          <span key={flash.key} className={`bc-td bc-td-${flash.side}`}>
-            <b>Touchdown</b>
-            <span>{flash.text}</span>
-          </span>
-        ) : null}
+      <div className="bc-lead" aria-label={diff === 0 ? "Tied" : `${diff > 0 ? "You lead" : "Champ leads"} by ${fmt(Math.abs(diff), 1)}`}>
+        <span className="bc-lead-champ" style={{ width: `${lead < 0 ? -lead * 50 : 0}%` }} />
+        <span className="bc-lead-you" style={{ width: `${lead > 0 ? lead * 50 : 0}%` }} />
+        <i />
       </div>
+      <p className="bc-lead-text">{diff === 0 ? "Tied" : diff > 0 ? `You lead by ${fmt(diff, 1)}` : `Champ leads by ${fmt(-diff, 1)}`}</p>
+
+      {replay ? (
+        <PlayFieldView field={replay.field} game={replay.game} side={replay.side} playKey={`${replay.side}:${replay.play}`} speed={speed * TEMPO} reduced={reduced} onLanded={setLandedKey} />
+      ) : (
+        <div className="pf pf-wait"><div className="pf-head"><span>Every game</span><b>Kickoff</b></div><div className="pf-empty">Big plays replay here</div></div>
+      )}
 
       <table className="bc-line">
         <thead><tr><th />{QUARTERS.slice(0, playedOT ? 5 : 4).map((q) => <th key={q}>{q}</th>)}<th>Total</th></tr></thead>
@@ -171,21 +172,13 @@ export const broadcastCss = `
   .bc-clock { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 0 0.7rem; background: #1d272b; min-width: 5.6rem; }
   .bc-clock span { font: 700 0.86rem var(--font-body); font-variant-numeric: tabular-nums; }
   .bc-clock em { font: 800 0.62rem var(--font-body); font-style: normal; letter-spacing: 0.12em; color: #fff; background: #c0392b; padding: 1px 6px; border-radius: 2px; animation: now-pulse 1.2s infinite; }
-  .bc-field { position: relative; height: 74px; margin-top: 0.6rem; background: repeating-linear-gradient(90deg, #2f6b3a 0 10%, #2b6335 10% 20%); overflow: hidden; border-radius: 4px; }
-  .ez { position: absolute; top: 0; bottom: 0; width: 7%; display: grid; place-items: center; font: 800 0.55rem var(--font-body); letter-spacing: 0.08em;
-    text-transform: uppercase; writing-mode: vertical-rl; color: #fff; }
-  .ez-champ { left: 0; background: #8f7440; transform: rotate(180deg); } .ez-you { right: 0; background: #2f6b4f; }
-  .bc-yard { position: absolute; top: 0; bottom: 0; width: 2px; background: #f1efe855; }
-  .bc-yard i { position: absolute; bottom: 3px; left: 4px; font: 700 0.6rem var(--font-body); font-style: normal; color: #f1efe8aa; }
-  .bc-ball { position: absolute; top: 50%; width: 22px; height: 13px; margin: -6px 0 0 -11px; background: #7a4a24; border-radius: 50%;
-    box-shadow: 0 0 0 1.5px #fff, 0 3px 6px #0008; transition: left 0.6s cubic-bezier(.2,.8,.25,1); }
-  .bc-ball::after { content: ""; position: absolute; left: 6px; right: 6px; top: 5px; height: 2px; background: #fff; }
-  .bc-td { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-    animation: td-in 1.3s ease-out both; }
-  .bc-td b { font: 900 clamp(1.3rem, 7vw, 2rem) var(--font-body); letter-spacing: 0.12em; text-transform: uppercase; color: #fff; text-shadow: 0 2px 0 #000, 0 0 18px #0008; }
-  .bc-td span { font: 700 0.78rem var(--font-body); color: #fff; text-shadow: 0 1px 2px #000; }
-  .bc-td-you { background: #2f6b4fcc; } .bc-td-champ { background: #8f7440cc; }
-  @keyframes td-in { 0% { transform: scale(1.6); opacity: 0; } 15% { transform: scale(1); opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+  .bc-lead { position: relative; height: 8px; margin-top: 0.5rem; background: #ffffff1a; border-radius: 4px; overflow: hidden; }
+  .bc-lead span { position: absolute; top: 0; bottom: 0; transition: width 0.5s ease-out; }
+  .bc-lead-you { left: 50%; background: #6fc596; } .bc-lead-champ { right: 50%; background: #c5a76a; }
+  .bc-lead i { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 2px; margin-left: -1px; background: #eee9dd; }
+  .bc-lead-text { margin: 3px 0 0; font-size: 0.7rem; color: #c4bcab; text-align: center; font-variant-numeric: tabular-nums; }
+  .pf-wait .pf-empty { aspect-ratio: 120 / 53.3; display: grid; place-items: center; border-radius: 4px; font-size: 0.75rem; color: #c4bcab;
+    background: repeating-linear-gradient(90deg, #2f6b3a 0 8.33%, #2b6335 8.33% 16.66%); }
   .bc-line { width: 100%; margin-top: 0.6rem; border-collapse: collapse; font-size: 0.78rem; font-variant-numeric: tabular-nums; }
   .bc-line th { font-weight: 600; color: #c4bcab; font-size: 0.66rem; text-align: right; padding: 2px 4px; }
   .bc-line td { text-align: right; padding: 3px 4px; border-top: 1px solid #ffffff14; }
@@ -212,7 +205,7 @@ export const broadcastCss = `
   .bc.is-final.bc-W { box-shadow: 0 0 0 2px #6fc59655; }
   .kickoff-gold { background: #c5a76a !important; color: #141b1e !important; }
   @media (prefers-reduced-motion: reduce) {
-    .bc, .bc-play, .bc-td, .bc-clock em { animation: none; }
-    .bc-ball { transition: none; }
+    .bc, .bc-play, .bc-clock em { animation: none; }
+    .bc-lead span { transition: none; }
   }
 `;

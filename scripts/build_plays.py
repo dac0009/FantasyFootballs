@@ -8,7 +8,14 @@ ESPN player id:
 
     {"season": 2023,
      "games": {"<game>": "CIN@ARI", ...},
-     "weeks": {"5": {"<espn id>": [[qtr, seconds_left_in_qtr, game, text, points, play], ...]}}}
+     "weeks": {"5": {"<espn id>": [[qtr, seconds_left_in_qtr, game, text, points, play, field], ...]}}}
+
+``field`` lets the site draw the actual play: [offense, yards from the end
+zone it attacks before the snap, yards gained, kind, air yards, down, yards
+to go, touchdown 0/1, return yards]. Kinds: P pass, p incomplete, R run,
+S sack, I interception, F fumble lost, G/g field goal made/missed, X/x extra
+point good/missed, 2 two-point try, K kick or punt return, Y safety, B
+blocked kick. Folded "routine" lines have no field (null).
 
 Big plays (touchdowns, 20+ yard gains, turnovers, kicks, defensive plays)
 are listed one by one; a player's routine plays in a quarter are folded into
@@ -59,7 +66,7 @@ COLS = [
     "td_player_id", "interception", "fumble_lost", "fumbled_1_player_id", "fumble_recovery_1_team", "sack",
     "safety", "field_goal_result", "kick_distance", "extra_point_result", "two_point_conv_result",
     "two_point_attempt", "kicker_player_id", "passing_yards", "receiving_yards", "rushing_yards",
-    "blocked_player_id",
+    "blocked_player_id", "yardline_100", "down", "ydstogo", "air_yards", "return_yards", "touchdown",
 ]
 
 BIG_GAIN = 20
@@ -108,6 +115,49 @@ def fg_points(dist: float) -> float:
     return 5.0 if dist >= 50 else 4.0 if dist >= 40 else 3.0
 
 
+def play_field(r) -> list | None:
+    """What the field view needs to replay this snap, or None if it can't."""
+    if not has(r.posteam) or r.yardline_100 != r.yardline_100:
+        return None
+    pt = r.play_type
+    if num(r.two_point_attempt) == 1:
+        kind = "2"
+    elif num(r.safety) == 1:
+        kind = "Y"
+    elif pt == "field_goal":
+        kind = "B" if has(r.blocked_player_id) else "G" if r.field_goal_result == "made" else "g"
+    elif pt == "extra_point":
+        kind = "X" if r.extra_point_result == "good" else "x"
+    elif pt in ("kickoff", "punt"):
+        if num(r.return_touchdown) != 1 and not has(r.blocked_player_id):
+            return None
+        kind = "B" if has(r.blocked_player_id) else "K"
+    elif num(r.interception) == 1:
+        kind = "I"
+    elif num(r.fumble_lost) == 1:
+        kind = "F"
+    elif num(r.sack) == 1:
+        kind = "S"
+    elif pt == "pass":
+        kind = "P" if num(r.complete_pass) == 1 else "p"
+    elif pt in ("run", "qb_kneel", "qb_spike"):
+        kind = "R"
+    else:
+        return None
+    air = r.air_yards if r.air_yards == r.air_yards else None
+    return [
+        r.posteam,
+        int(num(r.yardline_100)),
+        int(num(r.yards_gained)),
+        kind,
+        None if air is None else int(air),
+        int(num(r.down)) or None,
+        int(num(r.ydstogo)) or None,
+        1 if num(r.touchdown) == 1 else 0,
+        int(num(r.return_yards)),
+    ]
+
+
 def build_season(season: int, gsis_to_espn: dict, names: dict, wanted: set[int]) -> dict[int, dict]:
     df = pd.read_csv(fetch(PBP.format(season=season), f"pbp_{season}.csv.gz"), usecols=COLS, low_memory=False)
     df = df[df.season_type == "REG"]
@@ -117,11 +167,13 @@ def build_season(season: int, gsis_to_espn: dict, names: dict, wanted: set[int])
     # player-week-quarter routine totals: key -> [pts, catches, rec yds, carries, rush yds, pass yds, last clock]
     routine: dict[tuple, list] = collections.defaultdict(lambda: [0.0, 0, 0.0, 0, 0.0, 0.0, 900])
 
+    field: list = [None]
+
     def entry(week, espn_id, qtr, clock, game, text, pts, play):
         if espn_id not in wanted:
             return
         w = weeks.setdefault(week, {"games": {}, "players": collections.defaultdict(list)})
-        w["players"][espn_id].append([qtr, clock, game, text, round(pts, 2), play])
+        w["players"][espn_id].append([qtr, clock, game, text, round(pts, 2), play, field[0]])
 
     for r in df.itertuples(index=False):
         week = int(r.week)
@@ -134,6 +186,7 @@ def build_season(season: int, gsis_to_espn: dict, names: dict, wanted: set[int])
         gid = r.game_id
         play = f"{gid}:{int(num(r.play_id))}"
         qtr = min(qtr, 5)
+        field[0] = play_field(r)
         pid = lambda g: gsis_to_espn.get(g) if has(g) else None  # noqa: E731
         nm = lambda g: names.get(g, "?") if has(g) else "?"  # noqa: E731
         two_pt = num(r.two_point_attempt) == 1
@@ -235,6 +288,7 @@ def build_season(season: int, gsis_to_espn: dict, names: dict, wanted: set[int])
             entry(week, dst, qtr, clock, gid, f"{NICK.get(r.td_team, r.td_team)} return touchdown", 6.0, play)
 
     # Fold routine plays into one line per player per quarter.
+    field[0] = None
     for (week, espn_id, qtr, gid, kind), t in routine.items():
         if espn_id is None or abs(t[0]) < 0.05:
             continue
