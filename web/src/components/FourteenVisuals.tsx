@@ -330,3 +330,30 @@ export const visualsCss = `
     .bar { transition: none; }
   }
 `;
+
+/** Animates a number toward `value` (ease-out). Jumps straight there with reduced motion. */
+export function useCountUp(value: number, ms: number, reduced: boolean) {
+  const [shown, setShown] = useState(value);
+  const current = useRef(value);
+  useEffect(() => {
+    if (reduced || ms <= 0) {
+      current.current = value;
+      setShown(value);
+      return;
+    }
+    const from = current.current;
+    const start = performance.now();
+    let frame = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / ms);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const v = from + (value - from) * eased;
+      current.current = v;
+      setShown(v);
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [value, ms, reduced]);
+  return shown;
+}

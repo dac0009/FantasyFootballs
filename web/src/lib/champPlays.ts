@@ -15,6 +15,8 @@ export interface ChampPlay {
   team_count: number;
   all_play_wins: number;
   all_play_losses: number;
+  optimal_points?: number | null;
+  claims?: number | null;
   created_at?: string;
 }
 
@@ -24,7 +26,7 @@ export type ChampPlaysResult =
   | { status: "unavailable"; message: string };
 
 const COLUMNS =
-  "game_key,owner_id,season,champion_owner_id,wins,losses,ties,points_for,champion_points,points_rank,team_count,all_play_wins,all_play_losses,created_at";
+  "game_key,owner_id,season,champion_owner_id,wins,losses,ties,points_for,champion_points,points_rank,team_count,all_play_wins,all_play_losses,optimal_points,claims,created_at";
 
 const missingTable = (code?: string) => code === "42P01" || code === "PGRST205";
 
@@ -41,7 +43,12 @@ export async function loadChampPlays(): Promise<ChampPlaysResult> {
   // numeric columns can arrive as strings; make them numbers once, here.
   const plays = (data ?? []).map((p) => {
     const row = p as unknown as Record<string, unknown>;
-    return { ...row, points_for: Number(row.points_for), champion_points: Number(row.champion_points) } as ChampPlay;
+    return {
+      ...row,
+      points_for: Number(row.points_for),
+      champion_points: Number(row.champion_points),
+      optimal_points: row.optimal_points == null ? null : Number(row.optimal_points),
+    } as ChampPlay;
   });
   return { status: "ready", plays };
 }
@@ -51,7 +58,7 @@ export type ChampSaveResult =
   | { ok: false; reason: "duplicate" | "closed" | "unavailable" | "not-configured" | "error"; message: string };
 
 export async function saveChampPlay(
-  play: ChampPlay & { user_id: string; picks: { slot: string; player_id: number }[] },
+  play: ChampPlay & { user_id: string; picks: { slot: string; player_id: number }[] | { draft: unknown; claims: unknown } },
 ): Promise<ChampSaveResult> {
   if (!editorClient) return { ok: false, reason: "not-configured", message: "Scores aren't saved on this build." };
   const { error } = await editorClient.from("champ_plays").insert(play);
@@ -66,9 +73,11 @@ export async function saveChampPlay(
 
 /** Per-owner totals across every saved daily. */
 export function summarizeChamp(plays: ChampPlay[]) {
-  const byOwner = new Map<string, { owner_id: string; plays: number; wins: number; losses: number; beatChamp: number; topScorer: number }>();
+  const byOwner = new Map<string, { owner_id: string; plays: number; wins: number; losses: number; beatChamp: number; topScorer: number; iqSum: number; iqCount: number }>();
   for (const p of plays) {
-    const row = byOwner.get(p.owner_id) ?? { owner_id: p.owner_id, plays: 0, wins: 0, losses: 0, beatChamp: 0, topScorer: 0 };
+    const row = byOwner.get(p.owner_id) ?? { owner_id: p.owner_id, plays: 0, wins: 0, losses: 0, beatChamp: 0, topScorer: 0, iqSum: 0, iqCount: 0 };
+    const iq = lineupIq(p);
+    if (iq != null) { row.iqSum += iq; row.iqCount += 1; }
     row.plays += 1;
     row.wins += p.wins;
     row.losses += p.losses;
@@ -77,6 +86,27 @@ export function summarizeChamp(plays: ChampPlay[]) {
     byOwner.set(p.owner_id, row);
   }
   return [...byOwner.values()]
-    .map((r) => ({ ...r, pct: r.wins + r.losses ? r.wins / (r.wins + r.losses) : 0 }))
+    .map((r) => ({ ...r, pct: r.wins + r.losses ? r.wins / (r.wins + r.losses) : 0, iq: r.iqCount ? Math.round(r.iqSum / r.iqCount) : null }))
     .sort((a, b) => b.beatChamp - a.beatChamp || b.pct - a.pct);
+}
+
+/** Lineup IQ: the share of the best possible points you actually scored. */
+export function lineupIq(p: Pick<ChampPlay, "points_for" | "optimal_points">) {
+  return p.optimal_points ? Math.round((p.points_for / p.optimal_points) * 100) : null;
+}
+
+/** Has this owner already kicked off today's daily run (on any device)? */
+export async function loadMyStart(gameKey: string, userId: string): Promise<boolean | null> {
+  if (!editorClient) return null;
+  const { data, error } = await editorClient.from("champ_starts").select("game_key").eq("game_key", gameKey).eq("user_id", userId).limit(1);
+  if (error) return null;
+  return (data ?? []).length > 0;
+}
+
+/** Record that today's daily run has kicked off. A duplicate means it already had. */
+export async function recordStart(gameKey: string, userId: string, ownerId: string): Promise<"ok" | "duplicate" | "error"> {
+  if (!editorClient) return "error";
+  const { error } = await editorClient.from("champ_starts").insert({ game_key: gameKey, user_id: userId, owner_id: ownerId });
+  if (!error) return "ok";
+  return error.code === "23505" ? "duplicate" : "error";
 }

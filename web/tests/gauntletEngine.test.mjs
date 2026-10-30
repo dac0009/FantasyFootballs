@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import {
-  buildSeason, dailySeason, dayNumber, nextUsableSpin, shareText, simulate, slotsFor, spinOptions, spinOrder,
+  autoplay, bestLineup, buildSeason, checkLineup, dailySeason, dayNumber, nextUsableSpin, optimalPoints, outlook,
+  playWeek, shareText, slotsFor, spinOptions, spinOrder, summarize, waiverOptions,
 } from '../src/lib/gauntletEngine.mjs';
 
 // A tiny three-team, two-week league. Team 1 is the champion.
@@ -58,13 +59,15 @@ test('player lists never leak results: ordered by position, then draft round', (
   assert.deepEqual(names, ['QB Ten', 'RB Eleven', 'RB Twelve', 'WR Thirteen', 'Def Sixteen']);
 });
 
-test('slots: a player fills his own position before FLEX, and only open slots count', () => {
+test('draft spots: his position first, then FLEX, then the bench', () => {
   const b = board();
+  assert.deepEqual(b.draftKeys.map((k) => k.key).slice(-3), ['BE-1', 'BE-2', 'BE-3']);
   const rb = b.pools.get(2).find((p) => p.player_id === 11);
-  assert.deepEqual(slotsFor(rb, b.keys, {}).map((k) => k.key), ['RB-1', 'RB-2', 'FLEX-1']);
+  assert.deepEqual(slotsFor(rb, b.draftKeys, {}).map((k) => k.key), ['RB-1', 'RB-2', 'FLEX-1', 'BE-1', 'BE-2', 'BE-3']);
   const picks = { 'RB-1': rb, 'RB-2': b.pools.get(2).find((p) => p.player_id === 12) };
   assert.deepEqual(slotsFor({ position: 'RB' }, b.keys, picks).map((k) => k.key), ['FLEX-1']);
   assert.deepEqual(slotsFor({ position: 'K' }, b.keys, { 'K-1': rb }).map((k) => k.key), []);
+  assert.deepEqual(slotsFor({ position: 'K' }, b.draftKeys, { 'K-1': rb }).map((k) => k.key), ['BE-1', 'BE-2', 'BE-3']);
 });
 
 test('spins skip teams with nobody usable, and drafted players disappear', () => {
@@ -80,52 +83,88 @@ test('spins skip teams with nobody usable, and drafted players disappear', () =>
   assert.equal(nextUsableSpin(b, [3], 0, b.keys, picks), -1);
 });
 
-test('the season plays week by week against the champion and the league', () => {
+const all = (b) => new Map([...b.pools.values()].flat().map((p) => [p.player_id, p]));
+
+test('outlook: projection before kickoff, out on a bye, no data off every roster', () => {
+  const edited = rows.map((r) => (r.week === 1 && r.player_id === 12 ? { ...r, points: 0, projected: 0 } : r));
+  const b = buildSeason({ season: 2030, regularSeasonWeeks: 2, rows: edited, players, teamWeeks, championOwnerId: 'champ' });
+  const get = (id) => all(b).get(id);
+  assert.deepEqual(outlook(get(11), 1), { projected: 10, status: 'active', estimated: false });
+  assert.deepEqual(outlook(get(12), 1), { projected: 0, status: 'out' });
+  assert.deepEqual(outlook(get(13), 2), { projected: null, status: 'nodata' });
+});
+
+test('a week with missing ESPN projections uses each player\'s season average, flagged', () => {
+  // Everyone projected 0 in week 1 while scoring: ESPN lost the week.
+  const edited = rows.map((r) => (r.week === 1 ? { ...r, projected: 0 } : { ...r, projected: r.player_id === 11 ? 14 : r.projected }));
+  const b = buildSeason({ season: 2030, regularSeasonWeeks: 2, rows: edited, players, teamWeeks, championOwnerId: 'champ' });
+  assert.deepEqual(b.estimatedWeeks, [1]);
+  const rb = all(b).get(11);
+  assert.deepEqual(outlook(rb, 1), { projected: 14, status: 'active', estimated: true });
+  assert.deepEqual(outlook(rb, 2), { projected: 14, status: 'active', estimated: false });
+});
+
+test('a locked week scores real points against the champion and the league', () => {
   const b = board();
-  const get = (id) => [...b.pools.values()].flat().find((p) => p.player_id === id);
-  const picks = {
+  const get = (id) => all(b).get(id);
+  const lineup = {
     'QB-1': get(10), 'RB-1': get(11), 'RB-2': get(12), 'WR-1': get(13), 'WR-2': get(14),
     'TE-1': get(15), 'FLEX-1': get(21), 'D/ST-1': get(16), 'K-1': get(17),
   };
-  const r = simulate(b, picks);
-  // Week 1: 18+12+9+11+10+7+5+6+8 = 86 vs champ 100.
-  // Week 2: WR13 has no score on file, so a fill-in plays: the median WR who
-  // played that week (10 and 5) = 7.5. 75 + 7.5 = 82.5 vs 70.
-  assert.deepEqual(r.weeks.map((w) => [w.you, w.champ, w.result, w.missing]), [[86, 100, 'L', 0], [82.5, 70, 'W', 1]]);
-  assert.deepEqual(r.weeks[1].fillIns, [{ player_id: 13, name: 'WR Thirteen', position: 'WR', points: 7.5 }]);
-  assert.equal(r.wins, 1); assert.equal(r.losses, 1);
-  assert.equal(r.points_for, 168.5);
-  assert.equal(r.fill_in_points, 7.5);
-  assert.equal(r.by_player.find((p) => p.player_id === 13).games, 1);
-  // League points for: champ 170, twos 185, threes 140, you 168.5 -> 3rd of 4.
-  assert.equal(r.rank, 3); assert.equal(r.team_count, 4);
-  // All-play: week 1 beats 80 only; week 2 beats 70 and 60.
-  assert.deepEqual(r.all_play, { wins: 3, losses: 3, ties: 0 });
-  assert.deepEqual(r.champion, { wins: 1, losses: 1, ties: 0, points_for: 170 });
-  assert.equal(r.mvp.name, 'QB Ten');
-  assert.equal(r.missing_weeks, 1);
-  assert.equal(r.best_week.week, 1);
-  const text = shareText(b, r, 'Oct 29');
-  assert.match(text, /^Fourteen and Fantasy Oct 29: vs the 2030 champ/);
-  assert.match(text, /1-1 vs Champs/);
-  assert.match(text, /🟥🟩/);
+  const w1 = playWeek(b, 1, lineup);
+  // 18+12+9+11+10+7+5+6+8 = 86 vs champ 100; beats only Threes (80).
+  assert.equal(w1.you, 86); assert.equal(w1.champ, 100); assert.equal(w1.result, 'L');
+  assert.deepEqual([w1.allWins, w1.allLosses], [1, 2]);
+  // Week 2: WR13 has no score on file and scores 0. 75 vs 70.
+  const w2 = playWeek(b, 2, lineup);
+  assert.equal(w2.you, 75); assert.equal(w2.result, 'W');
+  assert.equal(w2.rows.find((r) => r.key === 'WR-1').status, 'nodata');
+  const empty = playWeek(b, 1, { 'QB-1': get(10) });
+  assert.equal(empty.you, 18);
+  assert.equal(empty.rows.find((r) => r.key === 'K-1').status, 'empty');
 });
 
-test('byes and scratches get a fill-in; a player who played and scored 0 keeps his 0', () => {
-  const edited = rows.map((r) => {
-    if (r.week === 1 && r.player_id === 12) return { ...r, points: 0, projected: 0 }; // bye
-    if (r.week === 2 && r.player_id === 15) return { ...r, points: 0, projected: 10 }; // played, scored 0
-    return r;
-  });
-  const b = buildSeason({ season: 2030, regularSeasonWeeks: 2, rows: edited, players, teamWeeks, championOwnerId: 'champ' });
-  // RBs who played week 1, champion's included: 15, 12, 4 -> median 12.
-  assert.equal(b.fillIns['RB:1'], 12);
-  const get = (id) => [...b.pools.values()].flat().find((p) => p.player_id === id);
-  assert.equal(get(12).played[1], false);
-  assert.equal(get(15).played[2], true);
-  const r = simulate(b, { 'RB-1': get(12), 'TE-1': get(15) });
-  assert.deepEqual(r.weeks.map((w) => w.you), [12 + 7, 9 + 0]);
-  assert.deepEqual(r.weeks.map((w) => w.missing), [1, 0]);
+test('best lineup by projection or by real points, and lineup checks', () => {
+  const b = board();
+  const get = (id) => all(b).get(id);
+  const roster = [10, 11, 12, 13, 14, 15, 16, 17, 20, 21].map(get);
+  const byProj = bestLineup(b, roster, 1, 'projected');
+  assert.equal(Object.keys(byProj).length, 9);
+  assert.equal(checkLineup(b, roster, byProj), null);
+  // Real points: the 9 best legal starters are everyone but TE20 (3).
+  assert.ok(!Object.values(bestLineup(b, roster, 1, 'actual')).some((p) => p.player_id === 20));
+  assert.equal(optimalPoints(b, roster, 1), 86);
+  assert.match(checkLineup(b, roster, { 'QB-1': get(11) }), /can't play QB/);
+  assert.match(checkLineup(b, roster, { 'RB-1': get(11), 'FLEX-1': get(11) }), /two spots/);
+  assert.match(checkLineup(b, roster.slice(1), { 'QB-1': get(10) }), /isn't on your roster/);
+});
+
+test('waiver wire: benched players who will play, seeded, never the champ or your own', () => {
+  const b = board();
+  // Week 1 benches: champ's 22 (excluded). Week 2: TE20 started as FLEX, 22 is champ-tainted.
+  const benchRows = rows.map((r) => (r.player_id === 20 ? { ...r, lineup_slot: 'BE', started: false } : r));
+  const b2 = buildSeason({ season: 2030, regularSeasonWeeks: 2, rows: benchRows, players, teamWeeks, championOwnerId: 'champ' });
+  assert.deepEqual(b.waiverPool[1] ?? [], []);
+  assert.deepEqual(waiverOptions(b2, 'seed', 1).map((p) => p.player_id), [20]);
+  assert.deepEqual(waiverOptions(b2, 'seed', 1, [20]), []);
+  assert.deepEqual(waiverOptions(b2, 'seed', 1), waiverOptions(b2, 'seed', 1));
+});
+
+test('season summary: record, points rank, all-play and lineup IQ', () => {
+  const b = board();
+  const get = (id) => all(b).get(id);
+  const roster = [10, 11, 12, 13, 14, 15, 16, 17, 20, 21].map(get);
+  const played = autoplay(b, roster);
+  const r = summarize(b, played);
+  assert.equal(r.weeks.length, 2);
+  assert.equal(r.wins + r.losses + r.ties, 2);
+  assert.ok(r.lineup_iq > 0 && r.lineup_iq <= 100);
+  assert.equal(r.points_for, played[0].you + played[1].you);
+  assert.equal(r.team_count, 4);
+  assert.deepEqual(r.champion, { wins: 1, losses: 1, ties: 0, points_for: 170 });
+  const text = shareText(b, r, 'Oct 29');
+  assert.match(text, /^Fourteen and Fantasy Oct 29: vs the 2030 champ/);
+  assert.match(text, /Lineup IQ \d+%/);
 });
 
 test('spin order is seeded, covers every team before repeating, and never doubles up', () => {
@@ -166,21 +205,32 @@ test('every completed season in the league data is playable', { skip: !existsSyn
       championOwnerId: s.champion.owner_id,
     });
     assert.equal(b.keys.length, 9, `${s.season} lineup`);
+    assert.equal(b.draftKeys.length, 12, `${s.season} roster`);
     assert.ok(b.spinTeams.length >= 5, `${s.season} teams`);
-    // Draft greedily (best season total) through the seeded spins; it must fill every slot.
+    // Draft greedily (best season total) through the seeded spins; it must fill every spot.
     const order = spinOrder(`test-${s.season}`, b.spinTeams);
     const picks = {};
     let i = 0;
-    while (Object.keys(picks).length < b.keys.length) {
-      i = nextUsableSpin(b, order, i, b.keys, picks);
+    while (Object.keys(picks).length < b.draftKeys.length) {
+      i = nextUsableSpin(b, order, i, b.draftKeys, picks);
       assert.ok(i >= 0, `${s.season} ran out of spins`);
-      const [best] = [...spinOptions(b, order[i], b.keys, picks)].sort((x, y) => y.season_points - x.season_points);
-      picks[slotsFor(best, b.keys, picks)[0].key] = best;
+      const [best] = [...spinOptions(b, order[i], b.draftKeys, picks)].sort((x, y) => y.season_points - x.season_points);
+      picks[slotsFor(best, b.draftKeys, picks)[0].key] = best;
       i += 1;
     }
-    const r = simulate(b, picks);
+    const roster = Object.values(picks);
+    const played = autoplay(b, roster);
+    const r = summarize(b, played);
     assert.equal(r.weeks.length, b.weeks.length);
     assert.equal(r.wins + r.losses + r.ties, b.weeks.length);
     assert.equal(r.team_count, b.teams.size + 1);
+    for (const w of played) assert.ok(w.you <= w.optimal + 1e-9, `${s.season} week ${w.week} beat the optimal lineup`);
+    // Every week offers waiver players, and none of them is on the champion.
+    const champIds = new Set(b.championRoster.map((p) => p.player_id));
+    for (const w of b.weeks) {
+      const offers = waiverOptions(b, 'test', w, roster.map((p) => p.player_id));
+      assert.ok(offers.length > 0, `${s.season} week ${w} has no waiver players`);
+      for (const p of offers) assert.ok(!champIds.has(p.player_id));
+    }
   }
 });
