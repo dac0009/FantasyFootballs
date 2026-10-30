@@ -193,3 +193,20 @@ export function usePlayerWeeks<T = unknown>(season: number | null): Async<T | nu
   }, [season]);
   return result;
 }
+
+/** Real NFL plays for one past season (data/plays/<season>.json). Ready with null if missing. */
+export function usePlays<T = unknown>(season: number | null): Async<T | null> {
+  const [result, setResult] = useState<Async<T | null>>({ state: "loading" });
+  useEffect(() => {
+    if (season == null) return;
+    let live = true;
+    setResult({ state: "loading" });
+    load<T>(`plays/${season}.json`)
+      .then((data) => live && setResult({ state: "ready", data }))
+      .catch(() => live && setResult({ state: "ready", data: null }));
+    return () => {
+      live = false;
+    };
+  }, [season]);
+  return result;
+}

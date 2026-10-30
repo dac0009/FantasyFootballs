@@ -234,22 +234,29 @@ export function buildSeason({ season, regularSeasonWeeks, rows, players, teamWee
   const pools = new Map();
   for (const [teamId, ids] of rosterOf) pools.set(teamId, [...ids].map(describe).sort(order));
 
-  // The waiver wire each week. With complete data: anyone who was on a league
-  // roster at some point that season but on nobody's roster that week (a real
-  // free agent), expected to play. Without it: players sitting on a league
-  // bench that week. Never anyone from the champion's roster.
+  // The waiver wire each week, in three tiers so every position always has
+  // someone (a kicker on a bye must always be replaceable):
+  //   1. real free agents: on a league roster at some point that season but
+  //      on nobody's roster that week (needs the complete weekly data);
+  //   2. players sitting on a league bench that week;
+  //   3. last resort, anyone on a league roster that week.
+  // Only players expected to play, and never anyone from the champion.
   const rosteredInWeek = new Map();
-  for (const r of inSeason) (rosteredInWeek.get(r.week) ?? rosteredInWeek.set(r.week, new Set()).get(r.week)).add(r.player_id);
+  const benchedInWeek = new Map();
+  for (const r of inSeason) {
+    (rosteredInWeek.get(r.week) ?? rosteredInWeek.set(r.week, new Set()).get(r.week)).add(r.player_id);
+    if (!r.started && r.lineup_slot === 'BE') (benchedInWeek.get(r.week) ?? benchedInWeek.set(r.week, new Set()).get(r.week)).add(r.player_id);
+  }
   const everRostered = [...new Set(inSeason.map((r) => r.player_id))].sort((a, b) => a - b);
   const waiverPool = {};
   for (const w of weeks) {
     const onRoster = rosteredInWeek.get(w) ?? new Set();
-    const candidates = complete.size
-      ? everRostered.filter((id) => complete.has(id) && !onRoster.has(id))
-      : [...new Set(inSeason.filter((r) => r.week === w && !r.started && r.lineup_slot === 'BE').map((r) => r.player_id))];
-    waiverPool[w] = candidates
-      .filter((id) => !championPlayers.has(id) && (projected.get(id)?.[w] ?? 0) > 0)
-      .sort((a, b) => a - b);
+    const usable = (id) => !championPlayers.has(id) && (projected.get(id)?.[w] ?? 0) > 0;
+    const tier1 = complete.size ? everRostered.filter((id) => complete.has(id) && !onRoster.has(id) && usable(id)) : [];
+    const tier2 = [...(benchedInWeek.get(w) ?? [])].filter(usable).sort((a, b) => a - b);
+    const seen = new Set([...tier1, ...tier2]);
+    const tier3 = [...onRoster].filter((id) => usable(id) && !seen.has(id)).sort((a, b) => a - b);
+    waiverPool[w] = [tier1, tier2, tier3];
   }
 
   const championRoster = [...championPlayers].map(describe).sort((a, b) => b.season_points - a.season_points);
@@ -269,6 +276,10 @@ export function buildSeason({ season, regularSeasonWeeks, rows, players, teamWee
     teams,
     champion,
     championRoster,
+    // The champion's real starting lineup each week, for the game broadcast.
+    championLineups: Object.fromEntries(weeks.map((w) => [w, inSeason
+      .filter((r) => r.team_id === champion.team_id && r.week === w && r.started && r.lineup_slot !== 'BE' && r.lineup_slot !== 'IR')
+      .map((r) => ({ slot: r.lineup_slot, player: describe(r.player_id), points: r.points ?? 0 }))])),
     pools,
     spinTeams: [...pools.keys()].sort((a, b) => a - b),
     games,
@@ -376,9 +387,17 @@ export function checkLineup(board, roster, lineup) {
  */
 export function waiverOptions(board, seed, week, rosterIds = []) {
   const taken = new Set(rosterIds);
-  const ids = (board.waiverPool[week] ?? []).filter((id) => !taken.has(id));
-  const order = shuffle(mulberry32(hashSeed(`${seed}:waivers:${week}`)), ids).map(board.describe);
-  return WAIVER_POSITIONS.map((pos) => order.find((p) => p.position === pos)).filter(Boolean);
+  const tiers = (board.waiverPool[week] ?? []).map((tier, i) =>
+    shuffle(mulberry32(hashSeed(`${seed}:waivers:${week}:${i}`)), tier.filter((id) => !taken.has(id))).map(board.describe));
+  return WAIVER_POSITIONS
+    .map((pos) => {
+      for (const tier of tiers) {
+        const p = tier.find((x) => x.position === pos);
+        if (p) return p;
+      }
+      return null;
+    })
+    .filter(Boolean);
 }
 
 /** Why this roster breaks the backup rule, or null if it's fine. */

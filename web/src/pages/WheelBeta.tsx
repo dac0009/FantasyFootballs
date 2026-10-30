@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { EditableText, useEditorial } from "../components/Editorial";
 import { Band, ErrorState, Loading, OwnerLink } from "../components/primitives";
-import { useDraft, useOwnerIndex, usePlayerWeeks, usePlayers, useRoster, useSeasonIndex, useTeamWeeks } from "../lib/data";
+import { useDraft, useOwnerIndex, usePlayerWeeks, usePlayers, usePlays, useRoster, useSeasonIndex, useTeamWeeks } from "../lib/data";
 import { points as fmt } from "../lib/format";
 import { dailyKey, hashSeed, mulberry32 } from "../lib/wheelEngine.mjs";
 import {
@@ -16,6 +16,9 @@ import {
 import { Confetti, SeasonWheel, SlotReel, VerdictStamp, WeekBars, buzz, visualsCss } from "../components/FourteenVisuals";
 import { Gameday, Reveal, SeasonStrip, gamedayCss, label } from "../components/FourteenGameday";
 import { PlayerFace, TeamLogo, faceCss } from "../components/PlayerFace";
+import { BroadcastView, broadcastCss } from "../components/FourteenBroadcast";
+import { buildBroadcast } from "../lib/broadcast.mjs";
+import type { PlaysFile } from "../lib/broadcast.mjs";
 
 // "Fourteen and Fantasy": the daily beat-the-champ game. Lives at /fourteen
 // (old /wheel-beta links redirect there), alongside the original /wheel.
@@ -107,6 +110,7 @@ export default function WheelBeta() {
   const rosterData = useRoster(run?.season ?? null);
   const draft = useDraft(run?.season ?? null);
   const playerWeeks = usePlayerWeeks<PlayerWeeksFile>(run?.season ?? null);
+  const nflPlays = usePlays<PlaysFile>(run?.season ?? null);
   const today = dailyKey();
   const todayKey = `champ:${today}`;
 
@@ -148,15 +152,32 @@ export default function WheelBeta() {
   const weekIndex = played.length;
   const week = board?.weeks[weekIndex] ?? null;
   const lastReveal = stage === "reveal" ? played[played.length - 1] ?? null : null;
+  const broadcast = useMemo(() => {
+    if (!board || !lastReveal || nflPlays.state !== "ready" || !nflPlays.data) return null;
+    return buildBroadcast(
+      nflPlays.data,
+      lastReveal.week,
+      lastReveal.rows.map((r) => ({ player: r.player, points: r.points })),
+      board.championLineups[lastReveal.week] ?? [],
+      { you: lastReveal.you, champ: lastReveal.champ },
+    );
+  }, [board, lastReveal, nflPlays]);
   const result: SeasonResult | null = useMemo(
     () => (board && stage === "done" && played.length ? summarize(board, played) : null),
     [board, stage, played],
   );
-  const claimUsed = week != null && claims.some((c) => c.week === week);
-  const waivers = useMemo(
-    () => (board && run && week != null ? waiverOptions(board, run.key, week, roster.map((p) => p.player_id)) : []),
-    [board, run, week, roster],
-  );
+  // One claim per position per week. The wire is drawn from the roster you
+  // had when the week opened, so a claim doesn't conjure a new offer.
+  const claimedPositions = useMemo(() => {
+    if (week == null) return [] as string[];
+    return claims.filter((c) => c.week === week).map((c) => board?.describe(c.add).position ?? "");
+  }, [claims, week, board]);
+  const waivers = useMemo(() => {
+    if (!board || !run || week == null) return [];
+    const ids = new Set(roster.map((p) => p.player_id));
+    for (const c of claims.filter((x) => x.week === week)) { ids.delete(c.add); ids.add(c.drop); }
+    return waiverOptions(board, run.key, week, [...ids]);
+  }, [board, run, week, roster, claims]);
 
   // Resume a daily run from this browser once its season's data is loaded.
   useEffect(() => {
@@ -361,7 +382,7 @@ export default function WheelBeta() {
   }
 
   function claim(add: DraftablePlayer, drop: DraftablePlayer) {
-    if (!board || week == null || claimUsed) return;
+    if (!board || week == null || claimedPositions.includes(add.position)) return;
     const problem = claimProblem(roster, add, drop);
     if (problem) { setGameError(problem); return; }
     const slot = board.keys.find((k) => lineup[k.key]?.player_id === drop.player_id);
@@ -540,8 +561,7 @@ export default function WheelBeta() {
               roster={roster}
               lineup={lineup}
               waivers={waivers}
-              claimUsed={claimUsed}
-              claimsLeftText="1 claim this week"
+              claimedPositions={claimedPositions}
               champLabel={champLabel}
               error={gameError}
               onSwap={(next) => { setLineup(next); setGameError(null); }}
@@ -553,16 +573,31 @@ export default function WheelBeta() {
           ) : null}
 
           {stage === "reveal" && lastReveal ? (
-            <Reveal
-              key={lastReveal.week}
-              board={board}
-              result={lastReveal}
-              champLabel={champLabel}
-              onNext={nextWeek}
-              onDone={() => setRevealDone(true)}
-              last={played.length >= board.weeks.length}
-              reduced={reduced}
-            />
+            broadcast ? (
+              <BroadcastView
+                key={lastReveal.week}
+                week={lastReveal.week}
+                result={lastReveal}
+                broadcast={broadcast}
+                champLabel={champLabel}
+                onNext={nextWeek}
+                onDone={() => setRevealDone(true)}
+                last={played.length >= board.weeks.length}
+                nextLabel={`Week ${board.weeks[board.weeks.indexOf(lastReveal.week) + 1] ?? ""}`}
+                reduced={reduced}
+              />
+            ) : (
+              <Reveal
+                key={lastReveal.week}
+                board={board}
+                result={lastReveal}
+                champLabel={champLabel}
+                onNext={nextWeek}
+                onDone={() => setRevealDone(true)}
+                last={played.length >= board.weeks.length}
+                reduced={reduced}
+              />
+            )
           ) : null}
 
           {stage === "done" && result ? (
@@ -635,6 +670,7 @@ export default function WheelBeta() {
       <style>{visualsCss}</style>
       <style>{gamedayCss}</style>
       <style>{faceCss}</style>
+      <style>{broadcastCss}</style>
       <style>{`
         .champ-start { margin-top: 1.2rem; }
         .champ-start .kickoff:disabled { opacity: 0.45; cursor: not-allowed; }

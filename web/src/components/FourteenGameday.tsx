@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { points as fmt } from "../lib/format";
 import { claimProblem, fits, outlook } from "../lib/gauntletEngine.mjs";
-import type { Board, DraftablePlayer, Lineup, Status, WeekResult } from "../lib/gauntletEngine.mjs";
+import type { Board, DraftablePlayer, Lineup, WeekResult } from "../lib/gauntletEngine.mjs";
 import { buzz, useCountUp } from "./FourteenVisuals";
 import { PlayerFace } from "./PlayerFace";
 
@@ -16,17 +16,21 @@ export const label = (slot: string) => (slot.startsWith("BN-") ? "BN" : SLOT_LAB
 
 type Pick = { kind: "slot"; key: string } | { kind: "bench"; id: number } | null;
 
-const STATUS_TEXT: Record<Status, string> = { active: "", out: "OUT", nodata: "OUT", empty: "" };
-const STATUS_HELP: Record<Status, string> = {
-  active: "",
-  out: "Not playing this week (bye or injury). He scores 0 if you start him.",
-  nodata: "No game line for him this week. He scores 0 if you start him.",
-  empty: "",
+/** Where each starter lines up on the field (percent of width, height). Offense drives up the screen. */
+const FORMATION: Record<string, [number, number]> = {
+  "WR-1": [13, 24], "WR-2": [87, 24], "TE-1": [71, 30], "QB-1": [50, 40],
+  "RB-1": [36, 56], "RB-2": [64, 56], "FLEX-1": [17, 50], "FLEX": [17, 50],
+  "D/ST-1": [30, 87], "K-1": [70, 87],
 };
 
-function StatusChip({ status }: { status: Status }) {
-  if (status !== "out" && status !== "nodata") return null;
-  return <span className={`chip chip-${status}`} title={STATUS_HELP[status]}>{STATUS_TEXT[status]}</span>;
+/** "Christian McCaffrey" -> "C. McCaffrey"; defenses keep their team name. */
+export function shortName(name: string) {
+  if (name.endsWith("D/ST")) return name.replace(" D/ST", "");
+  const parts = name.split(" ");
+  if (parts.length < 2) return name;
+  const suffix = /^(Jr\.?|Sr\.?|II|III|IV|V)$/.test(parts[parts.length - 1]) ? parts.pop() : null;
+  const last = parts.slice(1).join(" ");
+  return `${parts[0][0]}. ${last}${suffix ? ` ${suffix}` : ""}`;
 }
 
 export function SeasonStrip({ board, played, current }: { board: Board; played: WeekResult[]; current: number }) {
@@ -45,7 +49,7 @@ export function SeasonStrip({ board, played, current }: { board: Board; played: 
 }
 
 export function Gameday({
-  board, week, weekIndex, roster, lineup, waivers, claimUsed, claimsLeftText, champLabel, error,
+  board, week, weekIndex, roster, lineup, waivers, claimedPositions, champLabel, error,
   onSwap, onAutoSet, onClaim, onKickoff, onSim,
 }: {
   board: Board;
@@ -54,8 +58,7 @@ export function Gameday({
   roster: DraftablePlayer[];
   lineup: Lineup;
   waivers: DraftablePlayer[];
-  claimUsed: boolean;
-  claimsLeftText: string;
+  claimedPositions: string[];
   champLabel: string;
   error: string | null;
   onSwap: (next: Lineup) => void;
@@ -163,29 +166,6 @@ export function Gameday({
     return fits(p.position, slot.slot);
   };
 
-  const row = ({ key, slotName, p, selected, target, onTap }: { key: string | number; slotName: string; p?: DraftablePlayer; selected: boolean; target: boolean; onTap: () => void }) => {
-    const look = p ? outlook(p, week) : null;
-    return (
-      <li key={key}>
-        <button
-          type="button"
-          className={`gd-row${selected ? " is-picked" : ""}${target ? " is-target" : ""}${claiming ? " is-drop" : ""}${look && look.status !== "active" ? " is-out" : ""}`}
-          onClick={onTap}
-          aria-pressed={selected}
-        >
-          <span className={`gd-slot slot-${slotName.replace("/", "")}`}>{label(slotName)}</span>
-          {p ? <PlayerFace player={p} /> : <span className="face face-empty" />}
-          <span className="gd-name">
-            {p ? p.name : <em>Empty</em>}
-            {p ? <small>{label(p.position)}{p.teams?.[week] ?? p.team ? ` · ${p.teams?.[week] ?? p.team}` : ""}</small> : null}
-          </span>
-          {look ? <StatusChip status={look.status} /> : <span />}
-          <span className="gd-proj">{look?.projected != null && look.status === "active" ? fmt(look.projected, 1) : "—"}</span>
-        </button>
-      </li>
-    );
-  };
-
   return (
     <section className="gameday" aria-label={`Week ${week}`}>
       <div className="gd-head">
@@ -207,33 +187,72 @@ export function Gameday({
             : "Tap a player, then tap where he should go. Real points stay hidden until kickoff."}
       </p>
 
-      <ul className="gd-list" aria-label="Starters">
-        {board.keys.map((k) => row({
-          key: k.key,
-          slotName: k.slot,
-          p: lineup[k.key],
-          selected: pick?.kind === "slot" && pick.key === k.key,
-          target: canTarget(k.slot, lineup[k.key]),
-          onTap: () => tapSlot(k.key),
-        }))}
-      </ul>
-      <p className="gd-sub">Bench</p>
-      <ul className="gd-list gd-bench" aria-label="Bench">
-        {bench.length ? bench.map((p) => row({
-          key: p.player_id,
-          slotName: "BE",
-          p,
-          selected: pick?.kind === "bench" && pick.id === p.player_id,
-          target: benchTarget(p),
-          onTap: () => tapBench(p.player_id),
-        })) : <li className="gd-empty">Nobody on the bench.</li>}
-      </ul>
+      <div className={`field${pick || claiming ? " is-choosing" : ""}`} role="group" aria-label="Your starters">
+        <div className="field-turf" aria-hidden="true">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => <span key={i} className="yard" style={{ top: `${i * 10}%` }} />)}
+          <span className="los" />
+          <span className="oline">{[0, 1, 2, 3, 4].map((i) => <i key={i} />)}</span>
+        </div>
+        <span className="field-label field-label-st" aria-hidden="true">Defense and kicker</span>
+        {board.keys.map((k) => {
+          const p = lineup[k.key];
+          const at = FORMATION[k.key] ?? FORMATION[k.slot] ?? [50, 50];
+          const look = p ? outlook(p, week) : null;
+          const selected = pick?.kind === "slot" && pick.key === k.key;
+          const target = canTarget(k.slot, p);
+          return (
+            <button
+              key={k.key}
+              type="button"
+              className={`token${selected ? " is-picked" : ""}${target ? " is-target" : ""}${claiming ? " is-drop" : ""}${look && look.status !== "active" ? " is-out" : ""}${!p ? " is-empty" : ""}`}
+              style={{ left: `${at[0]}%`, top: `${at[1]}%` }}
+              onClick={() => tapSlot(k.key)}
+              aria-pressed={selected}
+              aria-label={p ? `${label(k.slot)}: ${p.name}, ${look?.status === "active" ? `projected ${fmt(look.projected, 1)}` : "out this week"}` : `${label(k.slot)}: empty`}
+            >
+              <span className="token-face" key={p?.player_id ?? "empty"}>
+                {p ? <PlayerFace player={p} size={46} /> : <span className="face face-empty" />}
+                <span className={`token-slot slot-${k.slot.replace("/", "")}`}>{label(k.slot)}</span>
+                {look && look.status !== "active" ? <span className="token-out">OUT</span> : null}
+              </span>
+              <span className="token-name">{p ? shortName(p.name) : "Empty"}</span>
+              <span className="token-proj">{look?.status === "active" && look.projected != null ? fmt(look.projected, 1) : "—"}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="gd-sub">Sideline <span>your bench</span></p>
+      <div className="sideline" role="group" aria-label="Bench">
+        {bench.length ? bench.map((p) => {
+          const look = outlook(p, week);
+          const selected = pick?.kind === "bench" && pick.id === p.player_id;
+          return (
+            <button
+              key={p.player_id}
+              type="button"
+              className={`bench-card${selected ? " is-picked" : ""}${benchTarget(p) ? " is-target" : ""}${claiming ? " is-drop" : ""}${look.status !== "active" ? " is-out" : ""}`}
+              onClick={() => tapBench(p.player_id)}
+              aria-pressed={selected}
+              aria-label={`Bench ${label(p.position)}: ${p.name}, ${look.status === "active" ? `projected ${fmt(look.projected, 1)}` : "out this week"}`}
+            >
+              <span className="token-face">
+                <PlayerFace player={p} size={40} />
+                <span className={`token-slot slot-${p.position.replace("/", "")}`}>{label(p.position)}</span>
+                {look.status !== "active" ? <span className="token-out">OUT</span> : null}
+              </span>
+              <span className="token-name">{shortName(p.name)}</span>
+              <span className="token-proj">{look.status === "active" && look.projected != null ? fmt(look.projected, 1) : "—"}</span>
+            </button>
+          );
+        }) : <p className="gd-empty">Nobody on the bench.</p>}
+      </div>
 
       {nudge ? <p className="gd-nudge" role="alert" key={nudge}>{nudge}</p> : null}
       {error ? <p className="gd-nudge" role="alert">{error}</p> : null}
 
       <div className="gd-waivers">
-        <p className="gd-sub">Waiver wire <span>{claimUsed ? "claim used this week" : claimsLeftText}</span></p>
+        <p className="gd-sub">Waiver wire <span>one pickup per position each week</span></p>
         <ul>
           {waivers.map((p) => {
             const look = outlook(p, week);
@@ -242,7 +261,11 @@ export function Gameday({
                 <span className={`gd-slot slot-${p.position.replace("/", "")}`}>{label(p.position)}</span>
                 <PlayerFace player={p} />
                 <span className="gd-name">{p.name}<small>{p.teams?.[week] ?? p.team ? `${p.teams?.[week] ?? p.team} · ` : ""}{look.projected != null ? `proj ${fmt(look.projected, 1)}` : ""}</small></span>
-                <button type="button" className="pill" disabled={claimUsed || !!claiming} onClick={() => { setPick(null); setClaiming(p); }}>Claim</button>
+                {roster.some((r) => r.player_id === p.player_id) ? (
+                  <span className="gd-added">Added ✓</span>
+                ) : (
+                  <button type="button" className="pill" disabled={claimedPositions.includes(p.position) || !!claiming} onClick={() => { setPick(null); setClaiming(p); }}>Claim</button>
+                )}
               </li>
             );
           })}
@@ -367,6 +390,43 @@ export const gamedayCss = `
   .gd-projected span { font-size: 0.7rem; color: var(--ink-faint); }
   .gd-help { font-size: 0.82rem; color: var(--ink-soft); margin: 0.6rem 0 0.4rem; min-height: 1.2em; }
   .gd-list { list-style: none; padding: 0; margin: 0; border-top: 2px solid var(--ink); }
+  .field { position: relative; height: clamp(430px, 112vw, 540px); margin-top: 0.4rem; border-radius: 6px; overflow: hidden; background: #2f6b3a;
+    box-shadow: inset 0 0 0 3px #f1efe855; touch-action: manipulation; }
+  .field-turf { position: absolute; inset: 0; background: repeating-linear-gradient(180deg, #2f6b3a 0 10%, #2b6335 10% 20%); }
+  .field-turf .yard { position: absolute; left: 0; right: 0; height: 2px; background: #f1efe844; }
+  .field-turf .los { position: absolute; left: 0; right: 0; top: 33%; height: 3px; background: #6fb3ff99; }
+  .field-turf .oline { position: absolute; left: 50%; top: 33%; transform: translate(-50%, -50%); display: flex; gap: 5px; }
+  .field-turf .oline i { width: 14px; height: 14px; border-radius: 50%; background: #f1efe866; box-shadow: inset 0 0 0 2px #f1efe8aa; }
+  .field::after { content: ""; position: absolute; left: 0; right: 0; top: 71%; bottom: 0; background: #1d272bcc; border-top: 3px solid #c5a76a; }
+  .field-label { position: absolute; z-index: 2; left: 50%; transform: translateX(-50%); font: 700 0.62rem var(--font-body); letter-spacing: 0.1em;
+    text-transform: uppercase; color: #c5a76a; white-space: nowrap; }
+  .field-label-st { top: 72.5%; }
+  .token { position: absolute; z-index: 3; transform: translate(-50%, -50%); width: 84px; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    background: none; border: 0; padding: 4px 2px; color: #fff; font: inherit; cursor: pointer; border-radius: 10px; transition: transform 0.18s, background 0.18s; }
+  .token:focus-visible, .bench-card:focus-visible { outline: 3px solid #fac775; outline-offset: 2px; }
+  .token-face { position: relative; display: inline-block; animation: token-in 0.35s cubic-bezier(.3,1.5,.5,1); }
+  @keyframes token-in { from { transform: scale(0.4); opacity: 0; } }
+  .token .face { box-shadow: 0 0 0 3px #fff, 0 6px 12px #0006; background: #e7dfcf; }
+  .token-slot { position: absolute; left: 50%; bottom: -7px; transform: translateX(-50%); font: 800 0.56rem var(--font-body); letter-spacing: 0.04em;
+    color: #fff; padding: 1px 5px; border-radius: 3px; box-shadow: 0 0 0 1.5px #fff; white-space: nowrap; }
+  .token-out { position: absolute; right: -10px; top: -6px; font: 800 0.55rem var(--font-body); color: #fff; background: var(--neg); padding: 1px 4px; border-radius: 3px; }
+  .token-name { margin-top: 7px; font: 700 0.74rem var(--font-body); line-height: 1.1; text-align: center; text-shadow: 0 1px 2px #000a; max-width: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .token-proj { font: 600 0.72rem var(--font-body); font-variant-numeric: tabular-nums; color: #fff; background: #0006; padding: 0 6px; border-radius: 8px; }
+  .token.is-out .face > img, .bench-card.is-out .face > img { filter: grayscale(1); opacity: 0.6; }
+  .token.is-out .token-name { text-decoration: line-through; text-decoration-color: #ff8a7a; }
+  .token.is-picked { transform: translate(-50%, -50%) scale(1.12); background: #0005; }
+  .token.is-picked .face, .bench-card.is-picked .face { box-shadow: 0 0 0 3px #fac775, 0 8px 16px #0008; }
+  .field.is-choosing .token:not(.is-target):not(.is-picked) { opacity: 0.45; }
+  .token.is-target .face, .bench-card.is-target .face { box-shadow: 0 0 0 3px #fac775, 0 0 0 7px #fac77555; animation: target-pulse 1.1s ease-in-out infinite; }
+  .token.is-drop.is-target .face, .bench-card.is-drop.is-target .face { box-shadow: 0 0 0 3px #e06a5a, 0 0 0 7px #e06a5a55; }
+  @keyframes target-pulse { 50% { box-shadow: 0 0 0 3px #fac775, 0 0 0 11px #fac77522; } }
+  .token.is-empty .token-name { color: #fac775; }
+  .sideline { display: flex; gap: 8px; overflow-x: auto; padding: 6px 2px 10px; scroll-snap-type: x proximity; }
+  .bench-card { flex: none; width: 92px; scroll-snap-align: start; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px;
+    background: #1d272b; color: #eee9dd; border: 0; border-radius: 10px; font: inherit; cursor: pointer; transition: transform 0.15s; }
+  .bench-card .token-proj { background: #ffffff1a; }
+  .bench-card.is-picked { transform: translateY(-4px); }
+  .sideline:has(.is-target) .bench-card:not(.is-target):not(.is-picked) { opacity: 0.5; }
   .gd-row { display: grid; grid-template-columns: 2.7rem 36px 1fr auto 3.1rem; gap: 0.6rem; align-items: center; width: 100%; min-height: 2.8rem; padding: 0.3rem 0.25rem;
     background: none; border: 0; border-bottom: 1px solid var(--rule-soft); font: inherit; color: inherit; text-align: left; cursor: pointer;
     transition: background 0.15s, transform 0.15s; }
@@ -396,6 +456,7 @@ export const gamedayCss = `
   @keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
   .gd-waivers ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.4rem; }
   .gd-waivers li { display: grid; grid-template-columns: 2.7rem 36px 1fr auto; gap: 0.6rem; align-items: center; padding: 0.4rem 0.4rem; border: 1px dashed var(--rule); }
+  .gd-added { font: 700 0.78rem var(--font-body); color: var(--pos); padding: 0 0.4rem; }
   .gd-waivers li.is-claiming { border-style: solid; border-color: var(--ink); background: var(--paper-deep); }
   .gd-warn { margin: 0.9rem 0 0; padding: 0.5rem 0.6rem; background: #a8453a14; border-left: 3px solid var(--neg); font-size: 0.85rem; }
   .gd-actions { display: flex; gap: 0.6rem; align-items: center; justify-content: space-between; margin-top: 0.9rem; flex-wrap: wrap; }
@@ -433,6 +494,6 @@ export const gamedayCss = `
   .rv-skip { margin: 0.6rem 0 0; font-size: 0.72rem; color: #c4bcab; }
   .reveal.is-final.r-W { box-shadow: 0 0 0 2px #6fc59655, 0 10px 30px #2f6b4f44; }
   @media (prefers-reduced-motion: reduce) {
-    .strip li.s-now, .gameday, .reveal, .rv-stamp, .rv-rows li.on .rv-pts, .gd-nudge, .rv-mid em { animation: none; }
+    .strip li.s-now, .gameday, .reveal, .rv-stamp, .rv-rows li.on .rv-pts, .gd-nudge, .rv-mid em, .token-face, .token.is-target .face, .bench-card.is-target .face { animation: none; }
   }
 `;

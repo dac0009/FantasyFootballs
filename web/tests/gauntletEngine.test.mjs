@@ -145,12 +145,11 @@ test('complete weekly data: fills roster gaps, marks byes out (never "no data"),
   assert.equal(w2.you, 6);
   assert.ok(!w2.rows.some((r) => r.status === 'nodata'));
   // WR13 was off every league roster in week 2: he's a real free agent then (RB12 was on a bye).
-  assert.deepEqual(b.waiverPool[2], [13]);
+  assert.deepEqual(b.waiverPool[2][0], [13]);
   // Where the pipeline has no line but a roster row does, the roster row still counts.
   const merged = buildSeason({ season: 2030, regularSeasonWeeks: 2, rows, players, teamWeeks, championOwnerId: 'champ', playerWeeks });
   assert.equal(all(merged).get(12).weekly[2], 9);
-  assert.deepEqual(waiverOptions(b, 'x', 2).map((p) => p.player_id), [13]);
-  assert.deepEqual(waiverOptions(b, 'x', 2, [13]), []);
+  assert.equal(waiverOptions(b, 'x', 2).find((p) => p.position === 'WR').player_id, 13);
 });
 
 test('a locked week scores real points against the champion and the league', () => {
@@ -188,15 +187,22 @@ test('best lineup by projection or by real points, and lineup checks', () => {
   assert.match(checkLineup(b, roster.slice(1), { 'QB-1': get(10) }), /isn't on your roster/);
 });
 
-test('waiver wire: benched players who will play, seeded, never the champ or your own', () => {
-  const b = board();
-  // Without complete data the wire is league bench players. Week 1 benches: champ's 22 (excluded).
+test('waiver wire: free agents first, then league benches, then anyone, one per position, seeded', () => {
   const benchRows = rows.map((r) => (r.player_id === 20 ? { ...r, lineup_slot: 'BE', started: false } : r));
-  const b2 = buildSeason({ season: 2030, regularSeasonWeeks: 2, rows: benchRows, players, teamWeeks, championOwnerId: 'champ' });
-  assert.deepEqual(b.waiverPool[1] ?? [], []);
-  assert.deepEqual(waiverOptions(b2, 'seed', 1).map((p) => p.player_id), [20]);
-  assert.deepEqual(waiverOptions(b2, 'seed', 1, [20]), []);
-  assert.deepEqual(waiverOptions(b2, 'seed', 1), waiverOptions(b2, 'seed', 1));
+  const b = buildSeason({ season: 2030, regularSeasonWeeks: 2, rows: benchRows, players, teamWeeks, championOwnerId: 'champ' });
+  // Week 1 tiers without complete data: no free agents; TE20 on a bench; everyone else last resort.
+  // The champion's players (1, 2, 22) are never offered.
+  const [t1, t2, t3] = b.waiverPool[1];
+  assert.deepEqual(t1, []);
+  assert.deepEqual(t2, [20]);
+  assert.ok(![1, 2, 22].some((id) => t3.includes(id)));
+  const offers = waiverOptions(b, 'seed', 1);
+  // The TE comes from the bench tier; every other position from the last-resort tier.
+  assert.equal(offers.find((p) => p.position === 'TE').player_id, 20);
+  assert.deepEqual(offers.map((p) => p.position), ['QB', 'RB', 'WR', 'TE', 'D/ST', 'K']);
+  assert.deepEqual(waiverOptions(b, 'seed', 1), offers);
+  // Never someone already on your roster: with TE20 and TE15 taken there's no TE left to offer.
+  assert.ok(!waiverOptions(b, 'seed', 1, [20, 15]).some((p) => p.position === 'TE'));
 });
 
 test('season summary: record, points rank, all-play and lineup IQ', () => {
@@ -275,12 +281,19 @@ test('every completed season in the league data is playable', { skip: !existsSyn
     assert.equal(r.wins + r.losses + r.ties, b.weeks.length);
     assert.equal(r.team_count, b.teams.size + 1);
     for (const w of played) assert.ok(w.you <= w.optimal + 1e-9, `${s.season} week ${w.week} beat the optimal lineup`);
-    // Every week offers waiver players, and none of them is on the champion.
+    // Every week the wire offers someone who'll play at every position (a kicker
+    // on a bye is always replaceable), and none of them is on the champion.
     const champIds = new Set(b.championRoster.map((p) => p.player_id));
     for (const w of b.weeks) {
       const offers = waiverOptions(b, 'test', w, roster.map((p) => p.player_id));
-      assert.ok(offers.length > 0, `${s.season} week ${w} has no waiver players`);
-      for (const p of offers) assert.ok(!champIds.has(p.player_id));
+      assert.deepEqual(offers.map((p) => p.position), ['QB', 'RB', 'WR', 'TE', 'D/ST', 'K'], `${s.season} week ${w}`);
+      for (const p of offers) {
+        assert.ok(!champIds.has(p.player_id));
+        assert.equal(outlook(p, w).status, 'active', `${s.season} week ${w} offered ${p.name}, who isn't playing`);
+        // Swapping any same-position starter for him keeps the roster legal.
+        const same = roster.find((r) => r.position === p.position);
+        if (same) assert.equal(claimProblem(roster, p, same), null);
+      }
     }
   }
 });

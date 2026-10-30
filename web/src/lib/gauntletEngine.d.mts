@@ -42,10 +42,11 @@ export interface Board {
   teams: Map<number, ChampTeam>;
   champion: ChampTeam;
   championRoster: DraftablePlayer[];
+  championLineups: Record<number, { slot: string; player: DraftablePlayer; points: number }[]>;
   pools: Map<number, DraftablePlayer[]>;
   spinTeams: number[];
   games: TeamWeek[];
-  waiverPool: Record<number, number[]>;
+  waiverPool: Record<number, number[][]>;
   estimatedWeeks: number[];
   hasCompleteData: boolean;
   describe: (id: number) => DraftablePlayer;
