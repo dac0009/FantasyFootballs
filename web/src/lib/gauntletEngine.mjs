@@ -7,12 +7,24 @@
 // your nine players' real weekly points are played week by week against the
 // champion's real weekly scores, and against the whole league.
 //
+// Fill-ins: the champion had a bench and the waiver wire; you have nine
+// players and no bench. So any week one of your players didn't play (bye,
+// injury, or simply no score on file), a fill-in takes the spot and scores
+// what a typical player at that position scored that week in our league:
+// the median of every league-rostered player at the position who played.
+//
 // Plain JavaScript so web/tests can run it with node:test. Nothing here
 // touches the original Wheel, which keeps using wheelEngine.mjs.
 
 import { eligible, hashSeed, mulberry32, slotKeys, slotTemplate } from './wheelEngine.mjs';
 
 const round2 = (n) => Math.round(n * 100) / 100;
+function median(list) {
+  if (!list.length) return 0;
+  const s = [...list].sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+}
 const POSITION_ORDER = ['QB', 'RB', 'WR', 'TE', 'D/ST', 'K'];
 
 /** Days since 1970-01-01 for a YYYY-MM-DD key. Same answer in every time zone. */
@@ -93,13 +105,29 @@ export function buildSeason({ season, regularSeasonWeeks, rows, players, teamWee
   if (!champion) throw new Error(`No champion team found for ${season}.`);
 
   // Every player's real points each week, whichever league team had him.
+  // "Played" means he scored, or ESPN projected him to (a 0 / 0 week is a bye
+  // or a scratch). A projected player who scored 0 still played.
   const weekly = new Map();
+  const playedWeeks = new Map();
+  const byPositionWeek = new Map();
   for (const r of inSeason) {
     if (r.points == null) continue;
     const byWeek = weekly.get(r.player_id) ?? {};
     byWeek[r.week] = r.points;
     weekly.set(r.player_id, byWeek);
+    if (r.points !== 0 || (r.projected ?? 0) > 0) {
+      const played = playedWeeks.get(r.player_id) ?? new Set();
+      if (!played.has(r.week)) {
+        played.add(r.week);
+        const position = playerById.get(r.player_id)?.position ?? '?';
+        const key = `${position}:${r.week}`;
+        (byPositionWeek.get(key) ?? byPositionWeek.set(key, []).get(key)).push(r.points);
+      }
+      playedWeeks.set(r.player_id, played);
+    }
   }
+  const fillIns = {};
+  for (const [key, list] of byPositionWeek) fillIns[key] = round2(median(list));
 
   const championPlayers = new Set(inSeason.filter((r) => r.team_id === champion.team_id).map((r) => r.player_id));
   const draftRound = new Map(draft.filter((d) => d.season === season).map((d) => [d.player_id, d.round]));
@@ -113,6 +141,7 @@ export function buildSeason({ season, regularSeasonWeeks, rows, players, teamWee
       position: p.position ?? '?',
       draft_round: draftRound.get(id) ?? null,
       weekly: byWeek,
+      played: Object.fromEntries(weeks.map((w) => [w, playedWeeks.get(id)?.has(w) ?? false])),
       season_points: round2(weeks.reduce((t, w) => t + (byWeek[w] ?? 0), 0)),
       weeks_with_data: weeks.filter((w) => byWeek[w] != null).length,
     };
@@ -151,6 +180,7 @@ export function buildSeason({ season, regularSeasonWeeks, rows, players, teamWee
     pools,
     spinTeams: [...pools.keys()].sort((a, b) => a - b),
     games,
+    fillIns,
   };
 }
 
@@ -185,21 +215,28 @@ export function simulate(board, picks) {
   const lineup = Object.values(picks).filter(Boolean);
   const scoreOf = (teamId, week) => board.games.find((g) => g.team_id === teamId && g.week === week)?.score ?? null;
 
+  /** What a lineup spot scored in a week, and whether a fill-in played it. */
+  const spotScore = (p, week) => {
+    if (p.played?.[week]) return { points: p.weekly[week] ?? 0, fillIn: false };
+    return { points: board.fillIns?.[`${p.position}:${week}`] ?? 0, fillIn: true };
+  };
+
   const weekRows = board.weeks.map((week) => {
     let you = 0;
-    let missing = 0;
+    const fillIns = [];
     for (const p of lineup) {
-      const v = p.weekly[week];
-      if (v == null) missing += 1;
-      else you += v;
+      const spot = spotScore(p, week);
+      you += spot.points;
+      if (spot.fillIn) fillIns.push({ player_id: p.player_id, name: p.name, position: p.position, points: spot.points });
     }
     you = round2(you);
+    const missing = fillIns.length;
     const champ = scoreOf(board.champion.team_id, week);
     const others = board.games.filter((g) => g.week === week).map((g) => g.score);
     const allWins = others.filter((s) => you > s).length;
     const allLosses = others.filter((s) => you < s).length;
     const result = champ == null ? null : you > champ ? 'W' : you < champ ? 'L' : 'T';
-    return { week, you, champ, result, missing, allWins, allLosses, allTies: others.length - allWins - allLosses };
+    return { week, you, champ, result, missing, fillIns, allWins, allLosses, allTies: others.length - allWins - allLosses };
   });
 
   const count = (r) => weekRows.filter((w) => w.result === r).length;
@@ -221,7 +258,12 @@ export function simulate(board, picks) {
     points_for: round2(champRow.reduce((t, g) => t + g.score, 0)),
   };
 
-  const scored = lineup.map((p) => ({ ...p, total: round2(board.weeks.reduce((t, w) => t + (p.weekly[w] ?? 0), 0)) }));
+  const scored = lineup.map((p) => ({
+    ...p,
+    total: round2(board.weeks.reduce((t, w) => t + (p.played?.[w] ? p.weekly[w] ?? 0 : 0), 0)),
+    games: board.weeks.filter((w) => p.played?.[w]).length,
+    fill_in_points: round2(board.weeks.reduce((t, w) => t + (p.played?.[w] ? 0 : spotScore(p, w).points), 0)),
+  }));
   scored.sort((a, b) => b.total - a.total);
   const best = [...weekRows].sort((a, b) => b.you - a.you)[0] ?? null;
   const worst = [...weekRows].sort((a, b) => a.you - b.you)[0] ?? null;
@@ -250,6 +292,7 @@ export function simulate(board, picks) {
     dud: scored[scored.length - 1] ?? null,
     by_player: scored,
     missing_weeks: weekRows.reduce((t, w) => t + w.missing, 0),
+    fill_in_points: round2(weekRows.reduce((t, w) => t + w.fillIns.reduce((a, f) => a + f.points, 0), 0)),
   };
 }
 

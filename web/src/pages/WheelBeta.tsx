@@ -10,6 +10,7 @@ import {
 } from "../lib/gauntletEngine.mjs";
 import type { Board, DraftablePlayer, Picks, SeasonResult } from "../lib/gauntletEngine.mjs";
 import { loadChampPlays, saveChampPlay, summarizeChamp, type ChampPlaysResult } from "../lib/champPlays";
+import { Confetti, SeasonWheel, SlotReel, VerdictStamp, WeekBars, buzz, visualsCss } from "../components/FourteenVisuals";
 
 // "Fourteen and Fantasy": the daily beat-the-champ game. Lives at /fourteen
 // (old /wheel-beta links redirect there), alongside the original /wheel.
@@ -50,6 +51,8 @@ export default function WheelBeta() {
   const [landedSpin, setLandedSpin] = useState<number | null>(null);
   const saving = useRef(false);
   const spinRef = useRef<HTMLElement | null>(null);
+  const tickRefs = useRef<(HTMLLIElement | null)[]>([]);
+  const seasonRef = useRef<HTMLElement | null>(null);
 
   const roster = useRoster(run?.season ?? null);
   const draft = useDraft(run?.season ?? null);
@@ -105,12 +108,32 @@ export default function WheelBeta() {
     if (el.getBoundingClientRect().top < 0) el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
   }, [filled, stage, reduced]);
 
+  // Keep the newest week on screen while the season plays, then bring the
+  // verdict up when it's over. The record stays pinned under the site toolbar.
+  useEffect(() => {
+    const toolbar = document.querySelector(".editor-toolbar") as HTMLElement | null;
+    const offset = toolbar && getComputedStyle(toolbar).position === "sticky" ? toolbar.getBoundingClientRect().height : 0;
+    seasonRef.current?.style.setProperty("--pin-top", `${Math.round(offset)}px`);
+    if (stage === "playing" && shown > 0) {
+      const row = tickRefs.current[shown - 1];
+      if (row && row.getBoundingClientRect().bottom > window.innerHeight - 24) {
+        row.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "end" });
+      }
+    }
+    if (stage === "done") {
+      document.getElementById("verdict")?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+    }
+  }, [stage, shown, reduced]);
+
   // Reveal the season one week at a time.
   useEffect(() => {
     if (stage !== "playing" || !result) return;
     if (reduced || shown >= result.weeks.length) {
       if (shown < result.weeks.length) setShown(result.weeks.length);
-      const id = window.setTimeout(() => setStage("done"), reduced ? 0 : 500);
+      const id = window.setTimeout(() => {
+        setStage("done");
+        buzz(result.wins > result.losses ? [30, 50, 30, 50, 60] : 40);
+      }, reduced ? 0 : 500);
       return () => window.clearTimeout(id);
     }
     const id = window.setTimeout(() => setShown((n) => n + 1), shown === 0 ? 250 : 420);
@@ -204,6 +227,11 @@ export default function WheelBeta() {
     }
   }
 
+  const shownWeeks = result ? result.weeks.slice(0, shown) : [];
+  const shownWins = shownWeeks.filter((w) => w.result === "W").length;
+  const shownLosses = shownWeeks.filter((w) => w.result === "L").length;
+  const maxScore = result ? Math.max(1, ...result.weeks.map((w) => Math.max(w.you, w.champ ?? 0))) : 1;
+
   const champ = board?.champion;
   const champLabel = champ ? `${possessive(first(champ.owner_id))} ${champ.name}` : "";
   const team = board && currentTeam != null ? board.teams.get(currentTeam) : null;
@@ -240,12 +268,14 @@ export default function WheelBeta() {
           <p className="champ-fine">
             Everyone gets the same season and the same spins each day. One daily run per owner, and it counts the moment you press Play the season.
             You get {REROLLS} reroll per run. Practice runs are unlimited and private.
+            No bench: if one of your players sits a week (bye or injury), a fill-in scores what a typical player at his position scored in our league that week.
           </p>
         </div>
       ) : null}
 
       {stage !== "idle" && run ? (
-        <SeasonReel
+        <SeasonWheel
+          key={run.key}
           years={pastSeasons.map((s) => String(s.season))}
           value={board ? String(board.season) : null}
           caption={champ ? `Champion: ${champ.name}, ${ownerName(champ.owner_id)} (${seasonRow?.champion?.record ?? ""} in the regular season)` : "Loading that season…"}
@@ -284,7 +314,7 @@ export default function WheelBeta() {
           <section className="spin" aria-live="polite" ref={spinRef}>
             <div className="spin-head">
               <span className="spin-count">Pick {filled + 1} of {keys.length}</span>
-              <TeamReel key={`${spin}`} names={board.spinTeams.map((id) => board.teams.get(id)?.name ?? "")} value={team.name} reduced={reduced} onLanded={() => setLandedSpin(spin)} />
+              <SlotReel key={`${run?.key}:${spin}`} names={board.spinTeams.map((id) => board.teams.get(id)?.name ?? "")} value={team.name} reduced={reduced} onLanded={() => setLandedSpin(spin)} />
               <span className="spin-owner">{landedSpin === spin ? `${ownerName(team.owner_id)}, ${board.season}` : "\u00a0"}</span>
             </div>
             {landedSpin === spin ? (
@@ -323,28 +353,39 @@ export default function WheelBeta() {
       ) : null}
 
       {board && result && (stage === "playing" || stage === "done") ? (
-        <section className="season">
-          <div className="season-score">
+        <section className="season" ref={seasonRef}>
+          <div className={`season-score${stage === "playing" ? " is-pinned" : ""}`}>
             <span className="season-record">
-              {result.weeks.slice(0, shown).filter((w) => w.result === "W").length}–{result.weeks.slice(0, shown).filter((w) => w.result === "L").length}
+              <span key={`${shownWins}-${shownLosses}`} className={shown ? "record-bump" : ""}>{shownWins}–{shownLosses}</span>
             </span>
             <span className="season-vs">against {champLabel}</span>
           </div>
-          <div className="ticker-head" aria-hidden="true"><span /><span style={{ textAlign: "right" }}>You</span><span style={{ textAlign: "right" }}>{first(board.champion.owner_id)}</span><span /></div>
+          <div className="ticker-key" aria-hidden="true"><span className="key-you" />You <span className="key-champ" />{first(board.champion.owner_id)}</div>
           <ol className="ticker">
-            {result.weeks.map((w, i) => (
-              <li key={w.week} className={`tick ${i < shown ? "tick-on" : ""} ${w.result === "W" ? "tick-w" : w.result === "L" ? "tick-l" : ""}`}>
-                <span className="tick-week">Week {w.week}</span>
-                <span className="tick-you">{i < shown ? fmt(w.you) : ""}</span>
-                <span className="tick-champ">{i < shown ? fmt(w.champ) : ""}</span>
-                <span className="tick-stamp" aria-label={i < shown ? (w.result === "W" ? "win" : w.result === "L" ? "loss" : "tie") : undefined}>{i < shown ? w.result : ""}</span>
-              </li>
-            ))}
+            {result.weeks.map((w, i) => {
+              const on = i < shown;
+              return (
+                <li key={w.week} ref={(el) => { tickRefs.current[i] = el; }} className={`tick ${on ? "tick-on" : ""} ${w.result === "W" ? "tick-w" : w.result === "L" ? "tick-l" : ""}`}>
+                  <span className="tick-week">Wk {w.week}</span>
+                  <WeekBars you={w.you} champ={w.champ} max={maxScore} on={on} youText={fmt(w.you, 1)} champText={fmt(w.champ, 1)} />
+                  <span className="tick-stamp" aria-label={on ? (w.result === "W" ? "win" : w.result === "L" ? "loss" : "tie") : undefined}>{on ? w.result : ""}</span>
+                  {on && w.fillIns.length ? (
+                    <span className="tick-note">
+                      Fill-in for {w.fillIns.map((f) => `${lastName(f.name)} (${fmt(f.points, 1)})`).join(", ")}
+                    </span>
+                  ) : null}
+                </li>
+              );
+            })}
           </ol>
           {stage === "playing" ? (
             <button type="button" className="pill" onClick={() => setShown(result.weeks.length)}>Skip to the end</button>
           ) : (
-            <Summary board={board} result={result} champLabel={champLabel} ownerName={ownerName} first={first} />
+            <>
+              <VerdictStamp wins={result.wins} losses={result.losses} weeks={result.weeks.length} reduced={reduced} />
+              <Confetti fire={result.wins > result.losses} reduced={reduced} />
+              <Summary board={board} result={result} champLabel={champLabel} ownerName={ownerName} first={first} />
+            </>
           )}
           {stage === "done" ? (
             <>
@@ -409,13 +450,10 @@ export default function WheelBeta() {
         </>
       ) : null}
 
+      <style>{visualsCss}</style>
       <style>{`
         .champ-start { margin-top: 1.2rem; }
         .champ-fine { color: var(--color-low); font-size: 0.82rem; line-height: 1.5; max-width: 44rem; margin: 0.9rem 0 0; }
-        .season-reel { margin-top: 1.4rem; border-top: 3px solid var(--ink); padding-top: 0.6rem; display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
-        .season-year { font-family: var(--font-display); font-weight: 700; font-size: clamp(3rem, 14vw, 5.2rem); line-height: 0.9; font-variant-numeric: tabular-nums; color: var(--ink-faint); }
-        .season-reel.landed .season-year { color: var(--ink); }
-        .season-caption { font-size: 0.92rem; color: var(--ink-soft); max-width: 26rem; line-height: 1.35; }
         .lineup { list-style: none; padding: 0; margin: 1.2rem 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.35rem; }
         .lineup li { border: 1px solid var(--rule); padding: 0.35rem 0.5rem; min-height: 3rem; display: flex; flex-direction: column; gap: 0.1rem; background: transparent; }
         .lineup li.lineup-full { background: var(--paper-deep); border-color: var(--ink-faint); }
@@ -425,8 +463,6 @@ export default function WheelBeta() {
         .spin { margin-top: 1.4rem; border-top: 3px double var(--ink); padding-top: 0.8rem; }
         .spin-head { display: flex; flex-direction: column; gap: 0.15rem; }
         .spin-count { font: 600 0.74rem var(--font-body); color: var(--ink-faint); }
-        .spin-team { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.5rem, 6vw, 2.1rem); line-height: 1.05; overflow-wrap: anywhere; }
-        .spin-team.rolling { color: var(--ink-faint); }
         .spin-owner { color: var(--ink-soft); font-size: 0.9rem; }
         .options { list-style: none; padding: 0; margin: 0.8rem 0 0; border-top: 2px solid var(--ink); }
         .options li { border-bottom: 1px solid var(--rule-soft); }
@@ -441,22 +477,25 @@ export default function WheelBeta() {
         .champ-ready { margin-top: 1.4rem; }
         .lede-line { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; margin: 0; }
         .season { margin-top: 1.6rem; border-top: 3px double var(--ink); padding-top: 0.8rem; }
-        .season-score { display: flex; align-items: baseline; gap: 0.8rem; flex-wrap: wrap; }
+        .season-score { display: flex; align-items: baseline; gap: 0.8rem; flex-wrap: wrap; padding: 0.3rem 0 0.4rem; }
+        .season-score.is-pinned { position: sticky; top: var(--pin-top, 0px); z-index: 3; background: var(--paper); box-shadow: 0 6px 8px -8px #0004; }
         .season-record { font-family: var(--font-display); font-weight: 700; font-size: clamp(3rem, 13vw, 4.6rem); line-height: 1; font-variant-numeric: tabular-nums; }
         .season-vs { color: var(--ink-soft); font-size: 0.95rem; }
-        .ticker { list-style: none; padding: 0; margin: 0.2rem 0 1rem; border-top: 2px solid var(--ink); }
-        .tick { display: grid; grid-template-columns: 5rem 1fr 1fr 2rem; gap: 0.5rem; align-items: center; padding: 0.38rem 0.2rem; border-bottom: 1px solid var(--rule-soft);
+        .ticker, .ticker-key, .season-score { max-width: 44rem; }
+        .ticker { list-style: none; padding: 0; margin: 0.35rem 0 1rem; border-top: 2px solid var(--ink); }
+        .tick { display: grid; grid-template-columns: 3.2rem 1fr 1.9rem; gap: 0.2rem 0.6rem; align-items: center; padding: 0.45rem 0.2rem; border-bottom: 1px solid var(--rule-soft);
           font-variant-numeric: tabular-nums; font-size: 0.92rem; color: var(--ink-faint); }
+        .tick-note { grid-column: 2 / -1; font-size: 0.72rem; color: var(--ink-faint); line-height: 1.3; }
+        .ticker-key { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.8rem; font-size: 0.74rem; color: var(--ink-faint); }
+        .ticker-key span { display: inline-block; width: 0.9rem; height: 6px; margin-left: 0.4rem; }
+        .ticker-key .key-you { background: var(--ink); margin-left: 0; }
+        .ticker-key .key-champ { background: #c5a76a; }
         .tick-on { color: var(--ink); }
-        .tick-week { font-size: 0.8rem; color: var(--ink-faint); }
-        .tick-you { font-weight: 700; text-align: right; }
-        .tick-champ { text-align: right; color: var(--ink-soft); }
-        .tick-stamp { font: 700 0.8rem var(--font-body); text-align: center; }
+        .tick-stamp { font: 700 0.8rem var(--font-body); text-align: center; padding: 0.15rem 0; }
         .tick-on.tick-w .tick-stamp { color: var(--paper); background: var(--pos); }
         .tick-on.tick-l .tick-stamp { color: var(--paper); background: var(--neg); }
         .tick-on .tick-stamp { animation: stamp 0.28s ease-out; }
         @keyframes stamp { from { transform: scale(1.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .ticker-head { margin-top: 0.8rem; display: grid; grid-template-columns: 5rem 1fr 1fr 2rem; gap: 0.5rem; font-size: 0.72rem; color: var(--ink-faint); padding: 0 0.2rem; }
         .verdict { max-width: 44rem; }
         .verdict p { margin: 0.4rem 0; line-height: 1.5; }
         .verdict .lede { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; }
@@ -468,11 +507,10 @@ export default function WheelBeta() {
         .mini td { padding: 0.32rem 0.2rem; border-bottom: 1px solid var(--rule-soft); }
         .mini td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
         .mini tr.you td { font-weight: 700; background: var(--paper-deep); }
+        .mini .games { display: block; font-size: 0.7rem; color: var(--ink-faint); }
         .mini-title { font-family: var(--font-display); font-size: 1.1rem; margin: 1.3rem 0 0.2rem; }
         @media (max-width: 640px) {
           .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-          .tick { grid-template-columns: 3.6rem 1fr 1fr 1.8rem; }
-          .ticker-head { grid-template-columns: 3.6rem 1fr 1fr 1.8rem; }
         }
         @media (prefers-reduced-motion: reduce) { .tick-on .tick-stamp { animation: none; } }
       `}</style>
@@ -480,61 +518,10 @@ export default function WheelBeta() {
   );
 }
 
-function SeasonReel({ years, value, caption, active, reduced, onSettled }: {
-  years: string[]; value: string | null; caption: string; active: boolean; reduced: boolean; onSettled: () => void;
-}) {
-  const [shown, setShown] = useState(years[0] ?? "—");
-  const [landed, setLanded] = useState(!active);
-  const settle = useRef(onSettled);
-  settle.current = onSettled;
-
-  useEffect(() => {
-    if (!active) return;
-    const random = () => years[Math.floor(Math.random() * years.length)] ?? "—";
-    if (value == null) {
-      const id = window.setInterval(() => setShown(random()), 80);
-      return () => window.clearInterval(id);
-    }
-    if (reduced) { setShown(value); setLanded(true); settle.current(); return; }
-    let step = 0;
-    let timer = 0;
-    const tick = () => {
-      step += 1;
-      if (step >= 12) { setShown(value); setLanded(true); timer = window.setTimeout(() => settle.current(), 500); return; }
-      setShown(random());
-      timer = window.setTimeout(tick, 40 + 2 * step * step);
-    };
-    timer = window.setTimeout(tick, 40);
-    return () => window.clearTimeout(timer);
-  }, [active, value, reduced, years]);
-
-  return (
-    <div className={`season-reel${landed ? " landed" : ""}`} aria-live="polite">
-      <span className="season-year">{landed && value ? value : shown}</span>
-      <span className="season-caption">{landed ? caption : "Spinning for a season…"}</span>
-    </div>
-  );
-}
-
-function TeamReel({ names, value, reduced, onLanded }: { names: string[]; value: string; reduced: boolean; onLanded: () => void }) {
-  const [shown, setShown] = useState(reduced ? value : names[0] ?? value);
-  const [rolling, setRolling] = useState(!reduced);
-  const landed = useRef(onLanded);
-  landed.current = onLanded;
-  useEffect(() => {
-    if (reduced) { landed.current(); return; }
-    let step = 0;
-    let timer = 0;
-    const tick = () => {
-      step += 1;
-      if (step >= 9) { setShown(value); setRolling(false); landed.current(); return; }
-      setShown(names[Math.floor(Math.random() * names.length)] ?? value);
-      timer = window.setTimeout(tick, 35 + 4 * step * step);
-    };
-    timer = window.setTimeout(tick, 35);
-    return () => window.clearTimeout(timer);
-  }, [names, value, reduced]);
-  return <span className={`spin-team${rolling ? " rolling" : ""}`}>{shown}</span>;
+function lastName(name: string) {
+  if (name.endsWith("D/ST")) return name;
+  const parts = name.split(" ").filter((p) => !/^(Jr\.?|Sr\.?|II|III|IV)$/.test(p));
+  return parts[parts.length - 1] ?? name;
 }
 
 function ordinal(n: number) {
@@ -578,7 +565,7 @@ function Summary({ board, result, champLabel, ownerName, first }: {
         <tbody>
           {result.by_player.map((p, i) => (
             <tr key={p.player_id}>
-              <td>{p.name}{i === 0 ? " (MVP)" : ""}</td>
+              <td>{p.name}{i === 0 ? " (MVP)" : ""}<span className="games">{p.games} {p.games === 1 ? "game" : "games"}</span></td>
               <td>{p.position}</td>
               <td>{fmt(p.total, 1)}</td>
             </tr>
@@ -604,7 +591,8 @@ function Summary({ board, result, champLabel, ownerName, first }: {
 
       {result.missing_weeks ? (
         <p className="champ-fine">
-          {result.missing_weeks} player-{result.missing_weeks === 1 ? "week" : "weeks"} had no score on file (the player wasn't on a league roster that week) and counted as zero.
+          Your guys sat {result.missing_weeks} {result.missing_weeks === 1 ? "week" : "weeks"} between them (byes, injuries, or no score on file).
+          Fill-ins covered those weeks for {fmt(result.fill_in_points, 1)} points, scoring what a typical player at that position scored in our league that week.
         </p>
       ) : null}
     </div>

@@ -12,6 +12,7 @@ export interface DraftablePlayer {
   position: string;
   draft_round: number | null;
   weekly: Record<number, number>;
+  played: Record<number, boolean>;
   season_points: number;
   weeks_with_data: number;
 }
@@ -27,6 +28,13 @@ export interface Board {
   pools: Map<number, DraftablePlayer[]>;
   spinTeams: number[];
   games: TeamWeek[];
+  fillIns: Record<string, number>;
+}
+export interface FillIn {
+  player_id: number;
+  name: string;
+  position: string;
+  points: number;
 }
 export interface WeekResult {
   week: number;
@@ -34,6 +42,7 @@ export interface WeekResult {
   champ: number | null;
   result: 'W' | 'L' | 'T' | null;
   missing: number;
+  fillIns: FillIn[];
   allWins: number;
   allLosses: number;
   allTies: number;
@@ -45,6 +54,7 @@ export interface TableRow {
   points_for: number;
   you: boolean;
 }
+export type ScoredPlayer = DraftablePlayer & { total: number; games: number; fill_in_points: number };
 export interface SeasonResult {
   weeks: WeekResult[];
   wins: number;
@@ -60,10 +70,11 @@ export interface SeasonResult {
   champion: { wins: number; losses: number; ties: number; points_for: number };
   best_week: WeekResult | null;
   worst_week: WeekResult | null;
-  mvp: (DraftablePlayer & { total: number }) | null;
-  dud: (DraftablePlayer & { total: number }) | null;
-  by_player: (DraftablePlayer & { total: number })[];
+  mvp: ScoredPlayer | null;
+  dud: ScoredPlayer | null;
+  by_player: ScoredPlayer[];
   missing_weeks: number;
+  fill_in_points: number;
 }
 
 export function dayNumber(dateKey: string): number;

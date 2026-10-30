@@ -88,11 +88,16 @@ test('the season plays week by week against the champion and the league', () => 
     'TE-1': get(15), 'FLEX-1': get(21), 'D/ST-1': get(16), 'K-1': get(17),
   };
   const r = simulate(b, picks);
-  // Week 1: 18+12+9+11+10+7+5+6+8 = 86 vs champ 100. Week 2: same minus WR13 (no data) = 75 vs 70.
-  assert.deepEqual(r.weeks.map((w) => [w.you, w.champ, w.result, w.missing]), [[86, 100, 'L', 0], [75, 70, 'W', 1]]);
+  // Week 1: 18+12+9+11+10+7+5+6+8 = 86 vs champ 100.
+  // Week 2: WR13 has no score on file, so a fill-in plays: the median WR who
+  // played that week (10 and 5) = 7.5. 75 + 7.5 = 82.5 vs 70.
+  assert.deepEqual(r.weeks.map((w) => [w.you, w.champ, w.result, w.missing]), [[86, 100, 'L', 0], [82.5, 70, 'W', 1]]);
+  assert.deepEqual(r.weeks[1].fillIns, [{ player_id: 13, name: 'WR Thirteen', position: 'WR', points: 7.5 }]);
   assert.equal(r.wins, 1); assert.equal(r.losses, 1);
-  assert.equal(r.points_for, 161);
-  // League points for: champ 170, twos 185, threes 140, you 161 -> 3rd of 4.
+  assert.equal(r.points_for, 168.5);
+  assert.equal(r.fill_in_points, 7.5);
+  assert.equal(r.by_player.find((p) => p.player_id === 13).games, 1);
+  // League points for: champ 170, twos 185, threes 140, you 168.5 -> 3rd of 4.
   assert.equal(r.rank, 3); assert.equal(r.team_count, 4);
   // All-play: week 1 beats 80 only; week 2 beats 70 and 60.
   assert.deepEqual(r.all_play, { wins: 3, losses: 3, ties: 0 });
@@ -104,6 +109,23 @@ test('the season plays week by week against the champion and the league', () => 
   assert.match(text, /^Fourteen and Fantasy Oct 29: vs the 2030 champ/);
   assert.match(text, /1-1 vs Champs/);
   assert.match(text, /🟥🟩/);
+});
+
+test('byes and scratches get a fill-in; a player who played and scored 0 keeps his 0', () => {
+  const edited = rows.map((r) => {
+    if (r.week === 1 && r.player_id === 12) return { ...r, points: 0, projected: 0 }; // bye
+    if (r.week === 2 && r.player_id === 15) return { ...r, points: 0, projected: 10 }; // played, scored 0
+    return r;
+  });
+  const b = buildSeason({ season: 2030, regularSeasonWeeks: 2, rows: edited, players, teamWeeks, championOwnerId: 'champ' });
+  // RBs who played week 1, champion's included: 15, 12, 4 -> median 12.
+  assert.equal(b.fillIns['RB:1'], 12);
+  const get = (id) => [...b.pools.values()].flat().find((p) => p.player_id === id);
+  assert.equal(get(12).played[1], false);
+  assert.equal(get(15).played[2], true);
+  const r = simulate(b, { 'RB-1': get(12), 'TE-1': get(15) });
+  assert.deepEqual(r.weeks.map((w) => w.you), [12 + 7, 9 + 0]);
+  assert.deepEqual(r.weeks.map((w) => w.missing), [1, 0]);
 });
 
 test('spin order is seeded, covers every team before repeating, and never doubles up', () => {
