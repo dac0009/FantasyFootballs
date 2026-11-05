@@ -1,0 +1,91 @@
+name: Update sportsbook lock times
+
+# The weekly "Refresh ESPN data" run posts the FFBucks lines on Tuesday. Rosters
+# keep changing after that, and a matchup locks at the first kickoff among both
+# teams' current rosters, so this re-reads the current rosters every hour from
+# Wednesday through Sunday and moves lock times when a pickup changes them.
+#
+# It only ever changes data/sportsbook/lines.json. Scores, standings and every
+# other league-site page are left exactly as the Tuesday refresh wrote them.
+# Times are UTC: hourly at :17 on Wed-Sun UTC covers Tuesday evening through
+# Sunday evening in New York, including Thursday night and early London games.
+
+on:
+  schedule:
+    - cron: "17 * * * 0,3,4,5,6"
+  workflow_dispatch:
+
+# Shares the data refresh's queue, so the two never write data/ at once.
+concurrency:
+  group: refresh-espn-data
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  locks:
+    name: Recompute lock times from current rosters
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Update lock times
+        env:
+          SWID: ${{ secrets.SWID }}
+          ESPN_S2: ${{ secrets.ESPN_S2 }}
+        run: |
+          if [ -z "$SWID" ] || [ -z "$ESPN_S2" ]; then
+            echo "::error::SWID and/or ESPN_S2 repository secrets are missing. See docs/SECURITY.md."
+            exit 1
+          fi
+          python -m pipeline locks
+
+      - name: Guard against committing credentials
+        env:
+          ESPN_S2_FRAGMENT: ${{ secrets.ESPN_S2 }}
+        run: |
+          if grep -rEl '\{[0-9A-Fa-f]{8}-([0-9A-Fa-f]{4}-){3}[0-9A-Fa-f]{12}\}' data/ 2>/dev/null; then
+            echo "::error::An ESPN GUID appeared in the generated data. Refusing to commit."
+            exit 1
+          fi
+          if [ -n "$ESPN_S2_FRAGMENT" ] && grep -rl "$ESPN_S2_FRAGMENT" data/ 2>/dev/null; then
+            echo "::error::Credential fragment found in generated data."
+            exit 1
+          fi
+
+      - name: Commit changed lock times
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/sportsbook
+          if git diff --cached --quiet; then
+            echo "Lock times unchanged; nothing to commit."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "Update sportsbook lock times ($(TZ=America/New_York date '+%Y-%m-%d %H:%M %Z'))"
+            git pull --rebase --quiet
+            git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    name: Rebuild the site
+    needs: locks
+    if: needs.locks.outputs.changed == 'true'
+    uses: ./.github/workflows/deploy.yml
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
