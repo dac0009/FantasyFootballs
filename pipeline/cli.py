@@ -5,6 +5,7 @@
     python -m pipeline sample             # publish data/ from the sample league
     python -m pipeline probe              # report what ESPN exposes per season
     python -m pipeline inspect            # summarise the published data/
+    python -m pipeline locks              # midweek: update sportsbook lock times only
 """
 
 from __future__ import annotations
@@ -16,7 +17,7 @@ import os
 import sys
 from pathlib import Path
 
-from . import build
+from . import build, sportsbook
 from .config import DATA_DIR, Credentials, load_league_config, load_owner_overrides
 from .espn_client import EspnApiError, EspnClient
 from .sample import SampleClient
@@ -71,6 +72,25 @@ def cmd_refresh(args: argparse.Namespace) -> int:
     print(f"\nWrote {len(result['files'])} files to data/")
     for season, status in sorted((result.get("player_weeks") or {}).items()):
         print(f"player_weeks {season}: {status}")
+    if result.get("sportsbook"):
+        print(f"sportsbook: {result['sportsbook']}")
+    return 0
+
+
+def cmd_locks(args: argparse.Namespace) -> int:
+    """Recompute sportsbook lock times from current rosters. Touches nothing else."""
+    league = load_league_config()
+    credentials = Credentials.from_env()
+    if not credentials.present:
+        print("SWID and ESPN_S2 are required. See docs/SECURITY.md.", file=sys.stderr)
+        return 1
+    client = EspnClient(league.league_id, credentials, use_cache=False, write_cache=False)
+    data_dir = Path(args.data_dir) if args.data_dir else DATA_DIR
+    try:
+        print(f"sportsbook: {sportsbook.refresh_locks(client, data_dir)}")
+    except Exception as exc:  # noqa: BLE001 - report plainly and fail the run
+        print(f"\nLOCK UPDATE FAILED\n{exc}", file=sys.stderr)
+        return 1
     return 0
 
 
@@ -97,6 +117,14 @@ def cmd_sample(args: argparse.Namespace) -> int:
         print(f"\nPIPELINE FAILED\n{exc}", file=sys.stderr)
         return 1
     print(result["report"].render())
+    # Lines only: the sample league has no real NFL schedule, so no lock times.
+    status = sportsbook.refresh(
+        client,
+        assembled,
+        Path(args.data_dir) if args.data_dir else None,
+        schedule_loader=lambda season: [],
+    )
+    print(f"sportsbook: {status}")
     counts = assembled["counts"]
     print(
         f"\nSample league published: {counts['seasons']} seasons, "
@@ -294,6 +322,10 @@ def main(argv: list[str] | None = None) -> int:
     owners = sub.add_parser("owners", help="print the owner identity map")
     add_common(owners)
     owners.set_defaults(func=cmd_owners)
+
+    locks = sub.add_parser("locks", help="update sportsbook lock times from current rosters")
+    locks.add_argument("--data-dir", help="output directory (default: data/)")
+    locks.set_defaults(func=cmd_locks)
 
     args = parser.parse_args(argv)
     logging.basicConfig(

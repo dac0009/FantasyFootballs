@@ -230,6 +230,24 @@ nudge, not a schedule-aware forecast.
 
 ---
 
+## FFBucks sportsbook lines
+
+Play money only. Written to `data/sportsbook/lines.json` for the separate sportsbook app;
+nothing on this site reads it. Code and full notes: `pipeline/sportsbook.py`.
+
+- **Expected score** = the playoff simulation's shrunk season average, plus recent form:
+  `0.25 × (three-week form z-score) × pooled sd`. Form is the same measure Game of the Week uses.
+- **Spread** and **total** = difference and sum of the two expected scores, rounded to the
+  nearest half point, priced at -110 both ways.
+- **Moneyline** = win probability from the same normal model as the playoff odds, with a margin
+  added so both sides together match a -110/-110 market, rounded to the nearest 5.
+- Lines are posted after the Tuesday refresh and **frozen for the week**.
+- **Lock** = earliest NFL kickoff among both teams' current rosters, bench included, from the
+  nflverse schedule (CC-BY 4.0). `python -m pipeline locks` re-checks rosters hourly Wednesday to
+  Sunday (workflow *Update sportsbook lock times*). A lock that has passed never moves. If
+  rosters can't be read, the lock is the first kickoff of that NFL week.
+- No ESPN projections are used (see `docs/ESPN_API.md`).
+
 ## Metrics that were considered and rejected
 
 **Draft value / draft grades.** Would require season-long points per drafted player attributed

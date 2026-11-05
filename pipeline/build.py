@@ -20,6 +20,7 @@ from . import (
     player_weeks,
     playoffs,
     records,
+    sportsbook,
     trade_value,
     transform,
 )
@@ -626,4 +627,6 @@ def run(
     # never raises, so it can't break a refresh.
     if with_rosters:
         result["player_weeks"] = player_weeks.refresh(client, assembled, data_dir or DATA_DIR)
+    # Same for the FFBucks sportsbook lines (data/sportsbook/lines.json).
+    result["sportsbook"] = sportsbook.refresh(client, assembled, data_dir or DATA_DIR)
     return result
