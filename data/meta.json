@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "pipeline_version": "1.0.0",
-  "generated_at": "2026-11-04T20:53:24+00:00",
+  "generated_at": "2026-11-05T14:42:06+00:00",
   "source": "espn",
   "league": {
     "league_id": 61253603,
@@ -32,7 +32,7 @@
     "roster_rows": 24865,
     "players": 711,
     "draft_picks": 1568,
-    "transactions": 63,
+    "transactions": 83,
     "head_to_head_pairs": 185
   },
   "limitations": [

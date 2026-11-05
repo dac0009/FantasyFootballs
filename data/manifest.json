@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-04T20:53:24+00:00",
+  "generated_at": "2026-11-05T14:42:06+00:00",
   "files": {
     "current.json": 44063,
     "drafts/2019.json": 44419,
@@ -60,7 +60,7 @@
     "seasons/2026.json": 125409,
     "team_weeks.json": 510954,
     "trade_values.json": 174313,
-    "transactions/2026.json": 16622
+    "transactions/2026.json": 21925
   },
-  "total_bytes": 8677426
+  "total_bytes": 8682729
 }

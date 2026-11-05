@@ -1,0 +1,613 @@
+{
+  "schema": 1,
+  "generated_at": "2026-11-05T14:42:06Z",
+  "season": 2026,
+  "week": 9,
+  "season_complete": false,
+  "credit": "NFL schedule data: nflverse (CC-BY 4.0)",
+  "model": {
+    "basis": "shrunk season scoring average plus recent form",
+    "form_weight_sd": 0.25,
+    "form_window_weeks": 3,
+    "shrinkage_games": 4.0,
+    "league_mean": 125.18,
+    "pooled_sd": 25.73,
+    "spread_and_total_price": -110,
+    "moneyline_overround": 0.0476
+  },
+  "owners": [
+    {
+      "owner_id": "abhik-patel",
+      "name": "Abhik Patel",
+      "team_name": "Team Crashee Rice",
+      "team_id": 10
+    },
+    {
+      "owner_id": "dom-campese",
+      "name": "Dom Campese",
+      "team_name": "Ben Simmons  Blows",
+      "team_id": 25
+    },
+    {
+      "owner_id": "dominick-cifelli",
+      "name": "Dominick Cifelli",
+      "team_name": "We are Christian Kirk",
+      "team_id": 1
+    },
+    {
+      "owner_id": "dylan-turner",
+      "name": "Dylan Turner",
+      "team_name": "Martinsburg Man Whores",
+      "team_id": 20
+    },
+    {
+      "owner_id": "dylan-williams",
+      "name": "Dylan Williams",
+      "team_name": "Bring Back The  4 for 4",
+      "team_id": 3
+    },
+    {
+      "owner_id": "jack-johnson",
+      "name": "Jack Johnson",
+      "team_name": "El Luchadores",
+      "team_id": 31
+    },
+    {
+      "owner_id": "jakob-frank",
+      "name": "Jakob Frank",
+      "team_name": "• Mothman for MVP",
+      "team_id": 16
+    },
+    {
+      "owner_id": "justin-ripple",
+      "name": "Justin Ripple",
+      "team_name": "Inhood Trash Pandas",
+      "team_id": 12
+    },
+    {
+      "owner_id": "mikey-fidler",
+      "name": "Mikey Fidler",
+      "team_name": "Cruise Control",
+      "team_id": 17
+    },
+    {
+      "owner_id": "preston-hill",
+      "name": "Preston Hill",
+      "team_name": "Yes Chef!!",
+      "team_id": 26
+    },
+    {
+      "owner_id": "russell-cameron",
+      "name": "Russell Cameron",
+      "team_name": "Jayden No. 5",
+      "team_id": 21
+    },
+    {
+      "owner_id": "tyler-kuiken",
+      "name": "Tyler Kuiken",
+      "team_name": "Mommys Little Allstars",
+      "team_id": 30
+    }
+  ],
+  "lines": [
+    {
+      "line_id": "2026-9-1-25",
+      "matchup_id": "2026-9-1-25",
+      "season": 2026,
+      "week": 9,
+      "nfl_weeks": [
+        9
+      ],
+      "game_type": "regular",
+      "playoff_tier": "NONE",
+      "home_team_id": 25,
+      "away_team_id": 1,
+      "home_owner_id": "dom-campese",
+      "away_owner_id": "dominick-cifelli",
+      "home_team_name": "Ben Simmons  Blows",
+      "away_team_name": "We are Christian Kirk",
+      "home_expected": 108.44,
+      "away_expected": 119.36,
+      "home_win_prob": 0.3821,
+      "home_spread": 11.0,
+      "total": 228.0,
+      "home_ml": 150,
+      "away_ml": -185,
+      "spread_price": -110,
+      "total_price": -110,
+      "posted_at": "2026-11-05T14:42:06Z",
+      "lock_at": "2026-11-08T14:30:00Z",
+      "lock_game": "CIN @ ATL",
+      "lock_source": "rosters"
+    },
+    {
+      "line_id": "2026-9-10-17",
+      "matchup_id": "2026-9-10-17",
+      "season": 2026,
+      "week": 9,
+      "nfl_weeks": [
+        9
+      ],
+      "game_type": "regular",
+      "playoff_tier": "NONE",
+      "home_team_id": 17,
+      "away_team_id": 10,
+      "home_owner_id": "mikey-fidler",
+      "away_owner_id": "abhik-patel",
+      "home_team_name": "Cruise Control",
+      "away_team_name": "Team Crashee Rice",
+      "home_expected": 113.78,
+      "away_expected": 143.91,
+      "home_win_prob": 0.2038,
+      "home_spread": 30.0,
+      "total": 257.5,
+      "home_ml": 370,
+      "away_ml": -505,
+      "spread_price": -110,
+      "total_price": -110,
+      "posted_at": "2026-11-05T14:42:06Z",
+      "lock_at": "2026-11-06T01:15:00Z",
+      "lock_game": "JAX @ BAL",
+      "lock_source": "rosters"
+    },
+    {
+      "line_id": "2026-9-12-31",
+      "matchup_id": "2026-9-12-31",
+      "season": 2026,
+      "week": 9,
+      "nfl_weeks": [
+        9
+      ],
+      "game_type": "regular",
+      "playoff_tier": "NONE",
+      "home_team_id": 12,
+      "away_team_id": 31,
+      "home_owner_id": "justin-ripple",
+      "away_owner_id": "jack-johnson",
+      "home_team_name": "Inhood Trash Pandas",
+      "away_team_name": "El Luchadores",
+      "home_expected": 117.94,
+      "away_expected": 124.3,
+      "home_win_prob": 0.4306,
+      "home_spread": 6.5,
+      "total": 242.0,
+      "home_ml": 120,
+      "away_ml": -150,
+      "spread_price": -110,
+      "total_price": -110,
+      "posted_at": "2026-11-05T14:42:06Z",
+      "lock_at": "2026-11-06T01:15:00Z",
+      "lock_game": "JAX @ BAL",
+      "lock_source": "rosters"
+    },
+    {
+      "line_id": "2026-9-16-21",
+      "matchup_id": "2026-9-16-21",
+      "season": 2026,
+      "week": 9,
+      "nfl_weeks": [
+        9
+      ],
+      "game_type": "regular",
+      "playoff_tier": "NONE",
+      "home_team_id": 21,
+      "away_team_id": 16,
+      "home_owner_id": "russell-cameron",
+      "away_owner_id": "jakob-frank",
+      "home_team_name": "Jayden No. 5",
+      "away_team_name": "• Mothman for MVP",
+      "home_expected": 137.42,
+      "away_expected": 118.0,
+      "home_win_prob": 0.7032,
+      "home_spread": -19.5,
+      "total": 255.5,
+      "home_ml": -280,
+      "away_ml": 220,
+      "spread_price": -110,
+      "total_price": -110,
+      "posted_at": "2026-11-05T14:42:06Z",
+      "lock_at": "2026-11-06T01:15:00Z",
+      "lock_game": "JAX @ BAL",
+      "lock_source": "rosters"
+    },
+    {
+      "line_id": "2026-9-20-30",
+      "matchup_id": "2026-9-20-30",
+      "season": 2026,
+      "week": 9,
+      "nfl_weeks": [
+        9
+      ],
+      "game_type": "regular",
+      "playoff_tier": "NONE",
+      "home_team_id": 30,
+      "away_team_id": 20,
+      "home_owner_id": "tyler-kuiken",
+      "away_owner_id": "dylan-turner",
+      "home_team_name": "Mommys Little Allstars",
+      "away_team_name": "Martinsburg Man Whores",
+      "home_expected": 119.66,
+      "away_expected": 118.78,
+      "home_win_prob": 0.5097,
+      "home_spread": -1.0,
+      "total": 238.5,
+      "home_ml": -115,
+      "away_ml": -105,
+      "spread_price": -110,
+      "total_price": -110,
+      "posted_at": "2026-11-05T14:42:06Z",
+      "lock_at": "2026-11-06T01:15:00Z",
+      "lock_game": "JAX @ BAL",
+      "lock_source": "rosters"
+    },
+    {
+      "line_id": "2026-9-3-26",
+      "matchup_id": "2026-9-3-26",
+      "season": 2026,
+      "week": 9,
+      "nfl_weeks": [
+        9
+      ],
+      "game_type": "regular",
+      "playoff_tier": "NONE",
+      "home_team_id": 26,
+      "away_team_id": 3,
+      "home_owner_id": "preston-hill",
+      "away_owner_id": "dylan-williams",
+      "home_team_name": "Yes Chef!!",
+      "away_team_name": "Bring Back The  4 for 4",
+      "home_expected": 133.05,
+      "away_expected": 147.48,
+      "home_win_prob": 0.3459,
+      "home_spread": 14.5,
+      "total": 280.5,
+      "home_ml": 175,
+      "away_ml": -220,
+      "spread_price": -110,
+      "total_price": -110,
+      "posted_at": "2026-11-05T14:42:06Z",
+      "lock_at": "2026-11-08T14:30:00Z",
+      "lock_game": "CIN @ ATL",
+      "lock_source": "rosters"
+    }
+  ],
+  "results": [
+    {
+      "matchup_id": "2026-1-1-30",
+      "week": 1,
+      "home_score": 116.4,
+      "away_score": 113.65,
+      "winner": "HOME"
+    },
+    {
+      "matchup_id": "2026-1-10-31",
+      "week": 1,
+      "home_score": 144.9,
+      "away_score": 165.6,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-1-12-17",
+      "week": 1,
+      "home_score": 173.75,
+      "away_score": 137.1,
+      "winner": "HOME"
+    },
+    {
+      "matchup_id": "2026-1-16-26",
+      "week": 1,
+      "home_score": 117.25,
+      "away_score": 111.9,
+      "winner": "HOME"
+    },
+    {
+      "matchup_id": "2026-1-20-25",
+      "week": 1,
+      "home_score": 102.8,
+      "away_score": 123.1,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-1-3-21",
+      "week": 1,
+      "home_score": 136.35,
+      "away_score": 152.95,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-2-1-21",
+      "week": 2,
+      "home_score": 163.75,
+      "away_score": 134.35,
+      "winner": "HOME"
+    },
+    {
+      "matchup_id": "2026-2-10-26",
+      "week": 2,
+      "home_score": 121.95,
+      "away_score": 122.6,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-2-16-20",
+      "week": 2,
+      "home_score": 126.55,
+      "away_score": 168.75,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-2-17-30",
+      "week": 2,
+      "home_score": 111.7,
+      "away_score": 95.1,
+      "winner": "HOME"
+    },
+    {
+      "matchup_id": "2026-2-25-31",
+      "week": 2,
+      "home_score": 80.9,
+      "away_score": 86.8,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-2-3-12",
+      "week": 2,
+      "home_score": 139.1,
+      "away_score": 128.6,
+      "winner": "HOME"
+    },
+    {
+      "matchup_id": "2026-3-1-17",
+      "week": 3,
+      "home_score": 156.45,
+      "away_score": 154.1,
+      "winner": "HOME"
+    },
+    {
+      "matchup_id": "2026-3-10-25",
+      "week": 3,
+      "home_score": 123.55,
+      "away_score": 87.0,
+      "winner": "HOME"
+    },
+    {
+      "matchup_id": "2026-3-12-21",
+      "week": 3,
+      "home_score": 93.7,
+      "away_score": 113.1,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-3-16-31",
+      "week": 3,
+      "home_score": 116.55,
+      "away_score": 126.1,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-3-20-26",
+      "week": 3,
+      "home_score": 90.2,
+      "away_score": 130.7,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-3-3-30",
+      "week": 3,
+      "home_score": 128.85,
+      "away_score": 150.4,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-4-1-12",
+      "week": 4,
+      "home_score": 154.6,
+      "away_score": 147.65,
+      "winner": "HOME"
+    },
+    {
+      "matchup_id": "2026-4-10-20",
+      "week": 4,
+      "home_score": 78.9,
+      "away_score": 141.2,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-4-16-25",
+      "week": 4,
+      "home_score": 147.15,
+      "away_score": 120.45,
+      "winner": "HOME"
+    },
+    {
+      "matchup_id": "2026-4-21-30",
+      "week": 4,
+      "home_score": 123.35,
+      "away_score": 111.55,
+      "winner": "HOME"
+    },
+    {
+      "matchup_id": "2026-4-26-31",
+      "week": 4,
+      "home_score": 194.7,
+      "away_score": 151.25,
+      "winner": "HOME"
+    },
+    {
+      "matchup_id": "2026-4-3-17",
+      "week": 4,
+      "home_score": 98.2,
+      "away_score": 102.7,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-5-1-3",
+      "week": 5,
+      "home_score": 156.25,
+      "away_score": 171.15,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-5-10-16",
+      "week": 5,
+      "home_score": 120.75,
+      "away_score": 193.5,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-5-12-30",
+      "week": 5,
+      "home_score": 93.45,
+      "away_score": 119.4,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-5-17-21",
+      "week": 5,
+      "home_score": 132.4,
+      "away_score": 85.05,
+      "winner": "HOME"
+    },
+    {
+      "matchup_id": "2026-5-20-31",
+      "week": 5,
+      "home_score": 113.45,
+      "away_score": 158.05,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-5-25-26",
+      "week": 5,
+      "home_score": 119.95,
+      "away_score": 129.9,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-6-1-10",
+      "week": 6,
+      "home_score": 149.25,
+      "away_score": 86.15,
+      "winner": "HOME"
+    },
+    {
+      "matchup_id": "2026-6-12-20",
+      "week": 6,
+      "home_score": 108.4,
+      "away_score": 137.1,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-6-17-25",
+      "week": 6,
+      "home_score": 116.5,
+      "away_score": 82.1,
+      "winner": "HOME"
+    },
+    {
+      "matchup_id": "2026-6-21-26",
+      "week": 6,
+      "home_score": 108.1,
+      "away_score": 129.7,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-6-3-16",
+      "week": 6,
+      "home_score": 150.55,
+      "away_score": 108.1,
+      "winner": "HOME"
+    },
+    {
+      "matchup_id": "2026-6-30-31",
+      "week": 6,
+      "home_score": 96.65,
+      "away_score": 93.85,
+      "winner": "HOME"
+    },
+    {
+      "matchup_id": "2026-7-1-31",
+      "week": 7,
+      "home_score": 101.25,
+      "away_score": 129.75,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-7-12-16",
+      "week": 7,
+      "home_score": 79.05,
+      "away_score": 85.65,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-7-17-20",
+      "week": 7,
+      "home_score": 152.05,
+      "away_score": 122.3,
+      "winner": "HOME"
+    },
+    {
+      "matchup_id": "2026-7-21-25",
+      "week": 7,
+      "home_score": 155.2,
+      "away_score": 88.4,
+      "winner": "HOME"
+    },
+    {
+      "matchup_id": "2026-7-26-30",
+      "week": 7,
+      "home_score": 106.6,
+      "away_score": 126.8,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-7-3-10",
+      "week": 7,
+      "home_score": 153.65,
+      "away_score": 128.65,
+      "winner": "HOME"
+    },
+    {
+      "matchup_id": "2026-8-1-26",
+      "week": 8,
+      "home_score": 101.45,
+      "away_score": 167.2,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-8-10-12",
+      "week": 8,
+      "home_score": 151.05,
+      "away_score": 112.35,
+      "winner": "HOME"
+    },
+    {
+      "matchup_id": "2026-8-16-17",
+      "week": 8,
+      "home_score": 101.9,
+      "away_score": 103.95,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-8-20-21",
+      "week": 8,
+      "home_score": 164.25,
+      "away_score": 105.3,
+      "winner": "HOME"
+    },
+    {
+      "matchup_id": "2026-8-25-30",
+      "week": 8,
+      "home_score": 107.55,
+      "away_score": 116.65,
+      "winner": "AWAY"
+    },
+    {
+      "matchup_id": "2026-8-3-31",
+      "week": 8,
+      "home_score": 109.85,
+      "away_score": 168.05,
+      "winner": "AWAY"
+    }
+  ],
+  "locks_updated_at": "2026-11-05T14:42:06Z"
+}
