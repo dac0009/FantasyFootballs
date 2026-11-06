@@ -9,8 +9,17 @@ on:
       - ".github/workflows/deploy.yml"
   workflow_dispatch:
   # Called by the data-refresh workflow, because a push made with
-  # GITHUB_TOKEN does not itself trigger the push event above.
+  # GITHUB_TOKEN does not itself trigger the push event above. The caller
+  # passes the commit it just pushed explicitly: github.sha is fixed to
+  # whatever triggered the *calling* workflow's run and does not advance
+  # when a job later in that same run pushes a new commit, so without this
+  # the build below would silently check out the pre-refresh commit.
   workflow_call:
+    inputs:
+      ref:
+        description: "Commit SHA or ref to build and deploy (defaults to the triggering ref)"
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -27,6 +36,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
 
       - uses: actions/setup-node@v4
         with:

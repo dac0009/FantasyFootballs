@@ -48,6 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       changed: ${{ steps.commit.outputs.changed }}
+      sha: ${{ steps.commit.outputs.sha }}
     steps:
       - name: Check the local time in the league's timezone
         id: guard
@@ -151,6 +152,7 @@ jobs:
             git commit -m "Refresh ESPN data ($(TZ=America/New_York date '+%Y-%m-%d %H:%M %Z'))"
             git push
             echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           fi
 
   deploy:
@@ -158,6 +160,8 @@ jobs:
     needs: refresh
     if: needs.refresh.outputs.changed == 'true'
     uses: ./.github/workflows/deploy.yml
+    with:
+      ref: ${{ needs.refresh.outputs.sha }}
     permissions:
       contents: read
       pages: write
