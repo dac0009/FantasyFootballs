@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-10T14:29:11+00:00",
+  "generated_at": "2026-11-13T13:54:12+00:00",
   "files": {
     "current.json": 43983,
     "drafts/2019.json": 44419,
@@ -13,7 +13,7 @@
     "game_of_week.json": 9036,
     "head_to_head.json": 593065,
     "matchups.json": 336328,
-    "meta.json": 1425,
+    "meta.json": 1426,
     "owners.json": 22554,
     "owners/abhik-patel.json": 42446,
     "owners/brandon-perez.json": 10704,
@@ -38,9 +38,9 @@
     "owners/thomas-strange.json": 26021,
     "owners/tyler-kuiken.json": 23502,
     "owners/wyatt-mowrer.json": 14734,
-    "players.json": 55118,
+    "players.json": 55116,
     "playoffs.json": 8903,
-    "records.json": 156604,
+    "records.json": 156602,
     "rosters/2019.json": 601979,
     "rosters/2020.json": 431295,
     "rosters/2021.json": 656111,
@@ -59,8 +59,8 @@
     "seasons/2025.json": 218217,
     "seasons/2026.json": 133154,
     "team_weeks.json": 514942,
-    "trade_values.json": 174803,
-    "transactions/2026.json": 1586
+    "trade_values.json": 174801,
+    "transactions/2026.json": 19612
   },
-  "total_bytes": 8712411
+  "total_bytes": 8730432
 }
